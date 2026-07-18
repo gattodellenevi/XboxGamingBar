@@ -105,6 +105,21 @@ namespace Shared.Data
             }
         }
 
+        [XmlElement("FPSLimit")]
+        private int fpsLimit;
+        public int FPSLimit
+        {
+            get { return fpsLimit; }
+            set
+            {
+                if (fpsLimit != value)
+                {
+                    fpsLimit = value;
+                    Save();
+                }
+            }
+        }
+
         [XmlIgnore]
         public string Path;
 
@@ -119,7 +134,7 @@ namespace Shared.Data
             set { cache = value; }
         }
 
-        public GameProfile(string gameName, string gamePath, bool inUse, int inTDP, bool inCPUBoost, int inCPUEPP, int inCPUClock, string inPath, IDictionary<GameId, GameProfile> inCache)
+        public GameProfile(string gameName, string gamePath, bool inUse, int inTDP, bool inCPUBoost, int inCPUEPP, int inCPUClock, int inFPSLimit, string inPath, IDictionary<GameId, GameProfile> inCache)
         {
             GameId = new GameId(gameName, gamePath);
             use = inUse;
@@ -127,6 +142,7 @@ namespace Shared.Data
             cpuBoost = inCPUBoost;
             cpuEPP = inCPUEPP;
             cpuClock = inCPUClock;
+            fpsLimit = inFPSLimit;
             Path = inPath;
             cache = inCache;
         }

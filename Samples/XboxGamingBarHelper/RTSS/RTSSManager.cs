@@ -19,6 +19,9 @@ namespace XboxGamingBarHelper.RTSS
         public override bool IsInstalled => RTSSHelper.IsInstalled(out _);
         // END IOnScreenDisplayProvider implementation
 
+        private readonly FPSLimitProperty fpsLimit;
+        public FPSLimitProperty FPSLimit => fpsLimit;
+
         private const string OSDVerticalLineSeparator = " <C=6E006A>|<C> ";
         private const string OSDNewLine = "\n";
         private const string OSDNewLinePadding = " ";
@@ -33,6 +36,9 @@ namespace XboxGamingBarHelper.RTSS
 
         public RTSSManager(HardwareManager hardwareManager, AppServiceConnection connection) : base(connection)
         {
+            RTSSFPSLimiter.Initialize();
+            fpsLimit = new FPSLimitProperty(this);
+
             var osdItemsList = new List<OSDItem>()
             {
                 new OSDItemBattery(hardwareManager.BatteryLevel, hardwareManager.BatteryDischargeRate, hardwareManager.BatteryChargeRate, hardwareManager.BatteryRemainingTime),
