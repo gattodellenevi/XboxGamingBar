@@ -70,6 +70,8 @@
                             <RowDefinition Height="32"/>   <!-- 8: CPU EPP Slider -->
                             <RowDefinition Height="36"/>   <!-- 9: Limit CPU Clock -->
                             <RowDefinition Height="32"/>   <!-- 10: CPU Clock Slider -->
+                            <RowDefinition Height="Auto"/> <!-- 11: FPS Limit Text -->
+                            <RowDefinition Height="32"/>   <!-- 12: FPS Limit Slider -->
                         </Grid.RowDefinitions>
 
                         <TextBlock x:Name="PerformanceOverlayText" Text="Performance Overlay" FontWeight="Normal" FontSize="18" Grid.Row="0"/>
@@ -135,6 +137,16 @@
                             TickPlacement="BottomRight"
                             IsEnabled="False"
                             Visibility="{Binding ElementName=LimitCPUClockToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        <Grid Grid.Row="11">
+                            <TextBlock x:Name="FPSLimitText" Text="FPS Limit (RTSS)" FontWeight="Normal" FontSize="18"/>
+                            <TextBlock x:Name="FPSLimitValueText" Text="{Binding ElementName=FPSLimitSlider, Path=Value}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                        </Grid>
+                        <Slider x:Name="FPSLimitSlider" Grid.Row="12"
+                            Minimum="0" Maximum="300"
+                            TickFrequency="5"
+                            SnapsTo="Ticks"
+                            TickPlacement="BottomRight"
+                            IsEnabled="False"/>
                     </Grid>
                 </ScrollViewer>
             </PivotItem>

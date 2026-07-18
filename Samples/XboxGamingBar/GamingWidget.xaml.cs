@@ -85,6 +85,7 @@ namespace XboxGamingBar
         private readonly AMDRadeonChillMaxFPSProperty amdRadeonChillMaxFPSProperty;
 
         private readonly IsListeningForKeyBindingProperty isListeningForKeyBinding;
+        private readonly FPSLimitProperty fpsLimit;
 
         private readonly WidgetProperties properties;
 
@@ -132,6 +133,7 @@ namespace XboxGamingBar
             focusingOnOSDSlider = new FocusingOnOSDSliderProperty(PerformanceOverlaySlider, this);
             isListeningForKeyBinding = new IsListeningForKeyBindingProperty();
             losslessScalingShortcut = new LosslessScalingShortcutProperty(LosslessScalingBindingButton, new List<int>());
+            fpsLimit = new FPSLimitProperty(0, FPSLimitSlider, this);
 
             properties = new WidgetProperties(
                 osd,
@@ -169,7 +171,8 @@ namespace XboxGamingBar
                 amdRadeonChillMaxFPSProperty,
                 focusingOnOSDSlider,
                 isListeningForKeyBinding,
-                losslessScalingShortcut
+                losslessScalingShortcut,
+                fpsLimit
             );
 
             this.KeyDown += GamingWidget_KeyDown;
