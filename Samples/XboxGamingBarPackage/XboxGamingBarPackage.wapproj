@@ -38,7 +38,7 @@
     <TargetPlatformVersion>10.0.26100.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.26100.0</TargetPlatformMinVersion>
     <DefaultLanguage>en-US</DefaultLanguage>
-    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
+    <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
     <NoWarn>$(NoWarn);NU1702</NoWarn>
     <EntryPointProjectUniqueName>..\XboxGamingBar\XboxGamingBar.csproj</EntryPointProjectUniqueName>
     <PackageCertificateThumbprint>35C884E04E0A561974EC39590EC731859E49D7EE</PackageCertificateThumbprint>
