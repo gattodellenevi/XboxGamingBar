@@ -1,4 +1,4 @@
-﻿using Shared.Data;
+using Shared.Data;
 using Shared.Enums;
 using XboxGamingBarHelper.Core;
 
@@ -54,6 +54,18 @@ namespace XboxGamingBarHelper.Profile
                 if (this.Value.CPUClock != value)
                 {
                     this.value.CPUClock = value;
+                }
+            }
+        }
+
+        public int FPSLimit
+        {
+            get { return value.FPSLimit; }
+            set
+            {
+                if (this.value.FPSLimit != value)
+                {
+                    this.value.FPSLimit = value;
                 }
             }
         }
