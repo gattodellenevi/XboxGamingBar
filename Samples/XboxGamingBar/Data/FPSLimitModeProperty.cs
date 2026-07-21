@@ -12,12 +12,16 @@ namespace XboxGamingBar.Data
             if (UI != null)
             {
                 UI.SelectionChanged += ComboBox_SelectionChanged;
+                if (UI.SelectedIndex < 0)
+                {
+                    UI.SelectedIndex = 0;
+                }
             }
         }
 
         private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (UI.SelectedIndex >= 0 && Value != UI.SelectedIndex)
+            if (UI.SelectedIndex >= 0)
             {
                 SetValue(UI.SelectedIndex);
             }

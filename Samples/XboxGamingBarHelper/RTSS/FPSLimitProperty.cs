@@ -13,7 +13,11 @@ namespace XboxGamingBarHelper.RTSS
         {
             base.NotifyPropertyChanged(propertyName);
 
-            RTSSFPSLimiter.SetFPSLimit(Value);
+            if (Manager.LimitFPS)
+            {
+                RTSSFPSLimiter.SetFPSLimit(Value);
+                RTSSFPSLimiter.SetFPSLimitMode(Manager.FPSLimitMode.Value);
+            }
         }
     }
 }

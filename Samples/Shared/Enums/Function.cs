@@ -36,6 +36,7 @@ namespace Shared.Enums
         FocusingOnOSDSlider,
         FPSLimit,
         FPSLimitMode,
+        LimitFPS,
 
         Settings_OnScreenDisplayProvider,
         Settings_OnScreenDisplayProviderInstalled,

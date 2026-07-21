@@ -57,6 +57,7 @@ namespace XboxGamingBar
         private readonly CPUEPPProperty cpuEPP;
         private readonly LimitCPUClockProperty limitCPUClock;
         private readonly CPUClockMaxProperty cpuClockMax;
+        private readonly LimitFPSProperty limitFPS;
         private readonly RefreshRatesProperty refreshRates;
         private readonly RefreshRateProperty refreshRate;
         private readonly ResolutionProperty resolution;
@@ -134,7 +135,8 @@ namespace XboxGamingBar
             focusingOnOSDSlider = new FocusingOnOSDSliderProperty(PerformanceOverlaySlider, this);
             isListeningForKeyBinding = new IsListeningForKeyBindingProperty();
             losslessScalingShortcut = new LosslessScalingShortcutProperty(LosslessScalingBindingButton, new List<int>());
-            fpsLimit = new FPSLimitProperty(0, FPSLimitSlider, this);
+            limitFPS = new LimitFPSProperty(LimitFPSToggle, this);
+            fpsLimit = new FPSLimitProperty(60, FPSLimitSlider, this);
             fpsLimitMode = new FPSLimitModeProperty(FPSLimitModeComboBox, this);
 
             properties = new WidgetProperties(
@@ -174,6 +176,7 @@ namespace XboxGamingBar
                 focusingOnOSDSlider,
                 isListeningForKeyBinding,
                 losslessScalingShortcut,
+                limitFPS,
                 fpsLimit,
                 fpsLimitMode
             );

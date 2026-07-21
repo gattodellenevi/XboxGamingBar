@@ -17,6 +17,7 @@
         <converter:RadeonBoostResolutionStringConverter x:Key="RadeonBoostResolutionStringConverter"/>
         <converter:RadeonChillMinFPSStringConverter x:Key="RadeonChillMinFPSStringConverter"/>
         <converter:RadeonChillMaxFPSStringConverter x:Key="RadeonChillMaxFPSStringConverter"/>
+        <converter:FPSStringConverter x:Key="FPSStringConverter"/>
     </Page.Resources>
 
     <Grid x:Name="RootGrid">
@@ -72,6 +73,7 @@
                             <RowDefinition Height="32"/>   <!-- 10: CPU Clock Slider -->
                             <RowDefinition Height="Auto"/> <!-- 11: FPS Limit Text -->
                             <RowDefinition Height="32"/>   <!-- 12: FPS Limit Slider -->
+                            <RowDefinition Height="Auto"/> <!-- 13: Limiter Mode (RTSS) -->
                         </Grid.RowDefinitions>
 
                         <TextBlock x:Name="PerformanceOverlayText" Text="Performance Overlay" FontWeight="Normal" FontSize="18" Grid.Row="0"/>
@@ -138,18 +140,22 @@
                             IsEnabled="False"
                             Visibility="{Binding ElementName=LimitCPUClockToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                         <Grid Grid.Row="11">
-                            <TextBlock x:Name="FPSLimitText" Text="FPS Limit (RTSS)" FontWeight="Normal" FontSize="18"/>
-                            <TextBlock x:Name="FPSLimitValueText" Text="{Binding ElementName=FPSLimitSlider, Path=Value}" VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                            <TextBlock x:Name="FPSLimitText" Text="FPS Limit (RTSS)" FontWeight="Normal" FontSize="18"
+                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <ToggleSwitch x:Name="LimitFPSToggle" IsEnabled="False" OffContent="Disabled" OnContent="{Binding ElementName=FPSLimitSlider, Path=Value, Converter={StaticResource FPSStringConverter}}"
+                                FlowDirection="RightToLeft" VerticalAlignment="Center" HorizontalAlignment="Right" />
                         </Grid>
                         <Slider x:Name="FPSLimitSlider" Grid.Row="12"
-                            Minimum="0" Maximum="300"
+                            Minimum="30" Maximum="300"
                             TickFrequency="5"
                             SnapsTo="Ticks"
                             TickPlacement="BottomRight"
-                            IsEnabled="False"/>
-                        <Grid Grid.Row="13" Margin="0,5,0,0">
+                            IsEnabled="False"
+                            Visibility="{Binding ElementName=LimitFPSToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                        <Grid Grid.Row="13" Margin="0,5,0,0"
+                            Visibility="{Binding ElementName=LimitFPSToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
                             <TextBlock x:Name="FPSLimitModeText" Text="Limiter Mode (RTSS)" FontWeight="Normal" FontSize="18" VerticalAlignment="Center" HorizontalAlignment="Left"/>
-                            <ComboBox x:Name="FPSLimitModeComboBox" HorizontalAlignment="Right" VerticalAlignment="Center" Width="150" IsEnabled="False">
+                            <ComboBox x:Name="FPSLimitModeComboBox" SelectedIndex="0" HorizontalAlignment="Right" VerticalAlignment="Center" Width="150" IsEnabled="False">
                                 <ComboBoxItem Content="Async"/>
                                 <ComboBoxItem Content="Front Edge Sync"/>
                                 <ComboBoxItem Content="Back Edge Sync"/>

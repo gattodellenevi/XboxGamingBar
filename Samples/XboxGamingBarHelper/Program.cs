@@ -152,6 +152,7 @@ namespace XboxGamingBarHelper
                 amdManager.FocusingOnOSDSlider,
                 settingsManager.OnScreenDisplayProvider,
                 settingsManager.LosslessScalingShortcut,
+                rtssManager.LimitFPS,
                 rtssManager.FPSLimit,
                 rtssManager.FPSLimitMode);
 
@@ -164,6 +165,7 @@ namespace XboxGamingBarHelper
             powerManager.CPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
             powerManager.LimitCPUClock.PropertyChanged += CPUClock_PropertyChanged;
             powerManager.CPUClockMax.PropertyChanged += CPUClock_PropertyChanged;
+            rtssManager.LimitFPS.PropertyChanged += LimitFPS_PropertyChanged;
             rtssManager.FPSLimit.PropertyChanged += FPSLimit_PropertyChanged;
             rtssManager.FPSLimitMode.PropertyChanged += FPSLimitMode_PropertyChanged;
             profileManager.CurrentProfile.PropertyChanged += CurrentProfile_PropertyChanged;
@@ -279,7 +281,8 @@ namespace XboxGamingBarHelper
                 powerManager.CPUEPP.SetValue(profileManager.CurrentProfile.CPUEPP);
                 powerManager.LimitCPUClock.SetValue(profileManager.CurrentProfile.CPUClock > 0);
                 powerManager.CPUClockMax.SetValue(profileManager.CurrentProfile.CPUClock > 0 ? profileManager.CurrentProfile.CPUClock : CPUConstants.DEFAULT_CPU_CLOCK);
-                rtssManager.FPSLimit.SetValue(profileManager.CurrentProfile.FPSLimit);
+                rtssManager.LimitFPS.SetValue(profileManager.CurrentProfile.FPSLimit > 0);
+                rtssManager.FPSLimit.SetValue(profileManager.CurrentProfile.FPSLimit > 0 ? profileManager.CurrentProfile.FPSLimit : 60);
                 rtssManager.FPSLimitMode.SetValue(profileManager.CurrentProfile.FPSLimitMode);
                 profileManager.PerGameProfile.SetValue(profileManager.CurrentProfile.Use);
             }
@@ -318,10 +321,18 @@ namespace XboxGamingBarHelper
             profileManager.CurrentProfile.TDP = hardwareManager.TDP;
         }
 
+        private static void LimitFPS_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            var newFPSLimit = rtssManager.LimitFPS ? (rtssManager.FPSLimit > 0 ? rtssManager.FPSLimit.Value : 60) : 0;
+            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s LimitFPS to {rtssManager.LimitFPS.Value} (FPS Limit = {newFPSLimit}).");
+            profileManager.CurrentProfile.FPSLimit = newFPSLimit;
+        }
+
         private static void FPSLimit_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit from {profileManager.CurrentProfile.FPSLimit} to {rtssManager.FPSLimit}.");
-            profileManager.CurrentProfile.FPSLimit = rtssManager.FPSLimit;
+            var newFPSLimit = rtssManager.LimitFPS ? rtssManager.FPSLimit.Value : 0;
+            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit from {profileManager.CurrentProfile.FPSLimit} to {newFPSLimit}.");
+            profileManager.CurrentProfile.FPSLimit = newFPSLimit;
         }
 
         private static void FPSLimitMode_PropertyChanged(object sender, PropertyChangedEventArgs e)

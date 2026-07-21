@@ -85,6 +85,7 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
     <Compile Include="Converter\BooleanToVisibilityConverter.cs" />
+    <Compile Include="Converter\FPSStringConverter.cs" />
     <Compile Include="Converter\RadeonBoostResolutionStringConverter.cs" />
     <Compile Include="Converter\RadeonChillMaxFPSStringConverter.cs" />
     <Compile Include="Converter\RadeonChillMinFPSStringConverter.cs" />
@@ -107,6 +108,7 @@
     <Compile Include="Data\FocusingOnOSDSliderProperty.cs" />
     <Compile Include="Data\FPSLimitProperty.cs" />
     <Compile Include="Data\FPSLimitModeProperty.cs" />
+    <Compile Include="Data\LimitFPSProperty.cs" />
     <Compile Include="Data\IsListeningForKeyBindingProperty.cs" />
     <Compile Include="Data\IsForegroundProperty.cs" />
     <Compile Include="Data\LimitCPUClockProperty.cs" />
