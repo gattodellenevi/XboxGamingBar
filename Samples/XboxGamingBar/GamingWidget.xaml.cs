@@ -1,4 +1,4 @@
-﻿using Microsoft.Gaming.XboxGameBar;
+using Microsoft.Gaming.XboxGameBar;
 using NLog;
 using Shared.Data;
 using Shared.Utilities;
@@ -86,6 +86,7 @@ namespace XboxGamingBar
 
         private readonly IsListeningForKeyBindingProperty isListeningForKeyBinding;
         private readonly FPSLimitProperty fpsLimit;
+        private readonly FPSLimitModeProperty fpsLimitMode;
 
         private readonly WidgetProperties properties;
 
@@ -134,6 +135,7 @@ namespace XboxGamingBar
             isListeningForKeyBinding = new IsListeningForKeyBindingProperty();
             losslessScalingShortcut = new LosslessScalingShortcutProperty(LosslessScalingBindingButton, new List<int>());
             fpsLimit = new FPSLimitProperty(0, FPSLimitSlider, this);
+            fpsLimitMode = new FPSLimitModeProperty(FPSLimitModeComboBox, this);
 
             properties = new WidgetProperties(
                 osd,
@@ -172,7 +174,8 @@ namespace XboxGamingBar
                 focusingOnOSDSlider,
                 isListeningForKeyBinding,
                 losslessScalingShortcut,
-                fpsLimit
+                fpsLimit,
+                fpsLimitMode
             );
 
             this.KeyDown += GamingWidget_KeyDown;

@@ -106,6 +106,7 @@
     <Compile Include="Data\CPUBoostProperty.cs" />
     <Compile Include="Data\FocusingOnOSDSliderProperty.cs" />
     <Compile Include="Data\FPSLimitProperty.cs" />
+    <Compile Include="Data\FPSLimitModeProperty.cs" />
     <Compile Include="Data\IsListeningForKeyBindingProperty.cs" />
     <Compile Include="Data\IsForegroundProperty.cs" />
     <Compile Include="Data\LimitCPUClockProperty.cs" />
