@@ -25,6 +25,9 @@ namespace XboxGamingBarHelper.RTSS
         private readonly FPSLimitModeProperty fpsLimitMode;
         public FPSLimitModeProperty FPSLimitMode => fpsLimitMode;
 
+        private readonly LimitFPSProperty limitFPS;
+        public LimitFPSProperty LimitFPS => limitFPS;
+
         private const string OSDVerticalLineSeparator = " <C=6E006A>|<C> ";
         private const string OSDNewLine = "\n";
         private const string OSDNewLinePadding = " ";
@@ -42,6 +45,7 @@ namespace XboxGamingBarHelper.RTSS
             RTSSFPSLimiter.Initialize();
             fpsLimit = new FPSLimitProperty(this);
             fpsLimitMode = new FPSLimitModeProperty(this);
+            limitFPS = new LimitFPSProperty(false, this);
 
             var osdItemsList = new List<OSDItem>()
             {
