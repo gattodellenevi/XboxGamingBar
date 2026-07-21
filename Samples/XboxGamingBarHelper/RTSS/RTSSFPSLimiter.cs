@@ -157,6 +157,74 @@ namespace XboxGamingBarHelper.RTSS
             return -1;
         }
 
+        public static bool SetFPSLimitMode(int mode)
+        {
+            if (!_isAvailable)
+            {
+                Logger.Debug("RTSSFPSLimiter: Not available, cannot set FPS limit mode");
+                return false;
+            }
+
+            if (!RTSSHelper.IsRunning())
+            {
+                Logger.Debug("RTSSFPSLimiter: RTSS is not running");
+                return false;
+            }
+
+            try
+            {
+                LoadProfile(GLOBAL_PROFILE);
+
+                if (SetProfileProperty("SyncLimiter", mode))
+                {
+                    SaveProfile(GLOBAL_PROFILE);
+                    UpdateProfiles();
+
+                    Logger.Info($"RTSSFPSLimiter: Set SyncLimiter to {mode}");
+                    return true;
+                }
+                else
+                {
+                    Logger.Warn($"RTSSFPSLimiter: SetProfileProperty returned false for SyncLimiter={mode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"RTSSFPSLimiter: Failed to set FPS limit mode: {ex.Message}");
+            }
+
+            return false;
+        }
+
+        public static int GetFPSLimitMode()
+        {
+            if (!_isAvailable)
+                return 0;
+
+            if (!RTSSHelper.IsRunning())
+                return 0;
+
+            try
+            {
+                if (!_profileLoaded)
+                {
+                    LoadProfile(GLOBAL_PROFILE);
+                    _profileLoaded = true;
+                }
+
+                if (GetProfileProperty("SyncLimiter", out int mode))
+                {
+                    return mode;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"RTSSFPSLimiter: Failed to get FPS limit mode: {ex.Message}");
+            }
+
+            return 0;
+        }
+
         #region Generic Property Helpers
 
         private static bool GetProfileProperty<T>(string propertyName, out T value) where T : struct

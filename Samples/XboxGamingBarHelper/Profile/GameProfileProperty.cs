@@ -70,6 +70,18 @@ namespace XboxGamingBarHelper.Profile
             }
         }
 
+        public int FPSLimitMode
+        {
+            get { return value.FPSLimitMode; }
+            set
+            {
+                if (this.value.FPSLimitMode != value)
+                {
+                    this.value.FPSLimitMode = value;
+                }
+            }
+        }
+
         public GameId GameId
         {
             get { return value.GameId; }

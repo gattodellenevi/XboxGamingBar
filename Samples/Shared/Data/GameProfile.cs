@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using Shared.Utilities;
 using System.Collections.Generic;
 using System.Xml.Serialization;
@@ -120,6 +120,21 @@ namespace Shared.Data
             }
         }
 
+        [XmlElement("FPSLimitMode")]
+        private int fpsLimitMode;
+        public int FPSLimitMode
+        {
+            get { return fpsLimitMode; }
+            set
+            {
+                if (fpsLimitMode != value)
+                {
+                    fpsLimitMode = value;
+                    Save();
+                }
+            }
+        }
+
         [XmlIgnore]
         public string Path;
 
@@ -134,7 +149,7 @@ namespace Shared.Data
             set { cache = value; }
         }
 
-        public GameProfile(string gameName, string gamePath, bool inUse, int inTDP, bool inCPUBoost, int inCPUEPP, int inCPUClock, int inFPSLimit, string inPath, IDictionary<GameId, GameProfile> inCache)
+        public GameProfile(string gameName, string gamePath, bool inUse, int inTDP, bool inCPUBoost, int inCPUEPP, int inCPUClock, int inFPSLimit, int inFPSLimitMode, string inPath, IDictionary<GameId, GameProfile> inCache)
         {
             GameId = new GameId(gameName, gamePath);
             use = inUse;
@@ -143,6 +158,7 @@ namespace Shared.Data
             cpuEPP = inCPUEPP;
             cpuClock = inCPUClock;
             fpsLimit = inFPSLimit;
+            fpsLimitMode = inFPSLimitMode;
             Path = inPath;
             cache = inCache;
         }

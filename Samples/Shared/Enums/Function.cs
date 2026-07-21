@@ -1,4 +1,4 @@
-﻿namespace Shared.Enums
+namespace Shared.Enums
 {
     public enum Function
     {
@@ -35,6 +35,7 @@
         Foreground,
         FocusingOnOSDSlider,
         FPSLimit,
+        FPSLimitMode,
 
         Settings_OnScreenDisplayProvider,
         Settings_OnScreenDisplayProviderInstalled,

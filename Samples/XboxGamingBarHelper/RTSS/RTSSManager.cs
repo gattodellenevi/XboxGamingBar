@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Diagnostics;
 using RTSSSharedMemoryNET;
@@ -22,6 +22,9 @@ namespace XboxGamingBarHelper.RTSS
         private readonly FPSLimitProperty fpsLimit;
         public FPSLimitProperty FPSLimit => fpsLimit;
 
+        private readonly FPSLimitModeProperty fpsLimitMode;
+        public FPSLimitModeProperty FPSLimitMode => fpsLimitMode;
+
         private const string OSDVerticalLineSeparator = " <C=6E006A>|<C> ";
         private const string OSDNewLine = "\n";
         private const string OSDNewLinePadding = " ";
@@ -38,6 +41,7 @@ namespace XboxGamingBarHelper.RTSS
         {
             RTSSFPSLimiter.Initialize();
             fpsLimit = new FPSLimitProperty(this);
+            fpsLimitMode = new FPSLimitModeProperty(this);
 
             var osdItemsList = new List<OSDItem>()
             {
