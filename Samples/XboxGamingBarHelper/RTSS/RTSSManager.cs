@@ -28,6 +28,9 @@ namespace XboxGamingBarHelper.RTSS
         private readonly LimitFPSProperty limitFPS;
         public LimitFPSProperty LimitFPS => limitFPS;
 
+        private readonly JudderFreeFPSProperty judderFreeFPS;
+        public JudderFreeFPSProperty JudderFreeFPS => judderFreeFPS;
+
         private const string OSDVerticalLineSeparator = " <C=6E006A>|<C> ";
         private const string OSDNewLine = "\n";
         private const string OSDNewLinePadding = " ";
@@ -46,6 +49,7 @@ namespace XboxGamingBarHelper.RTSS
             fpsLimit = new FPSLimitProperty(this);
             fpsLimitMode = new FPSLimitModeProperty(this);
             limitFPS = new LimitFPSProperty(false, this);
+            judderFreeFPS = new JudderFreeFPSProperty(this);
 
             var osdItemsList = new List<OSDItem>()
             {

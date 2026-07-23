@@ -225,6 +225,17 @@ namespace XboxGamingBarHelper.RTSS
             return 0;
         }
 
+        /// <summary>
+        /// Calculates the Judder Free FPS values (divisors of refreshRate starting from minFPS, e.g. 30).
+        /// </summary>
+        /// <param name="refreshRate">The display's refresh rate (e.g. 120)</param>
+        /// <param name="minFPS">The minimum threshold for calculated FPS values (defaults to 30)</param>
+        /// <returns>A sorted list of judder free FPS values</returns>
+        public static System.Collections.Generic.List<int> GetJudderFreeFPSValues(int refreshRate, int minFPS = 30)
+        {
+            return RTSSHelper.GetJudderFreeFPSValues(refreshRate, minFPS);
+        }
+
         #region Generic Property Helpers
 
         private static bool GetProfileProperty<T>(string propertyName, out T value) where T : struct

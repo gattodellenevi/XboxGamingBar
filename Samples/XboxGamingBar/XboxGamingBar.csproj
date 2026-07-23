@@ -109,6 +109,7 @@
     <Compile Include="Data\FPSLimitProperty.cs" />
     <Compile Include="Data\FPSLimitModeProperty.cs" />
     <Compile Include="Data\LimitFPSProperty.cs" />
+    <Compile Include="Data\JudderFreeFPSProperty.cs" />
     <Compile Include="Data\IsListeningForKeyBindingProperty.cs" />
     <Compile Include="Data\IsForegroundProperty.cs" />
     <Compile Include="Data\LimitCPUClockProperty.cs" />

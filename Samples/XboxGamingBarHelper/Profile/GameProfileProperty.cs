@@ -82,6 +82,18 @@ namespace XboxGamingBarHelper.Profile
             }
         }
 
+        public bool JudderFreeFPS
+        {
+            get { return value.JudderFreeFPS; }
+            set
+            {
+                if (this.value.JudderFreeFPS != value)
+                {
+                    this.value.JudderFreeFPS = value;
+                }
+            }
+        }
+
         public GameId GameId
         {
             get { return value.GameId; }

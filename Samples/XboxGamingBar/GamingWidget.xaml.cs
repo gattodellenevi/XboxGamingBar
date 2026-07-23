@@ -14,6 +14,7 @@ using Windows.Foundation.Metadata;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Controls.Primitives;
 using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Windows.UI.Xaml.Input;
@@ -88,6 +89,7 @@ namespace XboxGamingBar
         private readonly IsListeningForKeyBindingProperty isListeningForKeyBinding;
         private readonly FPSLimitProperty fpsLimit;
         private readonly FPSLimitModeProperty fpsLimitMode;
+        private readonly JudderFreeFPSProperty judderFreeFPS;
 
         private readonly WidgetProperties properties;
 
@@ -109,7 +111,7 @@ namespace XboxGamingBar
             limitCPUClock = new LimitCPUClockProperty(LimitCPUClockToggle, this);
             cpuClockMax = new CPUClockMaxProperty(CPUClockMaxSlider, this);
             refreshRates = new RefreshRatesProperty(RefreshRatesComboBox, this);
-            refreshRate = new RefreshRateProperty(RefreshRatesComboBox, this);
+            refreshRate = new RefreshRateProperty(RefreshRatesComboBox, this, FPSLimitSlider);
             resolutions = new ResolutionsProperty(ResolutionsComboBox, this);
             resolution = new ResolutionProperty(ResolutionsComboBox, this);
             trackedGame = new TrackedGameProperty(new TrackedGame());
@@ -138,6 +140,26 @@ namespace XboxGamingBar
             limitFPS = new LimitFPSProperty(LimitFPSToggle, this);
             fpsLimit = new FPSLimitProperty(60, FPSLimitSlider, this);
             fpsLimitMode = new FPSLimitModeProperty(FPSLimitModeComboBox, this);
+            judderFreeFPS = new JudderFreeFPSProperty(JudderFreeFPSToggle, this);
+
+            JudderFreeFPSToggle.Toggled += JudderFreeFPSToggle_Toggled;
+            LimitFPSToggle.Toggled += (s, e) => UpdateFPSLimitSliderJudderFree();
+            FPSLimitJudderFreeSlider.ValueChanged += FPSLimitJudderFreeSlider_ValueChanged;
+            FPSLimitJudderFreeCanvas.SizeChanged += (s, e) => RenderJudderFreeMarkers();
+            judderFreeFPS.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(judderFreeFPS.Value))
+                {
+                    UpdateFPSLimitSliderJudderFree();
+                }
+            };
+            refreshRate.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(refreshRate.Value))
+                {
+                    UpdateFPSLimitSliderJudderFree();
+                }
+            };
 
             properties = new WidgetProperties(
                 osd,
@@ -178,7 +200,8 @@ namespace XboxGamingBar
                 losslessScalingShortcut,
                 limitFPS,
                 fpsLimit,
-                fpsLimitMode
+                fpsLimitMode,
+                judderFreeFPS
             );
 
             this.KeyDown += GamingWidget_KeyDown;
@@ -581,6 +604,164 @@ namespace XboxGamingBar
         {
             //Logger.Info($"GamingWidget received message {args.Request.Message.ToDebugString()} from helper.");
             await properties.OnRequestReceived(new WidgetAppServiceRequest(args.Request));
+        }
+
+        private bool isUpdatingJudderFreeSlider = false;
+
+        private void JudderFreeFPSToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            UpdateFPSLimitSliderJudderFree();
+        }
+
+        private void FPSLimitJudderFreeSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            if (isUpdatingJudderFreeSlider) return;
+
+            if (refreshRate != null && refreshRate.Value > 0)
+            {
+                int maxRefresh = refreshRate.Value;
+                var judderFreeValues = RTSSHelper.GetJudderFreeFPSValues(maxRefresh, 30);
+                int idx = (int)Math.Round(e.NewValue);
+                if (idx >= 0 && idx < judderFreeValues.Count)
+                {
+                    FPSLimitSlider.Value = judderFreeValues[idx];
+                }
+            }
+        }
+
+        private void UpdateFPSLimitSliderJudderFree()
+        {
+            if (FPSLimitSlider == null || FPSLimitJudderFreeSlider == null || refreshRate == null || refreshRate.Value <= 0)
+                return;
+
+            int maxRefresh = refreshRate.Value;
+            bool isLimitFPSOn = LimitFPSToggle != null && LimitFPSToggle.IsOn;
+            bool isJudderFree = JudderFreeFPSToggle != null && JudderFreeFPSToggle.IsOn;
+
+            if (!isLimitFPSOn)
+            {
+                FPSLimitSlider.Visibility = Visibility.Collapsed;
+                FPSLimitJudderFreeSlider.Visibility = Visibility.Collapsed;
+                FPSLimitJudderFreeCanvas.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            FPSLimitJudderFreeCanvas.Visibility = Visibility.Visible;
+
+            if (isJudderFree)
+            {
+                var judderFreeValues = RTSSHelper.GetJudderFreeFPSValues(maxRefresh, 30);
+                if (judderFreeValues.Count > 0)
+                {
+                    FPSLimitSlider.Visibility = Visibility.Collapsed;
+                    FPSLimitJudderFreeSlider.Visibility = Visibility.Visible;
+
+                    isUpdatingJudderFreeSlider = true;
+                    FPSLimitJudderFreeSlider.Minimum = 0;
+                    FPSLimitJudderFreeSlider.Maximum = judderFreeValues.Count - 1;
+                    FPSLimitJudderFreeSlider.StepFrequency = 1;
+                    FPSLimitJudderFreeSlider.TickFrequency = 1;
+                    FPSLimitJudderFreeSlider.SnapsTo = SliderSnapsTo.StepValues;
+                    FPSLimitJudderFreeSlider.TickPlacement = TickPlacement.None;
+
+                    double currentVal = FPSLimitSlider.Value;
+                    int closestVal = judderFreeValues.OrderBy(v => Math.Abs(v - currentVal)).First();
+                    int idx = judderFreeValues.IndexOf(closestVal);
+                    if (idx < 0) idx = 0;
+
+                    FPSLimitJudderFreeSlider.Value = idx;
+                    FPSLimitSlider.Value = judderFreeValues[idx];
+                    isUpdatingJudderFreeSlider = false;
+                }
+                else
+                {
+                    FPSLimitSlider.Visibility = Visibility.Visible;
+                    FPSLimitJudderFreeSlider.Visibility = Visibility.Collapsed;
+                    FPSLimitSlider.Minimum = 30;
+                    FPSLimitSlider.Maximum = maxRefresh;
+                    FPSLimitSlider.TickPlacement = TickPlacement.BottomRight;
+                }
+            }
+            else
+            {
+                FPSLimitSlider.Visibility = Visibility.Visible;
+                FPSLimitJudderFreeSlider.Visibility = Visibility.Collapsed;
+                FPSLimitSlider.Minimum = 30;
+                FPSLimitSlider.Maximum = maxRefresh;
+                FPSLimitSlider.TickPlacement = TickPlacement.BottomRight;
+            }
+
+            RenderJudderFreeMarkers();
+        }
+
+        private void RenderJudderFreeMarkers()
+        {
+            if (FPSLimitJudderFreeCanvas == null || refreshRate == null || refreshRate.Value <= 0)
+                return;
+
+            FPSLimitJudderFreeCanvas.Children.Clear();
+
+            int maxRefresh = refreshRate.Value;
+            double canvasWidth = FPSLimitJudderFreeCanvas.ActualWidth;
+            if (canvasWidth <= 0)
+                return;
+
+            var judderFreeValues = RTSSHelper.GetJudderFreeFPSValues(maxRefresh, 30);
+            if (judderFreeValues == null || judderFreeValues.Count == 0)
+                return;
+
+            bool isJudderFree = JudderFreeFPSToggle != null && JudderFreeFPSToggle.IsOn;
+
+            if (isJudderFree)
+            {
+                int count = judderFreeValues.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    int val = judderFreeValues[i];
+                    double percent = count > 1 ? (double)i / (count - 1) : 0;
+                    double xPos = percent * canvasWidth;
+
+                    AddCanvasLabel(val.ToString(), xPos, canvasWidth);
+                }
+            }
+            else
+            {
+                double min = FPSLimitSlider.Minimum;
+                double max = FPSLimitSlider.Maximum;
+                if (max <= min) return;
+
+                foreach (int val in judderFreeValues)
+                {
+                    if (val < min || val > max) continue;
+
+                    double percent = (val - min) / (max - min);
+                    double xPos = percent * canvasWidth;
+
+                    AddCanvasLabel(val.ToString(), xPos, canvasWidth);
+                }
+            }
+        }
+
+        private void AddCanvasLabel(string text, double xPos, double canvasWidth)
+        {
+            var textBlock = new TextBlock
+            {
+                Text = text,
+                FontSize = 16,
+                Foreground = (Windows.UI.Xaml.Media.Brush)Application.Current.Resources["SystemControlForegroundBaseMediumBrush"]
+            };
+
+            textBlock.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+            double textWidth = textBlock.DesiredSize.Width;
+
+            double leftPos = xPos - (textWidth / 2.0);
+            if (leftPos < 0) leftPos = 0;
+            if (leftPos + textWidth > canvasWidth) leftPos = canvasWidth - textWidth;
+
+            Canvas.SetLeft(textBlock, leftPos);
+            Canvas.SetTop(textBlock, 0);
+
+            FPSLimitJudderFreeCanvas.Children.Add(textBlock);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Shared.Constants;
+using Shared.Constants;
 using Shared.Enums;
 using Shared.Utilities;
 using System;
@@ -207,7 +207,7 @@ namespace Shared.Data
             Logger.Info($"Value of {Function} is changing from {value} to {newValue}");
             lastUpdatedTime = updatedTime;
             value = newValue;
-            NotifyPropertyChanged(nameof(value));
+            NotifyPropertyChanged(nameof(Value));
             return true;
         }
 
