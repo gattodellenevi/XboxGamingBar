@@ -9,9 +9,9 @@
   IgnorableNamespaces="uap uap3 rescap">
 
   <Identity
-    Name="PlayandBuild.10365195AA1EC"
+    Name="GameBarGamingTools"
     Publisher="CN=zanchisoft"
-    Version="0.9.1.0" />
+    Version="1.0.0.0" />
 
   <Properties>
     <DisplayName>Gaming Bar</DisplayName>
