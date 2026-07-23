@@ -675,23 +675,24 @@ namespace XboxGamingBar
                 }
                 else
                 {
-                    FPSLimitSlider.Visibility = Visibility.Visible;
-                    FPSLimitJudderFreeSlider.Visibility = Visibility.Collapsed;
-                    FPSLimitSlider.Minimum = 30;
-                    FPSLimitSlider.Maximum = maxRefresh;
-                    FPSLimitSlider.TickPlacement = TickPlacement.BottomRight;
+                    ShowStandardFPSLimitSlider(maxRefresh);
                 }
             }
             else
             {
-                FPSLimitSlider.Visibility = Visibility.Visible;
-                FPSLimitJudderFreeSlider.Visibility = Visibility.Collapsed;
-                FPSLimitSlider.Minimum = 30;
-                FPSLimitSlider.Maximum = maxRefresh;
-                FPSLimitSlider.TickPlacement = TickPlacement.BottomRight;
+                ShowStandardFPSLimitSlider(maxRefresh);
             }
 
             RenderJudderFreeMarkers();
+        }
+
+        private void ShowStandardFPSLimitSlider(int maxRefresh)
+        {
+            FPSLimitSlider.Visibility = Visibility.Visible;
+            FPSLimitJudderFreeSlider.Visibility = Visibility.Collapsed;
+            FPSLimitSlider.Minimum = 30;
+            FPSLimitSlider.Maximum = maxRefresh;
+            FPSLimitSlider.TickPlacement = TickPlacement.BottomRight;
         }
 
         private void RenderJudderFreeMarkers()

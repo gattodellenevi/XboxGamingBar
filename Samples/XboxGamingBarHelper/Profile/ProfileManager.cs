@@ -45,7 +45,21 @@ namespace XboxGamingBarHelper.Profile
             if (!File.Exists(globalProfilePath))
             {
                 // Create global profile path when it's not previously exist.
-                GlobalProfile = new GameProfile(GameProfile.GLOBAL_PROFILE_NAME, GameProfile.GLOBAL_PROFILE_NAME, true, 25, true, 80, 0, 0, 0, globalProfilePath, gameProfiles, true);
+                GlobalProfile = new GameProfile(new GameProfileOptions
+                {
+                    GameName = GameProfile.GLOBAL_PROFILE_NAME,
+                    GamePath = GameProfile.GLOBAL_PROFILE_NAME,
+                    InUse = true,
+                    TDP = 25,
+                    CPUBoost = true,
+                    CPUEPP = 80,
+                    CPUClock = 0,
+                    FPSLimit = 0,
+                    FPSLimitMode = 0,
+                    ProfilePath = globalProfilePath,
+                    Cache = gameProfiles,
+                    JudderFreeFPS = true
+                });
                 GlobalProfile.Save();
             }
             else
@@ -109,7 +123,21 @@ namespace XboxGamingBarHelper.Profile
             }
 
             var newGameProfilePath = Path.Combine(GetGameProfilesFolder(), $"{Path.GetFileNameWithoutExtension(gameId.Path)}{XML_EXTENSION}");
-            var newGameProfile = new GameProfile(gameId.Name, gameId.Path, true, CurrentProfile.TDP, CurrentProfile.CPUBoost, CurrentProfile.CPUEPP, CurrentProfile.CPUClock, CurrentProfile.FPSLimit, CurrentProfile.FPSLimitMode, newGameProfilePath, gameProfiles, CurrentProfile.JudderFreeFPS);
+            var newGameProfile = new GameProfile(new GameProfileOptions
+            {
+                GameName = gameId.Name,
+                GamePath = gameId.Path,
+                InUse = true,
+                TDP = CurrentProfile.TDP,
+                CPUBoost = CurrentProfile.CPUBoost,
+                CPUEPP = CurrentProfile.CPUEPP,
+                CPUClock = CurrentProfile.CPUClock,
+                FPSLimit = CurrentProfile.FPSLimit,
+                FPSLimitMode = CurrentProfile.FPSLimitMode,
+                ProfilePath = newGameProfilePath,
+                Cache = gameProfiles,
+                JudderFreeFPS = CurrentProfile.JudderFreeFPS
+            });
             newGameProfile.Save();
             Logger.Info($"Add new profile for {gameId.Name} at {newGameProfilePath}.");
             return newGameProfile;

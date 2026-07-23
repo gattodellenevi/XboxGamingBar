@@ -164,19 +164,19 @@ namespace Shared.Data
             set { cache = value; }
         }
 
-        public GameProfile(string gameName, string gamePath, bool inUse, int inTDP, bool inCPUBoost, int inCPUEPP, int inCPUClock, int inFPSLimit, int inFPSLimitMode, string inPath, IDictionary<GameId, GameProfile> inCache, bool inJudderFreeFPS = true)
+        public GameProfile(GameProfileOptions options)
         {
-            GameId = new GameId(gameName, gamePath);
-            use = inUse;
-            tdp = inTDP;
-            cpuBoost = inCPUBoost;
-            cpuEPP = inCPUEPP;
-            cpuClock = inCPUClock;
-            fpsLimit = inFPSLimit;
-            fpsLimitMode = inFPSLimitMode;
-            judderFreeFPS = inJudderFreeFPS;
-            Path = inPath;
-            cache = inCache;
+            GameId = new GameId(options.GameName, options.GamePath);
+            use = options.InUse;
+            tdp = options.TDP;
+            cpuBoost = options.CPUBoost;
+            cpuEPP = options.CPUEPP;
+            cpuClock = options.CPUClock;
+            fpsLimit = options.FPSLimit;
+            fpsLimitMode = options.FPSLimitMode;
+            judderFreeFPS = options.JudderFreeFPS;
+            Path = options.ProfilePath;
+            cache = options.Cache;
         }
 
         public bool IsValid()

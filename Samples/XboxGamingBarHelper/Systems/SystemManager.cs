@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using RTSSSharedMemoryNET;
 using System;
 using System.IO;
@@ -189,27 +189,27 @@ namespace XboxGamingBarHelper.Systems
                     if (trackedGame.IsValid() && trackedGame.DisplayName == processWindow.Value.Title)
                     {
                         Logger.Debug($"Found window \"{processWindow.Value.Title}\" running {(processWindow.Value.IsForeground ? "foreground" : "background")} process id {processWindow.Key} at path \"{processWindow.Value.Path}\" named \"{processWindow.Value.ProcessName}\" matches the xbox game bar widget app tracker target.");
-                        possibleGames.Add(new RunningGame(processWindow.Value.ProcessId, processWindow.Value.Title, processWindow.Value.Path, trackedGame.AumId, 0, processWindow.Value.IsForeground));
+                        possibleGames.Add(new RunningGame(CreateGameOptions(processWindow.Value, aumId: trackedGame.AumId)));
                     }
 
                     if (Profiles.ContainsKey(new GameId(processWindow.Value.Title, processWindow.Value.Path)))
                     {
                         Logger.Debug($"Found window \"{processWindow.Value.Title}\" running {(processWindow.Value.IsForeground ? "foreground" : "background")} process id {processWindow.Key} at path \"{processWindow.Value.Path}\" named \"{processWindow.Value.ProcessName}\" has profile, use it.");
-                        possibleGames.Add(new RunningGame(processWindow.Value.ProcessId, processWindow.Value.Title, processWindow.Value.Path, string.Empty, 0, processWindow.Value.IsForeground));
+                        possibleGames.Add(new RunningGame(CreateGameOptions(processWindow.Value)));
                         continue;
                     }
 
                     if (AppEntries.TryGetValue(processWindow.Value.ProcessId, out var appEntry) && appEntry.InstantaneousFrames > 0)
                     {
                         Logger.Debug($"Found window \"{processWindow.Value.Title}\" running {(processWindow.Value.IsForeground ? "foreground" : "background")} process id {processWindow.Key} at path \"{processWindow.Value.Path}\" named \"{processWindow.Value.ProcessName}\" has {appEntry.InstantaneousFrames} FPS, use it.");
-                        possibleGames.Add(new RunningGame(processWindow.Value.ProcessId, processWindow.Value.Title, processWindow.Value.Path, string.Empty, appEntry.InstantaneousFrames, processWindow.Value.IsForeground));
+                        possibleGames.Add(new RunningGame(CreateGameOptions(processWindow.Value, fps: appEntry.InstantaneousFrames)));
                         continue;
                     }
 
                     if (GameProcesses.Contains(processExecutable))
                     {
                         Logger.Debug($"Found window \"{processWindow.Value.Title}\" running {(processWindow.Value.IsForeground ? "foreground" : "background")} process id {processWindow.Key} at path \"{processPath}\" named \"{processWindow.Value.ProcessName}\" in pre-defined list.");
-                        possibleGames.Add(new RunningGame(processWindow.Value.ProcessId, processWindow.Value.Title, processPath, string.Empty, 0, processWindow.Value.IsForeground));
+                        possibleGames.Add(new RunningGame(CreateGameOptions(processWindow.Value, customPath: processPath)));
                         continue;
                     }
 
@@ -256,6 +256,19 @@ namespace XboxGamingBarHelper.Systems
                 Logger.Debug($"Found highest FPS ({highestFPSGame.FPS}) game {highestFPSGame.GameId.Name} in multiple games.");
                 return highestFPSGame;
             }
+        }
+
+        private RunningGameOptions CreateGameOptions(ProcessWindow window, string customPath = null, string aumId = "", uint fps = 0)
+        {
+            return new RunningGameOptions
+            {
+                ProcessId = window.ProcessId,
+                Name = window.Title,
+                Path = customPath ?? window.Path,
+                AumId = aumId,
+                FPS = fps,
+                IsForeground = window.IsForeground
+            };
         }
 
         public override void Update()

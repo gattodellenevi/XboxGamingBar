@@ -1,4 +1,4 @@
-﻿namespace Shared.Data
+namespace Shared.Data
 {
     using Shared.Utilities;
     using System.Xml.Serialization;
@@ -21,12 +21,12 @@
         [XmlElement("IsForeground")]
         public bool IsForeground;
 
-        public RunningGame(int processId, string name, string path, string aumId, uint fps, bool isForeground)
+        public RunningGame(RunningGameOptions options)
         {
-            ProcessId = processId;
-            GameId = new GameId(name, path, aumId);
-            FPS = fps;
-            IsForeground = isForeground;
+            ProcessId = options.ProcessId;
+            GameId = new GameId(options.Name, options.Path, options.AumId);
+            FPS = options.FPS;
+            IsForeground = options.IsForeground;
         }
 
         public bool IsValid()

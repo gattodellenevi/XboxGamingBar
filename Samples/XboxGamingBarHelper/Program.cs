@@ -324,18 +324,21 @@ namespace XboxGamingBarHelper
             profileManager.CurrentProfile.TDP = hardwareManager.TDP;
         }
 
-        private static void LimitFPS_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private static void UpdateCurrentProfileFPSLimit()
         {
             var newFPSLimit = rtssManager.LimitFPS ? (rtssManager.FPSLimit > 0 ? rtssManager.FPSLimit.Value : 60) : 0;
-            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s LimitFPS to {rtssManager.LimitFPS.Value} (FPS Limit = {newFPSLimit}).");
+            Logger.Info($"Update current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit to {newFPSLimit}.");
             profileManager.CurrentProfile.FPSLimit = newFPSLimit;
+        }
+
+        private static void LimitFPS_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            UpdateCurrentProfileFPSLimit();
         }
 
         private static void FPSLimit_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            var newFPSLimit = rtssManager.LimitFPS ? rtssManager.FPSLimit.Value : 0;
-            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit from {profileManager.CurrentProfile.FPSLimit} to {newFPSLimit}.");
-            profileManager.CurrentProfile.FPSLimit = newFPSLimit;
+            UpdateCurrentProfileFPSLimit();
         }
 
         private static void FPSLimitMode_PropertyChanged(object sender, PropertyChangedEventArgs e)
