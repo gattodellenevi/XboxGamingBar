@@ -37,6 +37,7 @@ namespace Shared.Enums
         FPSLimit,
         FPSLimitMode,
         LimitFPS,
+        JudderFreeFPS,
 
         Settings_OnScreenDisplayProvider,
         Settings_OnScreenDisplayProviderInstalled,

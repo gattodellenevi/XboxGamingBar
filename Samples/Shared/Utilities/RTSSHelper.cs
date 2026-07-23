@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using System;
 using System.Diagnostics;
 
@@ -34,6 +34,23 @@ namespace Shared.Utilities
         {
             installDir = RegistryHelper.ReadStringValue(Registry.LocalMachine, @"Software\WOW6432Node\Unwinder\RTSS", "InstallDir");
             return !string.IsNullOrEmpty(installDir);
+        }
+
+        public static System.Collections.Generic.List<int> GetJudderFreeFPSValues(int refreshRate, int minFPS = 30)
+        {
+            var values = new System.Collections.Generic.List<int>();
+            if (refreshRate <= 0)
+                return values;
+
+            for (int i = minFPS; i <= refreshRate; i++)
+            {
+                if (refreshRate % i == 0)
+                {
+                    values.Add(i);
+                }
+            }
+
+            return values;
         }
     }
 }

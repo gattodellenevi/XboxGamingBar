@@ -154,7 +154,8 @@ namespace XboxGamingBarHelper
                 settingsManager.LosslessScalingShortcut,
                 rtssManager.LimitFPS,
                 rtssManager.FPSLimit,
-                rtssManager.FPSLimitMode);
+                rtssManager.FPSLimitMode,
+                rtssManager.JudderFreeFPS);
 
             Logger.Info("Initialize callbacks.");
             systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;
@@ -168,6 +169,7 @@ namespace XboxGamingBarHelper
             rtssManager.LimitFPS.PropertyChanged += LimitFPS_PropertyChanged;
             rtssManager.FPSLimit.PropertyChanged += FPSLimit_PropertyChanged;
             rtssManager.FPSLimitMode.PropertyChanged += FPSLimitMode_PropertyChanged;
+            rtssManager.JudderFreeFPS.PropertyChanged += JudderFreeFPS_PropertyChanged;
             profileManager.CurrentProfile.PropertyChanged += CurrentProfile_PropertyChanged;
 
             Logger.Info("Initialize Tray Icon Manager.");
@@ -284,6 +286,7 @@ namespace XboxGamingBarHelper
                 rtssManager.LimitFPS.SetValue(profileManager.CurrentProfile.FPSLimit > 0);
                 rtssManager.FPSLimit.SetValue(profileManager.CurrentProfile.FPSLimit > 0 ? profileManager.CurrentProfile.FPSLimit : 60);
                 rtssManager.FPSLimitMode.SetValue(profileManager.CurrentProfile.FPSLimitMode);
+                rtssManager.JudderFreeFPS.SetValue(profileManager.CurrentProfile.JudderFreeFPS);
                 profileManager.PerGameProfile.SetValue(profileManager.CurrentProfile.Use);
             }
             else
@@ -339,6 +342,12 @@ namespace XboxGamingBarHelper
         {
             Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit Mode from {profileManager.CurrentProfile.FPSLimitMode} to {rtssManager.FPSLimitMode}.");
             profileManager.CurrentProfile.FPSLimitMode = rtssManager.FPSLimitMode;
+        }
+
+        private static void JudderFreeFPS_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s JudderFreeFPS from {profileManager.CurrentProfile.JudderFreeFPS} to {rtssManager.JudderFreeFPS.Value}.");
+            profileManager.CurrentProfile.JudderFreeFPS = rtssManager.JudderFreeFPS.Value;
         }
 
         private static void RunningGame_PropertyChanged(object sender, PropertyChangedEventArgs e)

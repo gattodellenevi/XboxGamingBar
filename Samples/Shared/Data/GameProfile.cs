@@ -135,6 +135,21 @@ namespace Shared.Data
             }
         }
 
+        [XmlElement("JudderFreeFPS")]
+        private bool judderFreeFPS;
+        public bool JudderFreeFPS
+        {
+            get { return judderFreeFPS; }
+            set
+            {
+                if (judderFreeFPS != value)
+                {
+                    judderFreeFPS = value;
+                    Save();
+                }
+            }
+        }
+
         [XmlIgnore]
         public string Path;
 
@@ -149,7 +164,7 @@ namespace Shared.Data
             set { cache = value; }
         }
 
-        public GameProfile(string gameName, string gamePath, bool inUse, int inTDP, bool inCPUBoost, int inCPUEPP, int inCPUClock, int inFPSLimit, int inFPSLimitMode, string inPath, IDictionary<GameId, GameProfile> inCache)
+        public GameProfile(string gameName, string gamePath, bool inUse, int inTDP, bool inCPUBoost, int inCPUEPP, int inCPUClock, int inFPSLimit, int inFPSLimitMode, string inPath, IDictionary<GameId, GameProfile> inCache, bool inJudderFreeFPS = true)
         {
             GameId = new GameId(gameName, gamePath);
             use = inUse;
@@ -159,6 +174,7 @@ namespace Shared.Data
             cpuClock = inCPUClock;
             fpsLimit = inFPSLimit;
             fpsLimitMode = inFPSLimitMode;
+            judderFreeFPS = inJudderFreeFPS;
             Path = inPath;
             cache = inCache;
         }
