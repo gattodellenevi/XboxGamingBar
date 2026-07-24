@@ -46,6 +46,18 @@ namespace XboxGamingBarHelper.Profile
             }
         }
 
+        public bool LimitCPUEPP
+        {
+            get { return value.LimitCPUEPP; }
+            set
+            {
+                if (this.value.LimitCPUEPP != value)
+                {
+                    this.value.LimitCPUEPP = value;
+                }
+            }
+        }
+
         public int CPUClock
         {
             get { return value.CPUClock; }

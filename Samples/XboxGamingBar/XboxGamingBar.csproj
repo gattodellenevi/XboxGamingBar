@@ -115,6 +115,7 @@
     <Compile Include="Data\LimitCPUClockProperty.cs" />
     <Compile Include="Data\CPUClockMaxProperty.cs" />
     <Compile Include="Data\CPUEPPProperty.cs" />
+    <Compile Include="Data\LimitCPUEPPProperty.cs" />
     <Compile Include="Data\MaxTDPProperty.cs" />
     <Compile Include="Data\MinTDPProperty.cs" />
     <Compile Include="Data\OnScreenDisplayProviderProperty.cs" />

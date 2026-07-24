@@ -1,4 +1,4 @@
-﻿using Shared.Enums;
+using Shared.Enums;
 using XboxGamingBarHelper.Core;
 
 namespace XboxGamingBarHelper.Power
@@ -13,8 +13,15 @@ namespace XboxGamingBarHelper.Power
         {
             base.NotifyPropertyChanged(propertyName);
 
-            PowerManager.SetEppValue(false, (uint)Value);
-            PowerManager.SetEppValue(true, (uint)Value);
+            if (Manager.LimitCPUEPP.Value)
+            {
+                PowerManager.SetEppValue(false, (uint)Value);
+                PowerManager.SetEppValue(true, (uint)Value);
+            }
+            else
+            {
+                Logger.Info($"CPU EPP limit is disabled, skip applying.");
+            }
         }
     }
 }

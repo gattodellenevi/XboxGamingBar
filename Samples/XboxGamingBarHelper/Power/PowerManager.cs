@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using Shared.Constants;
 using System;
 using System.Runtime.InteropServices;
@@ -16,10 +16,19 @@ namespace XboxGamingBarHelper.Power
             get { return cpuBoost; }
         }
 
+        private static uint defaultEpp = 80;
+        public static uint DefaultEpp => defaultEpp;
+
         private readonly CPUEPPProperty cpuEPP;
         public CPUEPPProperty CPUEPP
         {
             get { return cpuEPP; }
+        }
+
+        private readonly LimitCPUEPPProperty limitCPUEPP;
+        public LimitCPUEPPProperty LimitCPUEPP
+        {
+            get { return limitCPUEPP; }
         }
 
         private readonly LimitCPUClockProperty limitCPUClock;
@@ -38,7 +47,11 @@ namespace XboxGamingBarHelper.Power
         {
             Logger.Info($"Check CPU Boost Mode and EPP.");
             cpuBoost = new CPUBoostProperty(GetCpuBoostMode(false), this);
-            cpuEPP = new CPUEPPProperty((int)GetEppValue(false), this);
+            var initialEpp = GetEppValue(false);
+            defaultEpp = initialEpp;
+            Logger.Info($"Initial CPU EPP: {initialEpp}%.");
+            limitCPUEPP = new LimitCPUEPPProperty(false, this);
+            cpuEPP = new CPUEPPProperty((int)initialEpp, this);
             var initialCPUClockMax = GetCpuFreqLimit(false);
             Logger.Info($"Initial CPU clock limit {initialCPUClockMax}Mhz.");
             limitCPUClock = new LimitCPUClockProperty(initialCPUClockMax != 0, this);
@@ -141,6 +154,13 @@ namespace XboxGamingBarHelper.Power
             Logger.Info($"Set CPU EPP {(isAC ? "AC" : "DC")} to {value}.");
             // Apply changes to the currently active power plan
             PowrProf.PowerSetActiveScheme(IntPtr.Zero, ref scheme);
+        }
+
+        public static void RestoreDefaultEpp()
+        {
+            Logger.Info($"Restoring default CPU EPP ({defaultEpp}%).");
+            SetEppValue(true, defaultEpp);
+            SetEppValue(false, defaultEpp);
         }
 
         /// <summary>

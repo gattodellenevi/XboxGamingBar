@@ -1,4 +1,4 @@
-﻿using Shared.Enums;
+using Shared.Enums;
 using XboxGamingBarHelper.Core;
 
 namespace XboxGamingBarHelper.Power
@@ -13,7 +13,7 @@ namespace XboxGamingBarHelper.Power
         {
             base.NotifyPropertyChanged(propertyName);
 
-            if (Manager.LimitCPUClock)
+            if (Manager.LimitCPUClock.Value)
             {
                 PowerManager.SetCpuFreqLimit(true, (uint)Value, false);
                 PowerManager.SetCpuFreqLimit(false, (uint)Value, false);

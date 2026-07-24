@@ -15,7 +15,7 @@ namespace XboxGamingBarHelper.Profile
         private const string PROFILE_FOLDER_NAME = "profiles";
         private const string XML_EXTENSION = ".xml";
 
-        public readonly GameProfile GlobalProfile;
+        public GameProfile GlobalProfile;
 
         private readonly Dictionary<GameId, GameProfile> gameProfiles;
         public IReadOnlyDictionary<GameId, GameProfile> GameProfiles
@@ -131,6 +131,7 @@ namespace XboxGamingBarHelper.Profile
                 TDP = CurrentProfile.TDP,
                 CPUBoost = CurrentProfile.CPUBoost,
                 CPUEPP = CurrentProfile.CPUEPP,
+                LimitCPUEPP = CurrentProfile.LimitCPUEPP,
                 CPUClock = CurrentProfile.CPUClock,
                 FPSLimit = CurrentProfile.FPSLimit,
                 FPSLimitMode = CurrentProfile.FPSLimitMode,

@@ -1,4 +1,4 @@
-﻿using Shared.Enums;
+using Shared.Enums;
 using XboxGamingBarHelper.Core;
 
 namespace XboxGamingBarHelper.Power
@@ -14,7 +14,7 @@ namespace XboxGamingBarHelper.Power
             base.NotifyPropertyChanged(propertyName);
 
             Logger.Info($"{(Value ? "Enable" : "Disable")} CPU Clock limit.");
-            var maxCPUClock = (uint)(Value ? Manager.CPUClockMax : 0);
+            var maxCPUClock = (uint)(Value ? Manager.CPUClockMax.Value : 0);
             PowerManager.SetCpuFreqLimit(true, maxCPUClock, false);
             PowerManager.SetCpuFreqLimit(false, maxCPUClock, false);
             PowerManager.SetCpuFreqLimit(true, maxCPUClock, true);

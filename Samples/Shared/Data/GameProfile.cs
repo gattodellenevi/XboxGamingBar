@@ -90,6 +90,21 @@ namespace Shared.Data
             }
         }
 
+        [XmlElement("LimitCPUEPP")]
+        private bool limitCPUEPP;
+        public bool LimitCPUEPP
+        {
+            get { return limitCPUEPP; }
+            set
+            {
+                if (limitCPUEPP != value)
+                {
+                    limitCPUEPP = value;
+                    Save();
+                }
+            }
+        }
+
         [XmlElement("CPUClock")]
         private int cpuClock;
         public int CPUClock
@@ -171,6 +186,7 @@ namespace Shared.Data
             tdp = options.TDP;
             cpuBoost = options.CPUBoost;
             cpuEPP = options.CPUEPP;
+            limitCPUEPP = options.LimitCPUEPP;
             cpuClock = options.CPUClock;
             fpsLimit = options.FPSLimit;
             fpsLimitMode = options.FPSLimitMode;

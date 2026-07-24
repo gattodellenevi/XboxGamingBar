@@ -10,6 +10,7 @@ namespace Shared.Data
         public int TDP { get; set; }
         public bool CPUBoost { get; set; }
         public int CPUEPP { get; set; }
+        public bool LimitCPUEPP { get; set; }
         public int CPUClock { get; set; }
         public int FPSLimit { get; set; }
         public int FPSLimitMode { get; set; }
@@ -27,6 +28,7 @@ namespace Shared.Data
                 TDP = 25,
                 CPUBoost = true,
                 CPUEPP = 80,
+                LimitCPUEPP = false,
                 CPUClock = 0,
                 FPSLimit = 0,
                 FPSLimitMode = 0,
