@@ -90,16 +90,16 @@ namespace Shared.Data
             }
         }
 
-        [XmlElement("LimitCPUEPP")]
-        private bool limitCPUEPP;
-        public bool LimitCPUEPP
+        [XmlElement("SetCPUEPP")]
+        private bool setCPUEPP;
+        public bool SetCPUEPP
         {
-            get { return limitCPUEPP; }
+            get { return setCPUEPP; }
             set
             {
-                if (limitCPUEPP != value)
+                if (setCPUEPP != value)
                 {
-                    limitCPUEPP = value;
+                    setCPUEPP = value;
                     Save();
                 }
             }
@@ -186,7 +186,7 @@ namespace Shared.Data
             tdp = options.TDP;
             cpuBoost = options.CPUBoost;
             cpuEPP = options.CPUEPP;
-            limitCPUEPP = options.LimitCPUEPP;
+            setCPUEPP = options.SetCPUEPP;
             cpuClock = options.CPUClock;
             fpsLimit = options.FPSLimit;
             fpsLimitMode = options.FPSLimitMode;

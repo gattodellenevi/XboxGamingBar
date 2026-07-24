@@ -11,7 +11,7 @@ namespace Shared.Enums
         PerGameProfile,
         CPUBoost,
         CPUEPP,
-        LimitCPUEPP,
+        SetCPUEPP,
         LimitCPUClock,
         CPUClockMax,
         RefreshRates,

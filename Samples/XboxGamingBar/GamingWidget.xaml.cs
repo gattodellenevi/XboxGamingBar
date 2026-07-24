@@ -56,7 +56,7 @@ namespace XboxGamingBar
         private readonly PerGameProfileProperty perGameProfile;
         private readonly CPUBoostProperty cpuBoost;
         private readonly CPUEPPProperty cpuEPP;
-        private readonly LimitCPUEPPProperty limitCPUEPP;
+        private readonly SetCPUEPPProperty setCPUEPP;
         private readonly LimitCPUClockProperty limitCPUClock;
         private readonly CPUClockMaxProperty cpuClockMax;
         private readonly LimitFPSProperty limitFPS;
@@ -109,7 +109,7 @@ namespace XboxGamingBar
             perGameProfile = new PerGameProfileProperty(PerGameProfileToggle, this);
             cpuBoost = new CPUBoostProperty(CPUBoostToggle, this);
             cpuEPP = new CPUEPPProperty(80, CPUEPPSlider, this);
-            limitCPUEPP = new LimitCPUEPPProperty(LimitCPUEPPToggle, this);
+            setCPUEPP = new SetCPUEPPProperty(SetCPUEPPToggle, this);
             limitCPUClock = new LimitCPUClockProperty(LimitCPUClockToggle, this);
             cpuClockMax = new CPUClockMaxProperty(CPUClockMaxSlider, this);
             refreshRates = new RefreshRatesProperty(RefreshRatesComboBox, this);
@@ -173,7 +173,7 @@ namespace XboxGamingBar
                 perGameProfile,
                 cpuBoost,
                 cpuEPP,
-                limitCPUEPP,
+                setCPUEPP,
                 limitCPUClock,
                 cpuClockMax,
                 refreshRates,

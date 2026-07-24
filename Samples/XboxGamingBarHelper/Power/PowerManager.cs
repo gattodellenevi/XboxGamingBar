@@ -25,10 +25,10 @@ namespace XboxGamingBarHelper.Power
             get { return cpuEPP; }
         }
 
-        private readonly LimitCPUEPPProperty limitCPUEPP;
-        public LimitCPUEPPProperty LimitCPUEPP
+        private readonly SetCPUEPPProperty setCPUEPP;
+        public SetCPUEPPProperty SetCPUEPP
         {
-            get { return limitCPUEPP; }
+            get { return setCPUEPP; }
         }
 
         private readonly LimitCPUClockProperty limitCPUClock;
@@ -50,7 +50,7 @@ namespace XboxGamingBarHelper.Power
             var initialEpp = GetEppValue(false);
             defaultEpp = initialEpp;
             Logger.Info($"Initial CPU EPP: {initialEpp}%.");
-            limitCPUEPP = new LimitCPUEPPProperty(false, this);
+            setCPUEPP = new SetCPUEPPProperty(false, this);
             cpuEPP = new CPUEPPProperty((int)initialEpp, this);
             var initialCPUClockMax = GetCpuFreqLimit(false);
             Logger.Info($"Initial CPU clock limit {initialCPUClockMax}Mhz.");

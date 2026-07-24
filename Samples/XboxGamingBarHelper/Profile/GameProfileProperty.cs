@@ -46,14 +46,14 @@ namespace XboxGamingBarHelper.Profile
             }
         }
 
-        public bool LimitCPUEPP
+        public bool SetCPUEPP
         {
-            get { return value.LimitCPUEPP; }
+            get { return value.SetCPUEPP; }
             set
             {
-                if (this.value.LimitCPUEPP != value)
+                if (this.value.SetCPUEPP != value)
                 {
-                    this.value.LimitCPUEPP = value;
+                    this.value.SetCPUEPP = value;
                 }
             }
         }

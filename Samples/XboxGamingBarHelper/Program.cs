@@ -124,7 +124,7 @@ namespace XboxGamingBarHelper
                 profileManager.PerGameProfile,
                 powerManager.CPUBoost,
                 powerManager.CPUEPP,
-                powerManager.LimitCPUEPP,
+                powerManager.SetCPUEPP,
                 powerManager.LimitCPUClock,
                 powerManager.CPUClockMax,
                 systemManager.RefreshRates,
@@ -165,7 +165,7 @@ namespace XboxGamingBarHelper
             hardwareManager.TDP.PropertyChanged += TDP_PropertyChanged;
             powerManager.CPUBoost.PropertyChanged += CPUBoost_PropertyChanged;
             powerManager.CPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
-            powerManager.LimitCPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
+            powerManager.SetCPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
             powerManager.LimitCPUClock.PropertyChanged += CPUClock_PropertyChanged;
             powerManager.CPUClockMax.PropertyChanged += CPUClock_PropertyChanged;
             rtssManager.LimitFPS.PropertyChanged += LimitFPS_PropertyChanged;
@@ -271,12 +271,12 @@ namespace XboxGamingBarHelper
 
         private static void CPUEPP_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s CPU EPP from {profileManager.CurrentProfile.CPUEPP} to {powerManager.CPUEPP} (Enabled: {powerManager.LimitCPUEPP.Value}).");
+            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s CPU EPP from {profileManager.CurrentProfile.CPUEPP} to {powerManager.CPUEPP} (Enabled: {powerManager.SetCPUEPP.Value}).");
             profileManager.CurrentProfile.CPUEPP = powerManager.CPUEPP;
-            profileManager.CurrentProfile.LimitCPUEPP = powerManager.LimitCPUEPP.Value;
+            profileManager.CurrentProfile.SetCPUEPP = powerManager.SetCPUEPP.Value;
             if (!profileManager.CurrentProfile.IsGlobalProfile)
             {
-                profileManager.GlobalProfile.LimitCPUEPP = powerManager.LimitCPUEPP.Value;
+                profileManager.GlobalProfile.SetCPUEPP = powerManager.SetCPUEPP.Value;
             }
         }
 
@@ -287,7 +287,7 @@ namespace XboxGamingBarHelper
                 Logger.Info($"Profile changed to {profileManager.CurrentProfile.GameId.Name}, apply it.");
                 hardwareManager.TDP.SetValue(profileManager.CurrentProfile.TDP);
                 powerManager.CPUBoost.SetValue(profileManager.CurrentProfile.CPUBoost);
-                powerManager.LimitCPUEPP.SetValue(profileManager.CurrentProfile.LimitCPUEPP);
+                powerManager.SetCPUEPP.SetValue(profileManager.CurrentProfile.SetCPUEPP);
                 powerManager.CPUEPP.SetValue(profileManager.CurrentProfile.CPUEPP);
                 powerManager.LimitCPUClock.SetValue(profileManager.CurrentProfile.CPUClock > 0);
                 powerManager.CPUClockMax.SetValue(profileManager.CurrentProfile.CPUClock > 0 ? profileManager.CurrentProfile.CPUClock : CPUConstants.DEFAULT_CPU_CLOCK);

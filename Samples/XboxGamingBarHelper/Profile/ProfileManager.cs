@@ -131,7 +131,7 @@ namespace XboxGamingBarHelper.Profile
                 TDP = CurrentProfile.TDP,
                 CPUBoost = CurrentProfile.CPUBoost,
                 CPUEPP = CurrentProfile.CPUEPP,
-                LimitCPUEPP = CurrentProfile.LimitCPUEPP,
+                SetCPUEPP = CurrentProfile.SetCPUEPP,
                 CPUClock = CurrentProfile.CPUClock,
                 FPSLimit = CurrentProfile.FPSLimit,
                 FPSLimitMode = CurrentProfile.FPSLimitMode,

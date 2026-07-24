@@ -13,14 +13,14 @@ namespace XboxGamingBarHelper.Power
         {
             base.NotifyPropertyChanged(propertyName);
 
-            if (Manager.LimitCPUEPP.Value)
+            if (Manager.SetCPUEPP.Value)
             {
                 PowerManager.SetEppValue(false, (uint)Value);
                 PowerManager.SetEppValue(true, (uint)Value);
             }
             else
             {
-                Logger.Info($"CPU EPP limit is disabled, skip applying.");
+                Logger.Info($"CPU EPP override is disabled, skip applying.");
             }
         }
     }

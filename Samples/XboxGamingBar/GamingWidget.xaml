@@ -121,7 +121,7 @@
                         <Grid Grid.Row="7">
                             <TextBlock x:Name="CPUEPPText" Text="Energy Pref (EPP)" FontWeight="Normal" FontSize="18"
                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                            <ToggleSwitch x:Name="LimitCPUEPPToggle" IsEnabled="False" OffContent="Disabled" OnContent="{Binding ElementName=CPUEPPSlider, Path=Value}"
+                            <ToggleSwitch x:Name="SetCPUEPPToggle" IsEnabled="False" OffContent="Disabled" OnContent="{Binding ElementName=CPUEPPSlider, Path=Value}"
                                 FlowDirection="RightToLeft" VerticalAlignment="Center" HorizontalAlignment="Right" />
                         </Grid>
                         <Slider x:Name="CPUEPPSlider" Grid.Row="8"
@@ -130,7 +130,7 @@
                             SnapsTo="Ticks"
                             TickPlacement="BottomRight"
                             IsEnabled="False"
-                            Visibility="{Binding ElementName=LimitCPUEPPToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                            Visibility="{Binding ElementName=SetCPUEPPToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                         <Grid Grid.Row="9">
                             <TextBlock x:Name="LimitCPUClockText" Text="Limit CPU Clock" FontWeight="Normal" FontSize="18"
                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" HorizontalAlignment="Left" VerticalAlignment="Center"/>
