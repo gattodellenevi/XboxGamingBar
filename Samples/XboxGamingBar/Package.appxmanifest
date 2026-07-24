@@ -9,15 +9,15 @@
   IgnorableNamespaces="uap uap3 mp rescap">
 
   <Identity
-    Name="PlayandBuild.10365195AA1EC"
-    Publisher="CN=632C25E4-B6CB-4B80-A9DB-AAB4012EE37A"
+    Name="GameBarGamingTools"
+    Publisher="CN=zanchisoft"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="c2dd2cd0-7156-428e-b305-d3dd3505b10d" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>Gaming Bar</DisplayName>
-    <PublisherDisplayName>Play and Build</PublisherDisplayName>
+    <PublisherDisplayName>ZanchiSoft</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
