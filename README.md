@@ -1,9 +1,9 @@
-# GameTweakBar
+# CouchGameBar
 
 ## What is it?
 
-GameTweakBar is a helper tool for gamers to control all gaming-related settings using the gamepad/game controller.
-GameTweakBar is built as an Xbox Game Bar widget as the frontend, and a Win32 helper as the backend tool.
+CouchGameBar is a helper tool for gamers to control all gaming-related settings using the gamepad/game controller.
+CouchGameBar is built as an Xbox Game Bar widget as the frontend, and a Win32 helper as the backend tool.
 It's a fork from this project: https://github.com/namquang93/XboxGamingBar, which I'm iterating on.
 
 ## Vision

@@ -11,10 +11,10 @@
   <Identity
     Name="PlayandBuild.10365195AA1EC"
     Publisher="CN=632C25E4-B6CB-4B80-A9DB-AAB4012EE37A"
-    Version="0.9.1.0" />
+    Version="1.0.0.0" />
 
   <Properties>
-    <DisplayName>GameTweakBar</DisplayName>
+    <DisplayName>CouchGameBar</DisplayName>
     <PublisherDisplayName>Play and Build</PublisherDisplayName>
     <Logo>Images\StoreLogo.png</Logo>
   </Properties>
@@ -33,7 +33,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="GameTweakBar"
+        DisplayName="CouchGameBar"
         Description="XboxGamingBarPackage"
         BackgroundColor="transparent"
         Square150x150Logo="Images\Square150x150Logo.png"
@@ -49,7 +49,7 @@
         <uap3:Extension Category="windows.appExtension">
           <uap3:AppExtension Name="microsoft.gameBarUIExtension"
                              Id="GamingWidget"
-                             DisplayName="GameTweakBar"
+                             DisplayName="CouchGameBar"
                              Description="Game Bar widget for changing system settings during game sessions with gamepad."
                              PublicFolder="Images">
             <uap3:Properties>
@@ -79,8 +79,8 @@
         <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="microsoft.gameBarUIExtension"
                               Id="GamingWidgetSettings"
-                              DisplayName="GameTweakBar Settings"
-                              Description="GameTweakBar settings."
+                              DisplayName="CouchGameBar Settings"
+                              Description="CouchGameBar settings."
                               PublicFolder="Images">
               <uap3:Properties>
                 <GameBarWidget Type="Settings">
