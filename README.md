@@ -1,19 +1,31 @@
-# Xbox Gaming Bar
+# GameTweakBar
 
 ## What is it?
 
-XBox Gaming Bar is a helper tool for gamers to control all gaming-related settings using the gamepad/game controller.
-Xbox Gaming Bar is built as an Xbox Game Bar widget as the frontend, and a Win32 helper as the backend tool.
+GameTweakBar is a helper tool for gamers to control all gaming-related settings using the gamepad/game controller.
+GameTweakBar is built as an Xbox Game Bar widget as the frontend, and a Win32 helper as the backend tool.
+It's a fork from this project: https://github.com/namquang93/XboxGamingBar, which I'm iterating on.
+
+## Vision
+The vision is to create a compact, user friendly, and fully featured tool for sofa gamers to control a plethora of settings with a controller.
+It is aimed at both AMD and Intel/NVIDIA users, both Desktop and Laptop computers.  
+It is NOT aimed at Handheld devices, for which alternative projects already exist and are pretty mature. Although it will work without issues.
+
+PC gaming can be complex, so effort is put into making settings easy to understand, with sensible defaults and easily reversible
+
+## Features
+
 As of now, there are the following functions:
 
 ### Performance Control
 - Performance Overlay using RivaTuner Statistics Server OSD.
-- TDP Limit **(Not available in Microsoft Store version)**.
+- Extensive options for RTSS frame limiting
 - Per-game Profile.
 - CPU performance adjustments.
   - Enable or disable CPU Boost.
   - Set CPU Energy Performance Preference (EPP).
   - Set CPU clock speed limit.
+- Frame limiter 
 
 ![alt text](Screenshots/v4_1.png)
 
@@ -35,21 +47,25 @@ As of now, there are the following functions:
 
 ## Installation
 
-There are 2 different versions of the application. The Microsoft Store version is much easier to install, but missing some main features, including TDP control (because it requires administrator rights, which is not allowed by Microsoft). The Sideload version needs some additional setups, but has all features.
+### Step 1: Install the Security Certificate (.cer)
+Sideloaded Windows packages are signed with a security certificate. You must add the certificate to your system's trusted store once:
 
-### Microsoft Store
+Extract the downloaded release .zip file.
+Locate and double-click the certificate file (.cer).
+Click Install Certificate...
+Select Local Machine (requires Administrator) and click Next.
+Select Place all certificates in the following store.
+Click Browse... and select Trusted People (or Trusted Root Certification Authorities).
+Click OK > Next > Finish.
+A message will appear saying: "The import was successful."
 
-[<img width="400" height="109" alt="StoreBadge-light" src="https://github.com/user-attachments/assets/43b740a7-ba12-44b5-acaa-d58affcaf973" />](https://apps.microsoft.com/detail/9njzds2l3trv)
+### Step 2: Install the App Package
+Option A: Using the Automated PowerShell Script (Recommended)
+In the extracted folder, right-click Add-AppDevPackage.ps1.
+Select Run with PowerShell.
+If prompted for execution policy, press Y and Enter.
+Follow the on-screen prompts until installation completes.
 
-### Sideload
-
-Grab the latest release [here](https://github.com/namquang93/XboxGamingBar/releases/latest) and follow our [Wiki](https://github.com/namquang93/XboxGamingBar/wiki/Installation-Instruction) page for installation instructions.
-
-## Report a bug
-
-If you have an issue with the application, feel free to create an issue in the [Issues](https://github.com/namquang93/XboxGamingBar/issues) section. Please also attach the log to the issue so that I can fix it quickly. There is a wiki page on [how to get the log](https://github.com/namquang93/XboxGamingBar/wiki/Getting-The-Logs).
-
-## Language
 
 Xbox Gaming Bar is 100% free and open source. It's built upon C#.
 Libraries used:
