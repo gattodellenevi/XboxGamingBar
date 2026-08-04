@@ -25,6 +25,7 @@
     <ApplicationManifest Condition="'$(Configuration)' != 'Store'">app.manifest</ApplicationManifest>
     <ApplicationManifest Condition="'$(Configuration)' == 'Store'">app.Store.manifest</ApplicationManifest>
     <Platforms>x64;x86</Platforms>
+    <ApplicationIcon>app.ico</ApplicationIcon>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <OutputPath>bin\x64\Debug\</OutputPath>
