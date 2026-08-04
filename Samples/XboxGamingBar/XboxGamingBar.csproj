@@ -163,6 +163,8 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\Icons\icon.png" />
+    <Content Include="Assets\Icons\icon.light.png" />
     <Content Include="Assets\Icons\icon.light.targetsize-16.png" />
     <Content Include="Assets\Icons\icon.light.targetsize-20.png" />
     <Content Include="Assets\Icons\icon.light.targetsize-24.png" />
@@ -212,6 +214,8 @@
     <Content Include="Assets\Square44x44Logo.light.targetsize-256.png" />
     <Content Include="Assets\Square44x44Logo.light.targetsize-32.png" />
     <Content Include="Assets\Square44x44Logo.light.targetsize-48.png" />
+    <Content Include="Assets\Square44x44Logo.png" />
+    <Content Include="Assets\Square150x150Logo.png" />
     <Content Include="Assets\Square44x44Logo.scale-100.png" />
     <Content Include="Assets\Square44x44Logo.scale-125.png" />
     <Content Include="Assets\Square44x44Logo.scale-150.png" />

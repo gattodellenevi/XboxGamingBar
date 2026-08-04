@@ -51,6 +51,7 @@
                              PublicFolder="Assets">
             <uap3:Properties>
               <GameBarWidget Type="Standard">
+                <Icon>Square44x44Logo.png</Icon>
                 <HomeMenuVisible>true</HomeMenuVisible>
                 <PinningSupported>true</PinningSupported>
                 <SettingsSupported AppExtensionId="GamingWidgetSettings" />
