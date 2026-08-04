@@ -9,9 +9,9 @@
   IgnorableNamespaces="uap uap3 rescap">
 
   <Identity
-    Name="GameBarGamingTools"
+    Name="CouchGameBar"
     Publisher="CN=zanchisoft"
-    Version="1.0.1.0" />
+    Version="1.0.0.0" />
 
   <Properties>
     <DisplayName>CouchGameBar</DisplayName>
