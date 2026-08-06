@@ -40,7 +40,6 @@
     <DefaultLanguage>en-US</DefaultLanguage>
     <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
     <NoWarn>$(NoWarn);NU1702</NoWarn>
-    <EntryPointProjectUniqueName>..\XboxGamingBar\XboxGamingBar.csproj</EntryPointProjectUniqueName>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
@@ -50,6 +49,7 @@
     <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
     <PackageCertificateKeyFile>XboxGamingBarPackage_TemporaryKey.pfx</PackageCertificateKeyFile>
+    <EntryPointProjectUniqueName>..\XboxGamingBar\CouchGameBar.csproj</EntryPointProjectUniqueName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <AppxBundle>Always</AppxBundle>
@@ -153,7 +153,7 @@
   </ItemGroup>
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\XboxGamingBar\XboxGamingBar.csproj" />
-    <ProjectReference Include="..\XboxGamingBarHelper\XboxGamingBarHelper.csproj" />
+    <ProjectReference Include="..\XboxGamingBar\CouchGameBar.csproj" />
+    <ProjectReference Include="..\XboxGamingBarHelper\CouchGamingBarHelper.csproj" />
   </ItemGroup>
 </Project>
