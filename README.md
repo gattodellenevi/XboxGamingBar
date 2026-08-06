@@ -27,14 +27,14 @@ As of now, there are the following functions:
   - Set CPU clock speed limit.
 - Frame limiter 
 
-![alt text](Screenshots/v4_1.png)
+![alt text](Screenshots/v4_1.png?v=1)
 
 ### Quick System Settings
 - Quickly change screen refresh rate and resolution.
 - Binding gamepad keys to some system functions.
   - Lossless Scaling hotkey.
 
-![alt text](Screenshots/v4_2.png)
+![alt text](Screenshots/v4_2.png?v=1)
 
 ### AMD Settings
   - Radeon Super Resolution.
@@ -43,7 +43,7 @@ As of now, there are the following functions:
   - Radeon Boost.
   - Radeon Chill.
 
-![alt text](Screenshots/v4_3.png)
+![alt text](Screenshots/v4_3.png?v=1)
 
 ## Installation
 
