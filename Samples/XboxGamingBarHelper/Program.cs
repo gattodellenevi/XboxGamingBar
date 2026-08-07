@@ -46,9 +46,17 @@ namespace XboxGamingBarHelper
         // Properties
         private static HelperProperties properties;
 
-        //[STAThread]
+        private static System.Threading.Mutex _singleInstanceMutex;
+
         static void Main(string[] args)
         {
+            _singleInstanceMutex = new System.Threading.Mutex(true, "CouchGamingBarHelper_SingleInstance_Mutex", out bool createdNew);
+            if (!createdNew)
+            {
+                Logger.Info("CouchGamingBarHelper is already running. Exiting duplicate instance.");
+                return;
+            }
+
             Run(args);
         }
 
