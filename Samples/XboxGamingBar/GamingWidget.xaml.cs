@@ -381,25 +381,19 @@ namespace XboxGamingBar
             {
                 ReconnectAppService();
             }
+            else if (ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0))
+            {
+                Logger.Info("App.Connection is NULL. Registering listeners and launching full trust process (helper).");
+                App.AppServiceConnected -= GamingWidget_AppServiceConnected;
+                App.AppServiceConnected += GamingWidget_AppServiceConnected;
+                App.AppServiceDisconnected -= GamingWidget_AppServiceDisconnected;
+                App.AppServiceDisconnected += GamingWidget_AppServiceDisconnected;
+                await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+                Logger.Info("FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync() completed.");
+            }
             else
             {
-                Logger.Info("Wait 1 second for the helper to reconnect...");
-                await Task.Delay(1000);
-                Logger.Info($"After 1 second: App.Connection:{(App.Connection == null ? "NULL" : "NOT_NULL")} FullTrustAppContract:{(ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0) ? "PRESENT" : "NOT_PRESENT")}");
-
-                if (App.Connection == null && ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0))
-                {
-                    Logger.Info("App.Connection is NULL. Launching a new full trust process (helper).");
-                    App.AppServiceConnected += GamingWidget_AppServiceConnected;
-                    App.AppServiceDisconnected += GamingWidget_AppServiceDisconnected;
-                    await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
-                    Logger.Info("FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync() completed.");
-                }
-                else
-                {
-                    Logger.Info($"App.Connection is {(App.Connection == null ? "NULL" : "NOT NULL")}. Contract present: {ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0)}. Not launching helper.");
-                    ReconnectAppService();
-                }
+                Logger.Info("FullTrustAppContract not present. Cannot launch full trust helper process.");
             }
             Logger.Info("GamingWidget OnNavigatedTo finished.");
         }

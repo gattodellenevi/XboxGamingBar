@@ -185,10 +185,13 @@ namespace XboxGamingBarHelper
                 await ConnectToWidget(false);
 
                 Logger.Info($"Widget connection status: {appServiceConnectionStatus}");
+                DateTime lastReconnectAttempt = DateTime.MinValue;
+
                 while (true)
                 {
-                    if (appServiceConnectionStatus != AppServiceConnectionStatus.Success && connection != null && !string.IsNullOrEmpty(connection?.PackageFamilyName))
+                    if (appServiceConnectionStatus != AppServiceConnectionStatus.Success && connection != null && !string.IsNullOrEmpty(connection?.PackageFamilyName) && (DateTime.UtcNow - lastReconnectAttempt).TotalMilliseconds >= 2000)
                     {
+                        lastReconnectAttempt = DateTime.UtcNow;
                         Logger.Info("Try to reconnect to the widget.");
                         await ConnectToWidget(false);
                     }
@@ -272,6 +275,38 @@ namespace XboxGamingBarHelper
             }
         }
 
+        private static void RecreateConnection()
+        {
+            Logger.Info("Re-creating AppServiceConnection object for next connection attempt.");
+            try
+            {
+                if (connection != null)
+                {
+                    connection.RequestReceived -= Connection_RequestReceived;
+                    connection.ServiceClosed -= Connection_ServiceClosed;
+                    connection.Dispose();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Exception occurred when disposing old connection: {ex.Message}");
+            }
+
+            InitializeConnection();
+
+            if (Managers != null)
+            {
+                foreach (var manager in Managers)
+                {
+                    manager.Connection = connection;
+                }
+            }
+            if (trayIconManager != null)
+            {
+                trayIconManager.Connection = connection;
+            }
+        }
+
         private static async Task ConnectToWidget(bool blocking)
         {
             if (connection == null || string.IsNullOrEmpty(connection?.PackageFamilyName))
@@ -298,7 +333,8 @@ namespace XboxGamingBarHelper
 
                     if (appServiceConnectionStatus != AppServiceConnectionStatus.Success)
                     {
-                        Logger.Info("Can't conncect to the widget. Try again in 1 second...");
+                        Logger.Info("Can't connect to the widget. Recreating connection object and trying again in 1 second...");
+                        RecreateConnection();
                         await Task.Delay(1000);
                     }
                 } while (appServiceConnectionStatus != AppServiceConnectionStatus.Success);
@@ -317,7 +353,11 @@ namespace XboxGamingBarHelper
                     appServiceConnectionStatus = AppServiceConnectionStatus.AppServiceUnavailable;
                 }
 
-                Logger.Info($"Try to conncect to the widget {appServiceConnectionStatus}.");
+                Logger.Info($"Try to connect to the widget {appServiceConnectionStatus}.");
+                if (appServiceConnectionStatus != AppServiceConnectionStatus.Success)
+                {
+                    RecreateConnection();
+                }
             }
         }
 
@@ -472,23 +512,7 @@ namespace XboxGamingBarHelper
             appServiceConnectionStatus = AppServiceConnectionStatus.AppServiceUnavailable;
 
             Logger.Info("Prepare to re-connect to the widget.");
-            try
-            {
-                connection?.Dispose();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Exception occurred when disposing the connection: {ex}");
-            }
-            InitializeConnection();
-            foreach (var manager in Managers)
-            {
-                manager.Connection = connection;
-            }
-            if (trayIconManager != null)
-            {
-                trayIconManager.Connection = connection;
-            }
+            RecreateConnection();
         }
     }
 }
