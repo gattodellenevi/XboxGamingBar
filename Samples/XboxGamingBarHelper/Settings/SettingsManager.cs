@@ -1,4 +1,4 @@
-﻿using Shared.Data;
+using Shared.Data;
 using Shared.Utilities;
 using System.ComponentModel;
 using System.IO;
@@ -6,6 +6,7 @@ using Windows.ApplicationModel.AppService;
 using Windows.Storage;
 using XboxGamingBarHelper.Core;
 using XboxGamingBarHelper.OnScreenDisplay;
+using XboxGamingBarHelper.Utilities;
 
 namespace XboxGamingBarHelper.Settings
 {
@@ -66,7 +67,7 @@ namespace XboxGamingBarHelper.Settings
 
         protected SettingsManager(AppServiceConnection connection) : base(connection)
         {
-            settingsPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "settings.xml");
+            settingsPath = Path.Combine(PathHelper.GetLocalFolderPath(), "settings.xml");
             if (File.Exists(settingsPath))
             {
                 Logger.Info("Loading settings from XML file.");

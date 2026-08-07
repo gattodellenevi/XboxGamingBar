@@ -50,7 +50,7 @@ namespace XboxGamingBarHelper
 
         static void Main(string[] args)
         {
-            _singleInstanceMutex = new System.Threading.Mutex(true, "CouchGamingBarHelper_SingleInstance_Mutex", out bool createdNew);
+            _singleInstanceMutex = new System.Threading.Mutex(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out bool createdNew);
             if (!createdNew)
             {
                 Logger.Info("CouchGamingBarHelper is already running. Exiting duplicate instance.");

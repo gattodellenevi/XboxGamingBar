@@ -383,19 +383,51 @@ namespace XboxGamingBar
             }
             else if (ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0))
             {
-                Logger.Info("App.Connection is NULL. Registering listeners and launching full trust process (helper).");
+                Logger.Info("App.Connection is NULL. Registering listeners.");
                 App.AppServiceConnected -= GamingWidget_AppServiceConnected;
                 App.AppServiceConnected += GamingWidget_AppServiceConnected;
                 App.AppServiceDisconnected -= GamingWidget_AppServiceDisconnected;
                 App.AppServiceDisconnected += GamingWidget_AppServiceDisconnected;
-                await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
-                Logger.Info("FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync() completed.");
+
+                if (IsHelperProcessRunning())
+                {
+                    Logger.Info("Helper process is already running. Skipping launch and waiting for AppService connection.");
+                }
+                else
+                {
+                    Logger.Info("Helper process is not running. Launching full trust process (helper).");
+                    await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+                    Logger.Info("FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync() completed.");
+                }
             }
             else
             {
                 Logger.Info("FullTrustAppContract not present. Cannot launch full trust helper process.");
             }
             Logger.Info("GamingWidget OnNavigatedTo finished.");
+        }
+
+        private bool IsHelperProcessRunning()
+        {
+            try
+            {
+                if (System.Threading.Mutex.TryOpenExisting(@"Global\CouchGamingBarHelper_SingleInstance_Mutex", out var mutex))
+                {
+                    mutex?.Dispose();
+                    return true;
+                }
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Access denied means the mutex exists but belongs to an elevated process (e.g. Task Scheduler logon task)
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Exception checking helper single-instance mutex: {ex.Message}");
+                return false;
+            }
         }
 
         private void ReconnectAppService()
@@ -565,8 +597,15 @@ namespace XboxGamingBar
             var eventArgs = e as BackgroundTaskCancellationEventArgs;
             if (eventArgs != null && eventArgs.Reason != BackgroundTaskCancellationReason.Terminating)
             {
-                Logger.Info($"AppService disconnected due to {eventArgs.Reason}, trying to relaunch.");
-                await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+                if (IsHelperProcessRunning())
+                {
+                    Logger.Info($"AppService disconnected due to {eventArgs.Reason}, but helper process is already running. Skipping relaunch.");
+                }
+                else
+                {
+                    Logger.Info($"AppService disconnected due to {eventArgs.Reason}, trying to relaunch.");
+                    await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+                }
             }
             else
             {
