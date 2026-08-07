@@ -1,4 +1,4 @@
-﻿using Microsoft.Gaming.XboxGameBar;
+using Microsoft.Gaming.XboxGameBar;
 using NLog;
 using Shared.Enums;
 using System;
@@ -68,8 +68,8 @@ namespace XboxGamingBar
             if (args.TaskInstance.TriggerDetails is AppServiceTriggerDetails details)
             {
                 Logger.Info($"App service trigger details: AppServiceName={details.AppServiceConnection.AppServiceName}, CallerPackageFamilyName={details.CallerPackageFamilyName}");
-                // only accept connections from callers in the same package
-                if (details.CallerPackageFamilyName == Package.Current.Id.FamilyName)
+                // only accept connections from callers in the same package or unpackaged fulltrust helper
+                if (string.IsNullOrEmpty(details.CallerPackageFamilyName) || details.CallerPackageFamilyName == Package.Current.Id.FamilyName)
                 {
                     // connection established from the fulltrust process
                     AppServiceDeferral = args.TaskInstance.GetDeferral();

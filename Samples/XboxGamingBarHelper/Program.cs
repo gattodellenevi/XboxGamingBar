@@ -76,132 +76,141 @@ namespace XboxGamingBarHelper
         /// </summary>
         private static async Task MainLoopAsync(string[] args)
         {
-            // Initialize app service connection.
-            InitializeConnection();
-
-            //while (!System.Diagnostics.Debugger.IsAttached)
-            //{
-            //    await Task.Delay(500);
-            //}
-
-            // Initialize managers.
-            Logger.Info("Initialize Settings Manager.");
-            settingsManager = SettingsManager.CreateInstance(connection);
-
-            Logger.Info("Initialize Hardware Manager.");
-            hardwareManager = new HardwareManager(connection);
-            Logger.Info("Initialize RTSS Manager.");
-            rtssManager = new RTSSManager(hardwareManager, connection);
-            Logger.Info("Initialize Profile Manager.");
-            profileManager = new ProfileManager(connection);
-            Logger.Info("Initialize System Manager.");
-            systemManager = new SystemManager(connection, profileManager.GameProfiles);
-            Logger.Info("Initialize Power Manager.");
-            powerManager = new PowerManager(connection);
-            Logger.Info("Initialize AMD Manager.");
-            amdManager = new AMDManager(connection);
-            Logger.Info("Initialize Input Manager.");
-            inputManager = new InputManager(connection);
-            
-            Managers = new List<IManager>
+            try
             {
-                hardwareManager,
-                rtssManager,
-                profileManager,
-                systemManager,
-                powerManager,
-                amdManager,
-                settingsManager,
-                inputManager
-            };
+                // Initialize app service connection.
+                InitializeConnection();
 
-            Logger.Info("Initialize properties.");
-            onScreenDisplayProviders = new List<OnScreenDisplayManager>() { rtssManager, amdManager };
-            onScreenDisplay = new OnScreenDisplayProperty(settingsManager.Setting.OnScreenDisplay, null, onScreenDisplayProviders[settingsManager.OnScreenDisplayProvider]);
-            settingsManager.SyncOnScreenDisplaySettings(onScreenDisplay);
-            //onScreenDisplay = new OnScreenDisplayProperty(0, null, amdManager);
+                Logger.Info("Initialize Tray Icon Manager.");
+                trayIconManager = new TrayIconManager(connection);
 
-            // Initialize properties.
-            properties = new HelperProperties(
-                systemManager.RunningGame,
-                onScreenDisplay,
-                hardwareManager.MinTDP,
-                hardwareManager.MaxTDP,
-                hardwareManager.TDPControlSupport,
-                hardwareManager.TDP,
-                profileManager.PerGameProfile,
-                powerManager.CPUBoost,
-                powerManager.CPUEPP,
-                powerManager.SetCPUEPP,
-                powerManager.LimitCPUClock,
-                powerManager.CPUClockMax,
-                systemManager.RefreshRates,
-                systemManager.RefreshRate,
-                systemManager.Resolutions,
-                systemManager.Resolution,
-                systemManager.TrackedGame,
-                settingsManager.OnScreenDisplayProviderInstalled,
-                settingsManager.IsForeground,
-                settingsManager.IsListeningForKeyBinding,
-                amdManager.AMDSettingsSupported,
-                amdManager.AMDRadeonSuperResolutionEnabled,
-                amdManager.AMDRadeonSuperResolutionSupported,
-                amdManager.AMDRadeonSuperResolutionSharpness,
-                amdManager.AMDFluidMotionFrameEnabled,
-                amdManager.AMDFluidMotionFrameSupported,
-                amdManager.AMDRadeonAntiLagEnabled,
-                amdManager.AMDRadeonAntiLagSupported,
-                amdManager.AMDRadeonBoostEnabled,
-                amdManager.AMDRadeonBoostSupported,
-                amdManager.AMDRadeonBoostResolution,
-                amdManager.AMDRadeonChillEnabled,
-                amdManager.AMDRadeonChillSupported,
-                amdManager.AMDRadeonChillMinFPS,
-                amdManager.AMDRadeonChillMaxFPS,
-                amdManager.FocusingOnOSDSlider,
-                settingsManager.OnScreenDisplayProvider,
-                settingsManager.LosslessScalingShortcut,
-                rtssManager.LimitFPS,
-                rtssManager.FPSLimit,
-                rtssManager.FPSLimitMode,
-                rtssManager.JudderFreeFPS);
+                // Initialize managers.
+                Logger.Info("Initialize Settings Manager.");
+                settingsManager = SettingsManager.CreateInstance(connection);
 
-            Logger.Info("Initialize callbacks.");
-            systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;
-            systemManager.ResumeFromSleep += SystemManager_ResumeFromSleep;
-            profileManager.PerGameProfile.PropertyChanged += PerGameProfile_PropertyChanged;
-            hardwareManager.TDP.PropertyChanged += TDP_PropertyChanged;
-            powerManager.CPUBoost.PropertyChanged += CPUBoost_PropertyChanged;
-            powerManager.CPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
-            powerManager.SetCPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
-            powerManager.LimitCPUClock.PropertyChanged += CPUClock_PropertyChanged;
-            powerManager.CPUClockMax.PropertyChanged += CPUClock_PropertyChanged;
-            rtssManager.LimitFPS.PropertyChanged += LimitFPS_PropertyChanged;
-            rtssManager.FPSLimit.PropertyChanged += FPSLimit_PropertyChanged;
-            rtssManager.FPSLimitMode.PropertyChanged += FPSLimitMode_PropertyChanged;
-            rtssManager.JudderFreeFPS.PropertyChanged += JudderFreeFPS_PropertyChanged;
-            profileManager.CurrentProfile.PropertyChanged += CurrentProfile_PropertyChanged;
+                Logger.Info("Initialize Hardware Manager.");
+                hardwareManager = new HardwareManager(connection);
+                Logger.Info("Initialize RTSS Manager.");
+                rtssManager = new RTSSManager(hardwareManager, connection);
+                Logger.Info("Initialize Profile Manager.");
+                profileManager = new ProfileManager(connection);
+                Logger.Info("Initialize System Manager.");
+                systemManager = new SystemManager(connection, profileManager.GameProfiles);
+                Logger.Info("Initialize Power Manager.");
+                powerManager = new PowerManager(connection);
+                Logger.Info("Initialize AMD Manager.");
+                amdManager = new AMDManager(connection);
+                Logger.Info("Initialize Input Manager.");
+                inputManager = new InputManager(connection);
+                
+                Managers = new List<IManager>
+                {
+                    hardwareManager,
+                    rtssManager,
+                    profileManager,
+                    systemManager,
+                    powerManager,
+                    amdManager,
+                    settingsManager,
+                    inputManager
+                };
 
-            Logger.Info("Initialize Tray Icon Manager.");
-            trayIconManager = new TrayIconManager(connection);
+                Logger.Info("Initialize properties.");
+                onScreenDisplayProviders = new List<OnScreenDisplayManager>() { rtssManager, amdManager };
+                onScreenDisplay = new OnScreenDisplayProperty(settingsManager.Setting.OnScreenDisplay, null, onScreenDisplayProviders[settingsManager.OnScreenDisplayProvider]);
+                settingsManager.SyncOnScreenDisplaySettings(onScreenDisplay);
+                //onScreenDisplay = new OnScreenDisplayProperty(0, null, amdManager);
 
-            await ConnectToWidget(true);
+                // Initialize properties.
+                properties = new HelperProperties(
+                    systemManager.RunningGame,
+                    onScreenDisplay,
+                    hardwareManager.MinTDP,
+                    hardwareManager.MaxTDP,
+                    hardwareManager.TDPControlSupport,
+                    hardwareManager.TDP,
+                    profileManager.PerGameProfile,
+                    powerManager.CPUBoost,
+                    powerManager.CPUEPP,
+                    powerManager.SetCPUEPP,
+                    powerManager.LimitCPUClock,
+                    powerManager.CPUClockMax,
+                    systemManager.RefreshRates,
+                    systemManager.RefreshRate,
+                    systemManager.Resolutions,
+                    systemManager.Resolution,
+                    systemManager.TrackedGame,
+                    settingsManager.OnScreenDisplayProviderInstalled,
+                    settingsManager.IsForeground,
+                    settingsManager.IsListeningForKeyBinding,
+                    amdManager.AMDSettingsSupported,
+                    amdManager.AMDRadeonSuperResolutionEnabled,
+                    amdManager.AMDRadeonSuperResolutionSupported,
+                    amdManager.AMDRadeonSuperResolutionSharpness,
+                    amdManager.AMDFluidMotionFrameEnabled,
+                    amdManager.AMDFluidMotionFrameSupported,
+                    amdManager.AMDRadeonAntiLagEnabled,
+                    amdManager.AMDRadeonAntiLagSupported,
+                    amdManager.AMDRadeonBoostEnabled,
+                    amdManager.AMDRadeonBoostSupported,
+                    amdManager.AMDRadeonBoostResolution,
+                    amdManager.AMDRadeonChillEnabled,
+                    amdManager.AMDRadeonChillSupported,
+                    amdManager.AMDRadeonChillMinFPS,
+                    amdManager.AMDRadeonChillMaxFPS,
+                    amdManager.FocusingOnOSDSlider,
+                    settingsManager.OnScreenDisplayProvider,
+                    settingsManager.LosslessScalingShortcut,
+                    rtssManager.LimitFPS,
+                    rtssManager.FPSLimit,
+                    rtssManager.FPSLimitMode,
+                    rtssManager.JudderFreeFPS);
 
-            Logger.Info($"Widget connection status: {appServiceConnectionStatus}");
-            while (true)
+                Logger.Info("Initialize callbacks.");
+                systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;
+                systemManager.ResumeFromSleep += SystemManager_ResumeFromSleep;
+                profileManager.PerGameProfile.PropertyChanged += PerGameProfile_PropertyChanged;
+                hardwareManager.TDP.PropertyChanged += TDP_PropertyChanged;
+                powerManager.CPUBoost.PropertyChanged += CPUBoost_PropertyChanged;
+                powerManager.CPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
+                powerManager.SetCPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
+                powerManager.LimitCPUClock.PropertyChanged += CPUClock_PropertyChanged;
+                powerManager.CPUClockMax.PropertyChanged += CPUClock_PropertyChanged;
+                rtssManager.LimitFPS.PropertyChanged += LimitFPS_PropertyChanged;
+                rtssManager.FPSLimit.PropertyChanged += FPSLimit_PropertyChanged;
+                rtssManager.FPSLimitMode.PropertyChanged += FPSLimitMode_PropertyChanged;
+                rtssManager.JudderFreeFPS.PropertyChanged += JudderFreeFPS_PropertyChanged;
+                profileManager.CurrentProfile.PropertyChanged += CurrentProfile_PropertyChanged;
+
+                await ConnectToWidget(false);
+
+                Logger.Info($"Widget connection status: {appServiceConnectionStatus}");
+                while (true)
+                {
+                    if (appServiceConnectionStatus != AppServiceConnectionStatus.Success && connection != null && !string.IsNullOrEmpty(connection?.PackageFamilyName))
+                    {
+                        Logger.Info("Try to reconnect to the widget.");
+                        await ConnectToWidget(false);
+                    }
+
+                    await Task.Delay(500);
+
+                    foreach (var manager in Managers)
+                    {
+                        try
+                        {
+                            manager.Update();
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex, "Exception in manager update loop.");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
             {
-                if (appServiceConnectionStatus != AppServiceConnectionStatus.Success)
-                {
-                    Logger.Info("Try to reconnect to the widget.");
-                    await ConnectToWidget(false);
-                }
-
-                await Task.Delay(500);
-
-                foreach (var manager in Managers)
-                {
-                    manager.Update();
-                }
+                Logger.Error(ex, "Fatal exception in MainLoopAsync.");
             }
         }
 
@@ -217,13 +226,61 @@ namespace XboxGamingBarHelper
             Logger.Info("Initialize connection...");
             connection = new AppServiceConnection();
             connection.AppServiceName = "XboxGamingBarService";
-            connection.PackageFamilyName = Package.Current.Id.FamilyName;
             connection.RequestReceived += Connection_RequestReceived;
             connection.ServiceClosed += Connection_ServiceClosed;
+
+            string packageFamilyName = null;
+            try
+            {
+                packageFamilyName = Package.Current.Id.FamilyName;
+                Logger.Info($"Obtained PackageFamilyName from Package.Current: {packageFamilyName}");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Could not get Package.Current identity (running unpackaged or via Task Scheduler): {ex.Message}");
+            }
+
+            if (string.IsNullOrEmpty(packageFamilyName))
+            {
+                try
+                {
+                    var packageManager = new global::Windows.Management.Deployment.PackageManager();
+                    var packages = packageManager.FindPackagesForUser(string.Empty);
+                    foreach (var package in packages)
+                    {
+                        if (package.Id.Name.Equals("CouchGameBar", StringComparison.OrdinalIgnoreCase))
+                        {
+                            packageFamilyName = package.Id.FamilyName;
+                            Logger.Info($"Found installed package family name via PackageManager: {packageFamilyName}");
+                            break;
+                        }
+                    }
+                }
+                catch (Exception pmEx)
+                {
+                    Logger.Error(pmEx, "Failed to query PackageManager for CouchGameBar package family name.");
+                }
+            }
+
+            if (!string.IsNullOrEmpty(packageFamilyName))
+            {
+                connection.PackageFamilyName = packageFamilyName;
+            }
+            else
+            {
+                Logger.Warn("PackageFamilyName could not be determined. AppService connection to widget will not be possible until package is registered.");
+            }
         }
 
         private static async Task ConnectToWidget(bool blocking)
         {
+            if (connection == null || string.IsNullOrEmpty(connection?.PackageFamilyName))
+            {
+                Logger.Info("Cannot connect to widget AppService: connection is null or PackageFamilyName is empty.");
+                appServiceConnectionStatus = AppServiceConnectionStatus.AppServiceUnavailable;
+                return;
+            }
+
             if (blocking)
             {
                 do

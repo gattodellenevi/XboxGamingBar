@@ -63,9 +63,10 @@ namespace XboxGamingBarHelper.Systems
                         using (Bitmap bitmap = new Bitmap(iconPath))
                         {
                             IntPtr hIcon = bitmap.GetHicon();
-                            notifyIcon.Icon = Icon.FromHandle(hIcon);
-                            // Note: notifyIcon.Icon takes ownership of the icon object, 
-                            // but hIcon itself is a GDI handle that can be destroyed after the Icon object is created.
+                            using (Icon tempIcon = Icon.FromHandle(hIcon))
+                            {
+                                notifyIcon.Icon = (Icon)tempIcon.Clone();
+                            }
                             DestroyIcon(hIcon);
                         }
                         break;
