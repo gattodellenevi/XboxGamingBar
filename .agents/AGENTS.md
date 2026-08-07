@@ -15,4 +15,12 @@
 * **Helper Object Re-instantiation on Retry**: Windows UWP `AppServiceConnection` instances cannot be reused after `OpenAsync()` fails. `CouchGamingBarHelper` must dispose old connection handles and initialize a fresh `AppServiceConnection` object (`RecreateConnection()`) before retrying, pacing retries (e.g. 2000ms) to avoid CPU/log churn.
 * **Single-Instance Helper & Widget Launch Prevention**: The helper process must use `@"Global\CouchGamingBarHelper_SingleInstance_Mutex"` for single-instance protection. Before `GamingWidget` invokes `FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync()`, it must check if the global single-instance mutex already exists (`IsHelperProcessRunning()`, catching `UnauthorizedAccessException` for elevated helper processes). If the mutex exists, `GamingWidget` must skip calling `FullTrustProcessLauncher` and instead passively await connection from the running helper.
 
-
+## Helper CPU & Performance Optimization
+* **Expected CPU Baseline**: Normal baseline CPU usage for `CouchGamingBarHelper.exe` is **< 0.5% average** (0.0%–0.2% idle, 0.1%–1.0% with active OSD/telemetry).
+* **Main Loop Pacing**: Default main loop delay is 500ms (`Task.Delay(500)` in `Program.cs`).
+* **CPU Reduction Strategies**:
+  * **Increase Loop Delay**: Increase `Task.Delay(500)` to `1000ms`+ in `Program.cs` to halve telemetry query frequency.
+  * **Adaptive Sleep / Dynamic Polling Rate**: Use longer delay (e.g. `3000ms`) when idle (no active game/OSD) and `1000ms` when gaming or OSD is enabled.
+  * **Conditional Telemetry Updates**: Skip `hardwareProvider.Update()` in `HardwareManager.cs` if `onScreenDisplayLevel == 0` and no UWP app service is connected.
+  * **NLog Disk Logging Verbosity**: Set `NLog.config` to `Info`/`Warn` to avoid disk I/O CPU spikes.
+  * **Disable OSD**: Set `OnScreenDisplay` level to 0 in settings when overlays are not needed to halt RTSS/ADLX buffer updates.
