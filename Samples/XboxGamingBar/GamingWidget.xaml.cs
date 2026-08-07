@@ -381,7 +381,21 @@ namespace XboxGamingBar
             {
                 ReconnectAppService();
             }
-            else if (ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0))
+            else
+            {
+                await EnsureHelperConnectionOrLaunchAsync();
+            }
+            Logger.Info("GamingWidget OnNavigatedTo finished.");
+        }
+
+        private async Task EnsureHelperConnectionOrLaunchAsync()
+        {
+            if (App.Connection != null)
+            {
+                return;
+            }
+
+            if (ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0))
             {
                 Logger.Info("App.Connection is NULL. Registering listeners.");
                 App.AppServiceConnected -= GamingWidget_AppServiceConnected;
@@ -404,7 +418,6 @@ namespace XboxGamingBar
             {
                 Logger.Info("FullTrustAppContract not present. Cannot launch full trust helper process.");
             }
-            Logger.Info("GamingWidget OnNavigatedTo finished.");
         }
 
         private bool IsHelperProcessRunning()
@@ -454,7 +467,8 @@ namespace XboxGamingBar
             }
             else
             {
-                Logger.Info("GamingWidget LeavingBackground but not connected to the full trust process.");
+                Logger.Info("GamingWidget LeavingBackground but not connected to full trust process. Checking helper status...");
+                await EnsureHelperConnectionOrLaunchAsync();
             }
 
             isForeground.SetValue(true);

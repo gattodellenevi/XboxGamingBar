@@ -50,7 +50,24 @@ namespace XboxGamingBarHelper
 
         static void Main(string[] args)
         {
-            _singleInstanceMutex = new System.Threading.Mutex(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out bool createdNew);
+            bool createdNew = false;
+            try
+            {
+                var sid = new System.Security.Principal.SecurityIdentifier("S-1-15-2-1");
+                var mutexSecurity = new System.Security.AccessControl.MutexSecurity();
+                mutexSecurity.AddAccessRule(new System.Security.AccessControl.MutexAccessRule(
+                    sid,
+                    System.Security.AccessControl.MutexRights.Synchronize | System.Security.AccessControl.MutexRights.Modify,
+                    System.Security.AccessControl.AccessControlType.Allow));
+
+                _singleInstanceMutex = System.Threading.MutexAcl.Create(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out createdNew, mutexSecurity);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to create single-instance mutex with ACL, falling back to standard Mutex constructor.");
+                _singleInstanceMutex = new System.Threading.Mutex(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out createdNew);
+            }
+
             if (!createdNew)
             {
                 Logger.Info("CouchGamingBarHelper is already running. Exiting duplicate instance.");
