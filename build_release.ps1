@@ -1,6 +1,7 @@
 param(
     [string]$Version = "1.0.0",
-    [string]$Configuration = "Release"
+    [string]$Configuration = "Release",
+    [string]$CertPath = "Samples\XboxGamingBarPackage\CouchGamingBarPackage_TemporaryKey.pfx"
 )
 
 $ErrorActionPreference = "Stop"
@@ -15,12 +16,21 @@ dotnet build Samples\XboxGamingBarHelper\CouchGamingBarHelper.csproj -c $Configu
 
 # 2. Build UWP AppX Package (Release configuration)
 Write-Host "`n[2/3] Building UWP AppX Package ($Configuration configuration)..." -ForegroundColor Yellow
+
+# Clean old AppPackages output to ensure only fresh Publish package is bundled
+$appPackagesDir = Join-Path $PSScriptRoot "Samples\XboxGamingBarPackage\AppPackages"
+if (Test-Path $appPackagesDir) {
+    Get-ChildItem $appPackagesDir -Recurse | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+}
+
 $msBuildPath = "C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuild.exe"
 if (-not (Test-Path $msBuildPath)) {
     $msBuildPath = "MSBuild.exe"
 }
 
-& $msBuildPath Samples\XboxGamingBar\CouchGameBar.csproj /p:Configuration=$Configuration /p:Platform=x64 /p:AppxBundle=Never /p:GenerateAppxPackageOnBuild=true /p:AppxPackageSigningEnabled=false /p:RemoveDisposableSigningCertificate=false /p:AppxPackageVersion="$Version.0"
+$pfxFullPath = if ([System.IO.Path]::IsPathRooted($CertPath)) { $CertPath } else { Join-Path $PSScriptRoot $CertPath }
+
+& $msBuildPath Samples\XboxGamingBarPackage\CouchGamingBarPackage.wapproj /t:Publish /p:Configuration=$Configuration /p:Platform=x64 /p:AppxBundle=Never /p:UapAppxPackageBuildMode=SideloadOnly /p:AppxPackageDir="$appPackagesDir\" /p:AppxPackageSigningEnabled=true /p:PackageCertificateKeyFile="$pfxFullPath" /p:PackageCertificateThumbprint="" /p:RemoveDisposableSigningCertificate=false /p:AppxPackageVersion="$Version.0"
 
 # 3. Build Inno Setup Installer
 Write-Host "`n[3/3] Building Inno Setup Installer..." -ForegroundColor Yellow

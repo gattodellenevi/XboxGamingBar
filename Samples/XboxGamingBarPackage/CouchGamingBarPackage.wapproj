@@ -48,7 +48,6 @@
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
     <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
-    <PackageCertificateKeyFile>XboxGamingBarPackage_TemporaryKey.pfx</PackageCertificateKeyFile>
     <EntryPointProjectUniqueName>..\XboxGamingBar\CouchGameBar.csproj</EntryPointProjectUniqueName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
@@ -78,6 +77,7 @@
     </AppxManifest>
   </ItemGroup>
   <ItemGroup>
+    <None Include="CouchGamingBarPackage_TemporaryKey.pfx" />
     <Content Include="Images\Icons\icon.png" />
     <Content Include="Images\Icons\icon.light.png" />
     <Content Include="Images\Icons\icon.light.targetsize-16.png" />
@@ -147,8 +147,6 @@
     <Content Include="Images\Wide310x150Logo.scale-150.png" />
     <Content Include="Images\Wide310x150Logo.scale-200.png" />
     <Content Include="Images\Wide310x150Logo.scale-400.png" />
-    <None Include="XboxGamingBarPackage_TemporaryKey.pfx" />
-    <None Include="XboxGamingBar.pfx" />
     <None Include="Package.StoreAssociation.xml" />
   </ItemGroup>
   <Import Project="$(WapProjPath)\Microsoft.DesktopBridge.targets" />
