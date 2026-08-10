@@ -155,4 +155,13 @@
     <ProjectReference Include="..\XboxGamingBar\CouchGameBar.csproj" />
     <ProjectReference Include="..\XboxGamingBarHelper\CouchGamingBarHelper.csproj" />
   </ItemGroup>
+  <Target Name="AppendAutostartToInstallScript" AfterTargets="_CreateTestLayout">
+    <PropertyGroup>
+      <_RawPublishDir Condition="'$(AppxPackageOutputFolder)' != ''">$(AppxPackageOutputFolder)</_RawPublishDir>
+      <_RawPublishDir Condition="'$(_RawPublishDir)' == '' and '$(AppxPackageDir)' != ''">$(AppxPackageDir)</_RawPublishDir>
+      <_TargetPublishDir Condition="'$(_RawPublishDir)' != ''">$([System.String]::Copy('$(_RawPublishDir)').TrimEnd('\'))</_TargetPublishDir>
+      <_TargetScriptDir>$([System.String]::Copy('$(MSBuildProjectDirectory)\..').TrimEnd('\'))</_TargetScriptDir>
+    </PropertyGroup>
+    <Exec Condition="'$(_TargetPublishDir)' != '' and Exists('$(_TargetPublishDir)')" Command="powershell -NoProfile -ExecutionPolicy Bypass -File &quot;$(_TargetScriptDir)\Append-AutostartToInstaller.ps1&quot; -PublishDir &quot;$(_TargetPublishDir)&quot; -ScriptDir &quot;$(_TargetScriptDir)&quot;" />
+  </Target>
 </Project>
