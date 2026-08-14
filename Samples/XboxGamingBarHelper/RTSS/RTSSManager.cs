@@ -8,8 +8,11 @@ using Windows.ApplicationModel.AppService;
 using XboxGamingBarHelper.OnScreenDisplay;
 using XboxGamingBarHelper.Hardware;
 using XboxGamingBarHelper.RTSS.OSDItems;
+using XboxGamingBarHelper.Windows;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using Microsoft.Win32;
 
 namespace XboxGamingBarHelper.RTSS
 {
@@ -31,7 +34,6 @@ namespace XboxGamingBarHelper.RTSS
         private readonly JudderFreeFPSProperty judderFreeFPS;
         public JudderFreeFPSProperty JudderFreeFPS => judderFreeFPS;
 
-        private const string OSDVerticalLineSeparator = " <C=6E006A>|<C> ";
         private const string OSDNewLine = "\n";
         private const string OSDNewLinePadding = " ";
         private const string OSDSingleLineShortBackground = "<M=0,0,0,0><P=0,0><L0><C=80000000><B=0,0>\b<C>";
@@ -42,6 +44,9 @@ namespace XboxGamingBarHelper.RTSS
         private OSD rtssOSD;
         private readonly OSDItem[] osdItems;
         private readonly OSDItemFrametimeStats frametimeStatsItem;
+
+        private IColorFormatter activeColorFormatter = SDRColorFormatter.Instance;
+        private bool isHDRActive = false;
 
         public RTSSManager(HardwareManager hardwareManager, AppServiceConnection connection) : base(connection)
         {
@@ -72,6 +77,28 @@ namespace XboxGamingBarHelper.RTSS
             osdItemsList.Add(new OSDItemFramtimeGraph());
 
             osdItems = osdItemsList.ToArray();
+
+            // Initial HDR detection & event subscription for zero-polling HDR state updates
+            isHDRActive = HDRDetector.IsHDRActive();
+            activeColorFormatter = isHDRActive ? (IColorFormatter)HDRColorFormatter.Instance : SDRColorFormatter.Instance;
+            SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+        }
+
+        private void OnDisplaySettingsChanged(object sender, EventArgs e)
+        {
+            bool newHDRState = HDRDetector.IsHDRActive();
+            if (newHDRState != isHDRActive)
+            {
+                isHDRActive = newHDRState;
+                activeColorFormatter = isHDRActive ? (IColorFormatter)HDRColorFormatter.Instance : SDRColorFormatter.Instance;
+                Logger.Info($"HDR state changed. New IsHDRActive: {isHDRActive}. Swapped RTSS color formatter.");
+            }
+        }
+
+        private string GetVerticalLineSeparator()
+        {
+            var purpleColor = activeColorFormatter.Format(Color.FromArgb(0x6E, 0x00, 0x6A));
+            return $" <C={purpleColor}>|<C> ";
         }
 
         public override void Update()
@@ -101,22 +128,6 @@ namespace XboxGamingBarHelper.RTSS
                     rtssOSD.Dispose();
                     rtssOSD = null;
                 }
-
-                /*var rtssProcess = RTSSHelper.GetProcess();
-                if (rtssProcess != null && SettingsManager.GetInstance().AutoStartRTSS)
-                {
-                    try
-                    {
-                        Logger.Info("Stopping Rivatuner Statistics Server..");
-                        rtssProcess.Kill();
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(ex, "Failed to stop Rivatuner Statistics Server.");
-                    }
-                }
-                rtssState = RivatunerStatisticsServerState.NotRunning;*/
-
                 return;
             }
 
@@ -173,10 +184,10 @@ namespace XboxGamingBarHelper.RTSS
             var osdString = onScreenDisplayLevel == 1 ? OSDSingleLineShortBackground : (onScreenDisplayLevel >= 3 ? OSDMultipleLinesBackground : OSDSingleLineFullwidthBackground);
             var needSeparator = false;
             var osdPadding = onScreenDisplayLevel >= 3 ? OSDNewLinePadding : string.Empty;
-            var osdSeparator = onScreenDisplayLevel >= 3 ? OSDNewLine : OSDVerticalLineSeparator;
+            var osdSeparator = onScreenDisplayLevel >= 3 ? OSDNewLine : GetVerticalLineSeparator();
             for (int i = 0; i < osdItems.Length; i++)
             {
-                var osdItemString = osdItems[i].GetOSDString(onScreenDisplayLevel);
+                var osdItemString = osdItems[i].GetOSDString(onScreenDisplayLevel, activeColorFormatter);
                 if (string.IsNullOrEmpty(osdItemString))
                     continue;
 
@@ -186,7 +197,6 @@ namespace XboxGamingBarHelper.RTSS
                 }
 
                 osdString += osdPadding + osdItemString;
-                //Logger.Info("OSD Item: " + osdItemString + " => OSD String: " + osdString);
                 needSeparator = true;
             }
 

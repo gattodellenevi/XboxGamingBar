@@ -27,10 +27,10 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             return osdItems;
         }
 
-        public override string GetOSDString(int osdLevel)
+        public override string GetOSDString(int osdLevel, IColorFormatter formatter = null)
         {
             if (osdLevel < 4) return string.Empty;
-            return base.GetOSDString(osdLevel);
+            return base.GetOSDString(osdLevel, formatter);
         }
     }
 }
