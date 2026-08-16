@@ -1,5 +1,6 @@
-﻿using NLog;
+using NLog;
 using Shared.Enums;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -38,37 +39,60 @@ namespace Shared.Data
 
         public async Task OnRequestReceived(TSharedAppServiceRequest request)
         {
-            var function = (Function)request.Message[nameof(Function)];
-            if (function == Function.None)
+            try
             {
-                Logger.Error("Invalid function.");
-                return;
-            }
+                var function = (Function)request.Message[nameof(Function)];
+                if (function == Function.None)
+                {
+                    Logger.Error("Invalid function.");
+                    return;
+                }
 
-            if (!properties.TryGetValue(function, out var property))
-            {
-                Logger.Error($"Property {function} not found.");
-                return;
-            }
+                if (!properties.TryGetValue(function, out var property))
+                {
+                    Logger.Error($"Property {function} not found.");
+                    return;
+                }
 
-            var command = (Command)request.Message[nameof(Command)];
-            var response = new TSharedValueSet();
-            switch (command)
-            {
-                case Command.Get:
-                    response = property.AddValueSetContent(response);
-                    break;
-                case Command.Set:
-                    property.SetValue(request.Message[nameof(Content)], (long)request.Message[nameof(UpdatedTime)]);
-                    response.Add(nameof(Content), "Set Success");
-                    break;
-                default:
-                    Logger.Error($"Can't process command {command}");
-                    break;
+                var command = (Command)request.Message[nameof(Command)];
+                var response = new TSharedValueSet();
+                switch (command)
+                {
+                    case Command.Get:
+                        response = property.AddValueSetContent(response);
+                        break;
+                    case Command.Set:
+                        object content = null;
+                        if (request.Message.TryGetValue(nameof(Content), out var reqContent))
+                        {
+                            content = reqContent;
+                        }
+                        else if (request.Message.TryGetValue("Value", out var reqValue))
+                        {
+                            content = reqValue;
+                        }
+
+                        long updatedTime = DateTime.UtcNow.Ticks;
+                        if (request.Message.TryGetValue(nameof(UpdatedTime), out var reqTime) && reqTime is long timeVal)
+                        {
+                            updatedTime = timeVal;
+                        }
+
+                        property.SetValue(content, updatedTime);
+                        response.Add(nameof(Content), "Set Success");
+                        break;
+                    default:
+                        Logger.Error($"Can't process command {command}");
+                        break;
+                }
+                Logger.Info($"Start sending response {function} {response.ToDebugString()}");
+                var sendResponseResult = await SendResponse(request, response);
+                Logger.Info($"Sent response {function} {sendResponseResult}.");
             }
-            Logger.Info($"Start sending response {function} {response.ToDebugString()}");
-            var sendResponseResult = await SendResponse(request, response);
-            Logger.Info($"Sent response {function} {sendResponseResult}.");
+            catch (System.Exception ex)
+            {
+                Logger.Error(ex, "Exception in OnRequestReceived.");
+            }
         }
 
         protected abstract Task<SharedAppServiceResponseStatus> SendResponse(TSharedAppServiceRequest request, TSharedValueSet response);

@@ -13,6 +13,7 @@ using XboxGamingBarHelper.AMD;
 using XboxGamingBarHelper.Core;
 using XboxGamingBarHelper.Hardware;
 using XboxGamingBarHelper.Input;
+using XboxGamingBarHelper.Nvidia;
 using XboxGamingBarHelper.OnScreenDisplay;
 using XboxGamingBarHelper.Power;
 using XboxGamingBarHelper.Profile;
@@ -34,6 +35,7 @@ namespace XboxGamingBarHelper
         private static SystemManager systemManager;
         private static PowerManager powerManager;
         private static AMDManager amdManager;
+        private static NvidiaManager nvidiaManager;
         private static SettingsManager settingsManager;
         private static InputManager inputManager;
         private static List<IManager> Managers;
@@ -117,6 +119,8 @@ namespace XboxGamingBarHelper
                 powerManager = new PowerManager(connection);
                 Logger.Info("Initialize AMD Manager.");
                 amdManager = new AMDManager(connection);
+                Logger.Info("Initialize NVIDIA Manager.");
+                nvidiaManager = new NvidiaManager(connection);
                 Logger.Info("Initialize Input Manager.");
                 inputManager = new InputManager(connection);
                 
@@ -128,6 +132,7 @@ namespace XboxGamingBarHelper
                     systemManager,
                     powerManager,
                     amdManager,
+                    nvidiaManager,
                     settingsManager,
                     inputManager
                 };
@@ -174,6 +179,7 @@ namespace XboxGamingBarHelper
                     amdManager.FocusingOnOSDSlider,
                     settingsManager.OnScreenDisplayProvider,
                     settingsManager.LosslessScalingShortcut,
+                    nvidiaManager.LaunchNvidiaApp,
                     rtssManager.LimitFPS,
                     rtssManager.FPSLimit,
                     rtssManager.FPSLimitMode,

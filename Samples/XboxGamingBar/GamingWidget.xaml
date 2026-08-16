@@ -346,11 +346,18 @@
                         <TextBlock Text="NVIDIA" FontWeight="SemiBold" VerticalAlignment="Center"/>
                     </StackPanel>
                 </PivotItem.Header>
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
                     <Grid Margin="3,10,3,15">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
+                            <TextBlock x:Name="NvidiaAppText" Text="NVIDIA App" FontWeight="Normal" FontSize="18"
+                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <Button x:Name="LaunchNvidiaAppButton" Content="Open" Width="140" HorizontalAlignment="Right" Click="LaunchNvidiaAppButton_Click"/>
+                        </Grid>
                     </Grid>
                 </ScrollViewer>
             </PivotItem>

@@ -1,6 +1,7 @@
 using Microsoft.Gaming.XboxGameBar;
 using NLog;
 using Shared.Data;
+using Shared.Enums;
 using Shared.Utilities;
 using System;
 using System.Linq;
@@ -10,6 +11,7 @@ using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.AppService;
 using Windows.ApplicationModel.Background;
+using Windows.Foundation.Collections;
 using Windows.Foundation.Metadata;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
@@ -293,6 +295,32 @@ namespace XboxGamingBar
             isFirstKeyCaptured = false;
             
             StartListeningTimeout();
+        }
+
+        private async void LaunchNvidiaAppButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("Launch NVIDIA App button clicked.");
+            if (App.Connection != null)
+            {
+                var valueSet = new ValueSet();
+                valueSet.Add(nameof(Command), (int)Command.Set);
+                valueSet.Add(nameof(Function), (int)Function.LaunchNvidiaApp);
+                valueSet.Add(nameof(Content), true);
+                valueSet.Add(nameof(UpdatedTime), DateTime.UtcNow.Ticks);
+                try
+                {
+                    var response = await App.Connection.SendMessageAsync(valueSet);
+                    Logger.Info($"SendMessageAsync LaunchNvidiaApp status: {response?.Status}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to send LaunchNvidiaApp message to helper.");
+                }
+            }
+            else
+            {
+                Logger.Warn("App.Connection is null, helper is not connected.");
+            }
         }
 
         private async void StartListeningTimeout()
