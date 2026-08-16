@@ -27,6 +27,11 @@
         <SolidColorBrush x:Key="SystemControlFocusVisualPrimaryBrush" Color="#107C41"/>
         <SolidColorBrush x:Key="SystemControlFocusVisualSecondaryBrush" Color="#FFFFFF"/>
 
+        <!-- Brand Accent Colors -->
+        <SolidColorBrush x:Key="RadeonRubyBrush" Color="#ED1C24"/>
+        <SolidColorBrush x:Key="GeForceGreenBrush" Color="#76B900"/>
+        <SolidColorBrush x:Key="XboxGreenBrush" Color="#107C41"/>
+
         <!-- Reusable Card Container Style -->
         <Style x:Key="SettingsCardStyle" TargetType="Border">
             <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
@@ -35,6 +40,20 @@
             <Setter Property="CornerRadius" Value="8"/>
             <Setter Property="Padding" Value="14,12,14,12"/>
             <Setter Property="Margin" Value="10,0,10,10"/>
+        </Style>
+
+        <!-- Segmented Quick-Toggle Button Style -->
+        <Style x:Key="SegmentedButtonStyle" TargetType="Button">
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Margin" Value="2,0,2,0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
         </Style>
 
         <!-- Reusable Subtitle Text Style -->
@@ -79,7 +98,7 @@
                         Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
                         Margin="0,0,12,0" VerticalAlignment="Center">
                     <FontIcon Glyph="&#xE7FC;" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" 
-                              Foreground="{ThemeResource SystemControlHighlightAccentBrush}"/>
+                              Foreground="{StaticResource XboxGreenBrush}"/>
                 </Border>
 
                 <!-- Game Name & Subtitle -->
@@ -119,7 +138,7 @@
                 <PivotItem>
                     <PivotItem.Header>
                         <StackPanel Orientation="Horizontal" Margin="25,0,0,0">
-                            <FontIcon Glyph="&#xE9D2;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center"/>
+                            <FontIcon Glyph="&#xE9D2;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
                             <TextBlock Text="Performance" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
@@ -131,37 +150,76 @@
                             
                             <Border Style="{StaticResource SettingsCardStyle}">
                                 <StackPanel>
-                                    <Grid Margin="0,0,0,6">
+                                    <Grid Margin="0,0,0,8">
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
                                             <TextBlock x:Name="PerformanceOverlayText" Text="Performance Overlay" FontWeight="SemiBold" FontSize="15"/>
                                             <TextBlock Text="RTSS / ADLX in-game metrics overlay" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                     </Grid>
 
+                                    <!-- Segmented Quick Selector Bar -->
+                                    <Border Background="{ThemeResource LayerFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                                            BorderThickness="1" CornerRadius="8" Padding="3" Margin="0,2,0,4">
+                                        <Grid x:Name="OSDSegmentedGrid">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+
+                                            <Button x:Name="OSDLevel0Button" Grid.Column="0" Content="OFF" Tag="0" 
+                                                    Style="{StaticResource SegmentedButtonStyle}" Click="OSDLevelButton_Click"
+                                                    IsEnabled="{Binding ElementName=PerformanceOverlaySlider, Path=IsEnabled}"
+                                                    XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
+                                                    XYFocusDown="{Binding ElementName=LimitFPSToggle}"
+                                                    XYFocusRight="{Binding ElementName=OSDLevel1Button}"/>
+
+                                            <Button x:Name="OSDLevel1Button" Grid.Column="1" Content="FPS" Tag="1" 
+                                                    Style="{StaticResource SegmentedButtonStyle}" Click="OSDLevelButton_Click"
+                                                    IsEnabled="{Binding ElementName=PerformanceOverlaySlider, Path=IsEnabled}"
+                                                    XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
+                                                    XYFocusDown="{Binding ElementName=LimitFPSToggle}"
+                                                    XYFocusLeft="{Binding ElementName=OSDLevel0Button}"
+                                                    XYFocusRight="{Binding ElementName=OSDLevel2Button}"/>
+
+                                            <Button x:Name="OSDLevel2Button" Grid.Column="2" Content="DETAIL" Tag="2" 
+                                                    Style="{StaticResource SegmentedButtonStyle}" Click="OSDLevelButton_Click"
+                                                    IsEnabled="{Binding ElementName=PerformanceOverlaySlider, Path=IsEnabled}"
+                                                    XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
+                                                    XYFocusDown="{Binding ElementName=LimitFPSToggle}"
+                                                    XYFocusLeft="{Binding ElementName=OSDLevel1Button}"
+                                                    XYFocusRight="{Binding ElementName=OSDLevel3Button}"/>
+
+                                            <Button x:Name="OSDLevel3Button" Grid.Column="3" Content="FULL" Tag="3" 
+                                                    Style="{StaticResource SegmentedButtonStyle}" Click="OSDLevelButton_Click"
+                                                    IsEnabled="{Binding ElementName=PerformanceOverlaySlider, Path=IsEnabled}"
+                                                    XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
+                                                    XYFocusDown="{Binding ElementName=LimitFPSToggle}"
+                                                    XYFocusLeft="{Binding ElementName=OSDLevel2Button}"
+                                                    XYFocusRight="{Binding ElementName=OSDLevel4Button}"/>
+
+                                            <Button x:Name="OSDLevel4Button" Grid.Column="4" Content="ALL" Tag="4" 
+                                                    Style="{StaticResource SegmentedButtonStyle}" Click="OSDLevelButton_Click"
+                                                    IsEnabled="{Binding ElementName=PerformanceOverlaySlider, Path=IsEnabled}"
+                                                    XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
+                                                    XYFocusDown="{Binding ElementName=LimitFPSToggle}"
+                                                    XYFocusLeft="{Binding ElementName=OSDLevel3Button}"/>
+                                        </Grid>
+                                    </Border>
+
+                                    <!-- Underlying Slider (Preserved for OSDProperty compatibility) -->
                                     <Slider x:Name="PerformanceOverlaySlider"
                                         Minimum="0" Maximum="4"
                                         TickFrequency="1"
                                         SnapsTo="StepValues"
-                                        TickPlacement="BottomRight"
+                                        TickPlacement="None"
                                         IsEnabled="False"
-                                        Margin="0,4,0,0"
-                                        XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
-                                        XYFocusDown="{Binding ElementName=LimitFPSToggle}"/>
-
-                                    <Grid Margin="-20,-8,-20,4">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition/>
-                                            <ColumnDefinition/>
-                                            <ColumnDefinition/>
-                                            <ColumnDefinition/>
-                                            <ColumnDefinition/>
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock Text="OFF"      Grid.Column="0" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                                        <TextBlock Text="FPS"      Grid.Column="1" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                                        <TextBlock Text="DETAILED" Grid.Column="2" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                                        <TextBlock Text="FULL"     Grid.Column="3" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                                        <TextBlock Text="ALL"      Grid.Column="4" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                                    </Grid>
+                                        Height="0"
+                                        Opacity="0"
+                                        Margin="0"
+                                        IsHitTestVisible="False"/>
                                 </StackPanel>
                             </Border>
 
@@ -180,7 +238,7 @@
                                         <ToggleSwitch x:Name="LimitFPSToggle" IsEnabled="False" 
                                             OffContent="Disabled" OnContent="{Binding ElementName=FPSLimitSlider, Path=Value, Converter={StaticResource FPSStringConverter}}"
                                             VerticalAlignment="Center" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=PerformanceOverlaySlider}"
+                                            XYFocusUp="{Binding ElementName=OSDLevel0Button}"
                                             XYFocusDown="{Binding ElementName=FPSLimitSlider}"/>
                                     </Grid>
 
@@ -379,11 +437,11 @@
                     </ScrollViewer>
                 </PivotItem>
 
-                <!-- AMD SETTINGS TAB -->
+                <!-- AMD SETTINGS TAB (Radeon Ruby Themed) -->
                 <PivotItem x:Name="AMDPivotItem" Visibility="Collapsed">
                     <PivotItem.Header>
                         <StackPanel x:Name="AMDPivotItemStackPanel" Orientation="Horizontal" Margin="10,0,10,0" Visibility="Collapsed">
-                            <FontIcon Glyph="&#xE945;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="#ED1C24"/>
+                            <FontIcon Glyph="&#xE945;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource RadeonRubyBrush}"/>
                             <TextBlock Text="AMD" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
@@ -394,6 +452,14 @@
                             <TextBlock Text="RADEON UPSCALING &amp; FRAMES" Style="{StaticResource SectionHeaderTextStyle}"/>
 
                             <Border Style="{StaticResource SettingsCardStyle}">
+                                <Border.Resources>
+                                    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#ED1C24"/>
+                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#D01820"/>
+                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#B8141C"/>
+                                    <SolidColorBrush x:Key="SliderTrackValueFill" Color="#ED1C24"/>
+                                    <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#D01820"/>
+                                    <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B8141C"/>
+                                </Border.Resources>
                                 <StackPanel>
                                     <!-- RSR -->
                                     <Grid>
@@ -439,6 +505,14 @@
                             <TextBlock Text="LATENCY &amp; DYNAMICS" Style="{StaticResource SectionHeaderTextStyle}"/>
 
                             <Border Style="{StaticResource SettingsCardStyle}">
+                                <Border.Resources>
+                                    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#ED1C24"/>
+                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#D01820"/>
+                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#B8141C"/>
+                                    <SolidColorBrush x:Key="SliderTrackValueFill" Color="#ED1C24"/>
+                                    <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#D01820"/>
+                                    <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B8141C"/>
+                                </Border.Resources>
                                 <StackPanel>
                                     <!-- Anti-Lag -->
                                     <Grid>
@@ -484,6 +558,14 @@
                             <TextBlock Text="RADEON CHILL" Style="{StaticResource SectionHeaderTextStyle}"/>
 
                             <Border Style="{StaticResource SettingsCardStyle}">
+                                <Border.Resources>
+                                    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#ED1C24"/>
+                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#D01820"/>
+                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#B8141C"/>
+                                    <SolidColorBrush x:Key="SliderTrackValueFill" Color="#ED1C24"/>
+                                    <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#D01820"/>
+                                    <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B8141C"/>
+                                </Border.Resources>
                                 <StackPanel>
                                     <Grid>
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
@@ -527,11 +609,11 @@
                     </ScrollViewer>
                 </PivotItem>
 
-                <!-- NVIDIA SETTINGS TAB -->
+                <!-- NVIDIA SETTINGS TAB (GeForce Green Themed) -->
                 <PivotItem x:Name="NvidiaPivotItem">
                     <PivotItem.Header>
                         <StackPanel x:Name="NvidiaPivotItemStackPanel" Orientation="Horizontal" Margin="0,0,25,0">
-                            <FontIcon Glyph="&#xE9D9;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="#76B900"/>
+                            <FontIcon Glyph="&#xE9D9;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource GeForceGreenBrush}"/>
                             <TextBlock Text="NVIDIA" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
@@ -549,6 +631,7 @@
                                         <TextBlock Text="Open NVIDIA App / GeForce Experience overlay" Style="{StaticResource SubtitleTextStyle}"/>
                                     </StackPanel>
                                     <Button x:Name="LaunchNvidiaAppButton" Content="Open" Width="140" HorizontalAlignment="Right" Click="LaunchNvidiaAppButton_Click"
+                                        Background="#76B900" Foreground="Black" FontWeight="Bold" CornerRadius="6"
                                         XYFocusUp="{Binding ElementName=PerGameProfileToggle}"/>
                                 </Grid>
                             </Border>

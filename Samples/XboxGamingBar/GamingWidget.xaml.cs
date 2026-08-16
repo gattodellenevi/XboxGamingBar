@@ -142,6 +142,8 @@ namespace XboxGamingBar
             LimitFPSToggle.Toggled += (s, e) => UpdateFPSLimitSliderJudderFree();
             FPSLimitJudderFreeSlider.ValueChanged += FPSLimitJudderFreeSlider_ValueChanged;
             FPSLimitJudderFreeCanvas.SizeChanged += (s, e) => RenderJudderFreeMarkers();
+            PerformanceOverlaySlider.ValueChanged += (s, e) => UpdateOSDSegmentedButtons((int)e.NewValue);
+            UpdateOSDSegmentedButtons((int)PerformanceOverlaySlider.Value);
             judderFreeFPS.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(judderFreeFPS.Value))
@@ -320,6 +322,44 @@ namespace XboxGamingBar
             else
             {
                 Logger.Warn("App.Connection is null, helper is not connected.");
+            }
+        }
+
+        private void OSDLevelButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag != null && int.TryParse(btn.Tag.ToString(), out int level))
+            {
+                Logger.Info($"OSD level button clicked: {level}");
+                PerformanceOverlaySlider.Value = level;
+                UpdateOSDSegmentedButtons(level);
+            }
+        }
+
+        private void UpdateOSDSegmentedButtons(int level)
+        {
+            Button[] buttons = new Button[] { OSDLevel0Button, OSDLevel1Button, OSDLevel2Button, OSDLevel3Button, OSDLevel4Button };
+            var accentBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65)); // Xbox Green
+            var transparentBrush = new SolidColorBrush(Windows.UI.Colors.Transparent);
+            var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
+            var textMutedBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(200, 200, 200, 200));
+
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                if (buttons[i] != null)
+                {
+                    if (i == level)
+                    {
+                        buttons[i].Background = accentBrush;
+                        buttons[i].Foreground = whiteBrush;
+                        buttons[i].FontWeight = Windows.UI.Text.FontWeights.Bold;
+                    }
+                    else
+                    {
+                        buttons[i].Background = transparentBrush;
+                        buttons[i].Foreground = textMutedBrush;
+                        buttons[i].FontWeight = Windows.UI.Text.FontWeights.SemiBold;
+                    }
+                }
             }
         }
 
