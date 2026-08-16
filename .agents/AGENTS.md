@@ -29,4 +29,16 @@
 * **Permanent Removal**: TDP control, `RyzenAdj` (`libryzenadj.dll`), and `WinRing0` (`WinRing0x64.sys` / `WinRing0x64.dll` / `inpoutx64.dll`) have been completely removed from the project to eliminate all Windows Defender vulnerable driver blocklist warnings (CVE-2020-14979).
 * CPU power management in CouchGameBar now relies strictly on native Windows Power Scheme APIs (CPU Boost, Energy Performance Preference / EPP, and CPU Max Clock limits).
 
+## Widget UI & Visual Design Guidelines
+* **Fluent 2 Card-Based Architecture**: `GamingWidget.xaml` uses controller-first Fluent 2 card layout:
+  * Setting groups are enclosed in rounded cards using `SettingsCardStyle` (`CornerRadius="8"`, `CardBackgroundFillColorDefaultBrush`, `CardStrokeColorDefaultBrush`, `Padding="14,12,14,12"`, `Margin="10,0,10,10"`).
+  * Group headers use `SectionHeaderTextStyle` (`FontSize="11"`, `FontWeight="Bold"`, `CharacterSpacing="50"`).
+  * Control subtitles use `SubtitleTextStyle` (`FontSize="12"`, `SystemControlForegroundBaseMediumBrush`).
+  * Hero game card at the top hosts `RunningGameText` and `PerGameProfileToggle` in a `CornerRadius="10"` container with controller icon badge (`&#xE7FC;`).
+  * Tab bumper tags (`LT`/`RT`) use rounded pill borders (`CornerRadius="6"`).
+* **Code-Behind & Binding Integrity**:
+  * Always preserve all exact `x:Name` properties (e.g. `AMDRadeonSuperResolutionText`, `FPSLimitSlider`, `JudderFreeFPSToggle`, etc.) as they are directly referenced by widget property classes in `Data/` and event subscriptions.
+  * Maintain XY focus navigation bindings (`XYFocusUp`, `XYFocusDown`, `XYFocusLeft`, `XYFocusRight`) across card elements for controller navigation.
+
+
 
