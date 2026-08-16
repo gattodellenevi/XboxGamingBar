@@ -42,6 +42,25 @@
             <Setter Property="Margin" Value="10,0,10,10"/>
         </Style>
 
+        <!-- Reusable Value Badge Container Style -->
+        <Style x:Key="ValueBadgeStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Padding" Value="6,1,6,1"/>
+            <Setter Property="Background" Value="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"/>
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Reusable Value Badge Text Style -->
+        <Style x:Key="ValueBadgeTextStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
         <!-- Segmented Quick-Toggle Button Style -->
         <Style x:Key="SegmentedButtonStyle" TargetType="Button">
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
@@ -101,10 +120,13 @@
                               Foreground="{StaticResource XboxGreenBrush}"/>
                 </Border>
 
-                <!-- Game Name & Subtitle -->
+                <!-- Game Name & Subtitle with Status Dot -->
                 <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <TextBlock x:Name="RunningGameText" Text="No game detected" FontWeight="SemiBold" FontSize="16"
-                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Ellipse Width="7" Height="7" Fill="{StaticResource XboxGreenBrush}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="RunningGameText" Text="No game detected" FontWeight="SemiBold" FontSize="16"
+                            TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                    </StackPanel>
                     <TextBlock Text="Active profile configuration" FontSize="11" 
                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
                 </StackPanel>
@@ -228,15 +250,22 @@
 
                             <Border Style="{StaticResource SettingsCardStyle}">
                                 <StackPanel>
-                                    <!-- Frame Limiter Toggle Row -->
+                                    <!-- Frame Limiter Toggle Row with Header Value Badge -->
                                     <Grid>
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock x:Name="FPSLimitText" Text="Frame Limiter" FontWeight="SemiBold" FontSize="15"
-                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock x:Name="FPSLimitText" Text="Frame Limiter" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                        Visibility="{Binding ElementName=LimitFPSToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="{Binding ElementName=FPSLimitSlider, Path=Value, Converter={StaticResource FPSStringConverter}}" 
+                                                               Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock Text="Cap framerate via RTSS to stabilize frametimes" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="LimitFPSToggle" IsEnabled="False" 
-                                            OffContent="Disabled" OnContent="{Binding ElementName=FPSLimitSlider, Path=Value, Converter={StaticResource FPSStringConverter}}"
+                                            OffContent="Disabled" OnContent="Enabled"
                                             VerticalAlignment="Center" HorizontalAlignment="Right"
                                             XYFocusUp="{Binding ElementName=OSDLevel0Button}"
                                             XYFocusDown="{Binding ElementName=FPSLimitSlider}"/>
@@ -304,14 +333,20 @@
 
                             <Border Style="{StaticResource SettingsCardStyle}">
                                 <StackPanel>
-                                    <!-- CPU Boost -->
+                                    <!-- CPU Boost with Value Badge -->
                                     <Grid>
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock x:Name="CPUBoostText" Text="CPU Boost" FontWeight="SemiBold" FontSize="15"
-                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock x:Name="CPUBoostText" Text="CPU Boost" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                        Visibility="{Binding ElementName=CPUBoostToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="AGGRESSIVE" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock Text="Dynamic core clock frequency boosting" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
-                                        <ToggleSwitch x:Name="CPUBoostToggle" IsEnabled="False" OffContent="Disabled" OnContent="Aggressive"
+                                        <ToggleSwitch x:Name="CPUBoostToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
                                             VerticalAlignment="Center" HorizontalAlignment="Right"
                                             XYFocusUp="{Binding ElementName=LimitFPSToggle}"
                                             XYFocusDown="{Binding ElementName=SetCPUEPPToggle}"/>
@@ -319,14 +354,20 @@
 
                                     <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
 
-                                    <!-- Energy Pref (EPP) -->
+                                    <!-- Energy Pref (EPP) with Value Badge -->
                                     <Grid>
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock x:Name="CPUEPPText" Text="Energy Preference (EPP)" FontWeight="SemiBold" FontSize="15"
-                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock x:Name="CPUEPPText" Text="Energy Preference (EPP)" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                        Visibility="{Binding ElementName=SetCPUEPPToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="{Binding ElementName=CPUEPPSlider, Path=Value}" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock Text="Balance performance vs power efficiency" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
-                                        <ToggleSwitch x:Name="SetCPUEPPToggle" IsEnabled="False" OffContent="Disabled" OnContent="{Binding ElementName=CPUEPPSlider, Path=Value}"
+                                        <ToggleSwitch x:Name="SetCPUEPPToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
                                             VerticalAlignment="Center" HorizontalAlignment="Right"
                                             XYFocusUp="{Binding ElementName=CPUBoostToggle}"
                                             XYFocusDown="{Binding ElementName=CPUEPPSlider}"/>
@@ -345,14 +386,20 @@
 
                                     <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
 
-                                    <!-- Limit CPU Clock -->
+                                    <!-- Limit CPU Clock with Value Badge -->
                                     <Grid>
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock x:Name="LimitCPUClockText" Text="Limit CPU Clock" FontWeight="SemiBold" FontSize="15"
-                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock x:Name="LimitCPUClockText" Text="Limit CPU Clock" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                        Visibility="{Binding ElementName=LimitCPUClockToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="{Binding ElementName=CPUClockMaxSlider, Path=Value, Converter={StaticResource MegahertzStringConverter}}" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock Text="Cap maximum CPU frequency in MHz" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
-                                        <ToggleSwitch x:Name="LimitCPUClockToggle" IsEnabled="False" OffContent="Disabled" OnContent="{Binding ElementName=CPUClockMaxSlider, Path=Value, Converter={StaticResource MegahertzStringConverter}}"
+                                        <ToggleSwitch x:Name="LimitCPUClockToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
                                             VerticalAlignment="Center" HorizontalAlignment="Right"
                                             XYFocusUp="{Binding ElementName=SetCPUEPPToggle}"
                                             XYFocusDown="{Binding ElementName=CPUClockMaxSlider}"/>
@@ -461,14 +508,20 @@
                                     <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B8141C"/>
                                 </Border.Resources>
                                 <StackPanel>
-                                    <!-- RSR -->
+                                    <!-- RSR with Value Badge -->
                                     <Grid>
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock x:Name="AMDRadeonSuperResolutionText" Text="Radeon Super Resolution" FontWeight="SemiBold" FontSize="15"
-                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock x:Name="AMDRadeonSuperResolutionText" Text="Radeon Super Resolution" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                        Visibility="{Binding ElementName=AMDRadeonSuperResolutionToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="{Binding ElementName=AMDRadeonSuperResolutionSharpnessSlider, Path=Value, Converter={StaticResource SharpnessPercentStringConverter}}" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock Text="Spatial upscaling with sharpening filter" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
-                                        <ToggleSwitch x:Name="AMDRadeonSuperResolutionToggle" IsEnabled="False" OffContent="Disabled" OnContent="{Binding ElementName=AMDRadeonSuperResolutionSharpnessSlider, Path=Value, Converter={StaticResource SharpnessPercentStringConverter}}"
+                                        <ToggleSwitch x:Name="AMDRadeonSuperResolutionToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
                                             VerticalAlignment="Center" HorizontalAlignment="Right"
                                             XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
                                             XYFocusDown="{Binding ElementName=AMDRadeonSuperResolutionSharpnessSlider}"/>
@@ -486,11 +539,17 @@
 
                                     <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
 
-                                    <!-- AFMF -->
+                                    <!-- AFMF with Value Badge -->
                                     <Grid>
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock x:Name="AMDFluidMotionFrameText" Text="AMD Fluid Motion Frame" FontWeight="SemiBold" FontSize="15"
-                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock x:Name="AMDFluidMotionFrameText" Text="AMD Fluid Motion Frame" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                        Visibility="{Binding ElementName=AMDFluidMotionFrameToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="ON" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock Text="Optical flow driver-level frame generation" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDFluidMotionFrameToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
@@ -514,11 +573,17 @@
                                     <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B8141C"/>
                                 </Border.Resources>
                                 <StackPanel>
-                                    <!-- Anti-Lag -->
+                                    <!-- Anti-Lag with Value Badge -->
                                     <Grid>
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock x:Name="AMDRadeonAntiLagText" Text="Radeon Anti-Lag" FontWeight="SemiBold" FontSize="15"
-                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock x:Name="AMDRadeonAntiLagText" Text="Radeon Anti-Lag" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                        Visibility="{Binding ElementName=AMDRadeonAntiLagToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="ON" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock Text="Paces CPU work to minimize input latency" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDRadeonAntiLagToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
@@ -529,14 +594,20 @@
 
                                     <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
 
-                                    <!-- Boost -->
+                                    <!-- Boost with Value Badge -->
                                     <Grid>
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock x:Name="AMDRadeonBoostText" Text="Radeon Boost" FontWeight="SemiBold" FontSize="15"
-                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock x:Name="AMDRadeonBoostText" Text="Radeon Boost" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                        Visibility="{Binding ElementName=AMDRadeonBoostToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                    <TextBlock Text="{Binding ElementName=AMDRadeonBoostResolutionSlider, Path=Value, Converter={StaticResource RadeonBoostResolutionStringConverter}}" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock Text="Dynamic resolution during fast camera motion" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
-                                        <ToggleSwitch x:Name="AMDRadeonBoostToggle" IsEnabled="False" OffContent="Disabled" OnContent="{Binding ElementName=AMDRadeonBoostResolutionSlider, Path=Value, Converter={StaticResource RadeonBoostResolutionStringConverter}}"
+                                        <ToggleSwitch x:Name="AMDRadeonBoostToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
                                             VerticalAlignment="Center" HorizontalAlignment="Right"
                                             XYFocusUp="{Binding ElementName=AMDRadeonAntiLagToggle}"
                                             XYFocusDown="{Binding ElementName=AMDRadeonBoostResolutionSlider}"/>
