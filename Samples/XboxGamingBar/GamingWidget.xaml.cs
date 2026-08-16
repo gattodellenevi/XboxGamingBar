@@ -266,12 +266,12 @@ namespace XboxGamingBar
                 return;
             }
 
-            if (e.Key == VirtualKey.GamepadLeftTrigger)
+            if (e.Key == VirtualKey.GamepadLeftTrigger || e.Key == VirtualKey.GamepadLeftShoulder)
             {
                 NavigatePivot(-1);
                 e.Handled = true;
             }
-            else if (e.Key == VirtualKey.GamepadRightTrigger)
+            else if (e.Key == VirtualKey.GamepadRightTrigger || e.Key == VirtualKey.GamepadRightShoulder)
             {
                 NavigatePivot(1);
                 e.Handled = true;

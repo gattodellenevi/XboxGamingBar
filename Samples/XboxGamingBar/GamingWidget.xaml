@@ -7,7 +7,12 @@
     xmlns:converter="using:XboxGamingBar.Converter"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    d:DesignHeight="670" d:DesignWidth="500">
+    d:DesignHeight="670" d:DesignWidth="500"
+    FocusVisualPrimaryBrush="{ThemeResource SystemControlFocusVisualPrimaryBrush}"
+    FocusVisualSecondaryBrush="{ThemeResource SystemControlFocusVisualSecondaryBrush}"
+    FocusVisualPrimaryThickness="2"
+    FocusVisualSecondaryThickness="1"
+    FocusVisualMargin="-2">
 
     <Page.Resources>
         <converter:MegahertzStringConverter x:Key="MegahertzStringConverter"/>
@@ -17,6 +22,10 @@
         <converter:RadeonChillMinFPSStringConverter x:Key="RadeonChillMinFPSStringConverter"/>
         <converter:RadeonChillMaxFPSStringConverter x:Key="RadeonChillMaxFPSStringConverter"/>
         <converter:FPSStringConverter x:Key="FPSStringConverter"/>
+
+        <!-- High-Visibility Xbox Green Focus Brushes -->
+        <SolidColorBrush x:Key="SystemControlFocusVisualPrimaryBrush" Color="#107C41"/>
+        <SolidColorBrush x:Key="SystemControlFocusVisualSecondaryBrush" Color="#FFFFFF"/>
 
         <!-- Reusable Card Container Style -->
         <Style x:Key="SettingsCardStyle" TargetType="Border">
@@ -84,24 +93,25 @@
                 <!-- Profile Switch -->
                 <ToggleSwitch x:Name="PerGameProfileToggle" Grid.Column="2" IsEnabled="False" 
                               OffContent="Global" OnContent="Per-game"
-                              VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                              VerticalAlignment="Center" HorizontalAlignment="Right"
+                              XYFocusDown="{Binding ElementName=MainPivot}"/>
             </Grid>
         </Border>
 
         <Grid Grid.Row="1">
 
-            <!-- Tab Navigation Indicators (Modern Pill Bumpers) -->
-            <Border Width="26" Height="24" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,8,0,0" 
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" 
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" IsHitTestVisible="False" Canvas.ZIndex="2">
+            <!-- Tab Navigation Indicators (Modern Pill Bumpers with Xbox Theme) -->
+            <Border Width="28" Height="22" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,10,0,0" 
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1.2" CornerRadius="6" 
+                    Background="{ThemeResource LayerFillColorDefaultBrush}" IsHitTestVisible="False" Canvas.ZIndex="2">
                 <TextBlock Text="LT" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" 
-                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" CharacterSpacing="30"/>
             </Border>
-            <Border Width="26" Height="24" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0" 
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" CornerRadius="6" 
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" IsHitTestVisible="False" Canvas.ZIndex="2">
+            <Border Width="28" Height="22" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,8,0" 
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1.2" CornerRadius="6" 
+                    Background="{ThemeResource LayerFillColorDefaultBrush}" IsHitTestVisible="False" Canvas.ZIndex="2">
                 <TextBlock Text="RT" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" 
-                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" CharacterSpacing="30"/>
             </Border>
             
             <Pivot x:Name="MainPivot" XYFocusKeyboardNavigation="Enabled" UseSystemFocusVisuals="True">
@@ -135,6 +145,7 @@
                                         TickPlacement="BottomRight"
                                         IsEnabled="False"
                                         Margin="0,4,0,0"
+                                        XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
                                         XYFocusDown="{Binding ElementName=LimitFPSToggle}"/>
 
                                     <Grid Margin="-20,-8,-20,4">
@@ -312,7 +323,7 @@
                             <TextBlock Text="System" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
                         <StackPanel Margin="0,8,0,16">
 
                             <!-- SECTION: DISPLAY -->
@@ -326,7 +337,9 @@
                                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
                                             <TextBlock Text="Active display refresh rate (Hz)" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
-                                        <ComboBox x:Name="RefreshRatesComboBox" PlaceholderText="60 Hz" Width="140" IsEnabled="False" HorizontalAlignment="Right">
+                                        <ComboBox x:Name="RefreshRatesComboBox" PlaceholderText="60 Hz" Width="140" IsEnabled="False" HorizontalAlignment="Right"
+                                            XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
+                                            XYFocusDown="{Binding ElementName=ResolutionsComboBox}">
                                             <x:String>60 Hz</x:String>
                                         </ComboBox>
                                     </Grid>
@@ -339,7 +352,9 @@
                                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
                                             <TextBlock Text="Active screen display resolution" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
-                                        <ComboBox x:Name="ResolutionsComboBox" PlaceholderText="1920x1080" Width="140" IsEnabled="False" HorizontalAlignment="Right">
+                                        <ComboBox x:Name="ResolutionsComboBox" PlaceholderText="1920x1080" Width="140" IsEnabled="False" HorizontalAlignment="Right"
+                                            XYFocusUp="{Binding ElementName=RefreshRatesComboBox}"
+                                            XYFocusDown="{Binding ElementName=LosslessScalingBindingButton}">
                                             <x:String>1920x1080</x:String>
                                         </ComboBox>
                                     </Grid>
@@ -356,7 +371,8 @@
                                             TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
                                         <TextBlock Text="Hold gamepad combo to toggle frame generation" Style="{StaticResource SubtitleTextStyle}"/>
                                     </StackPanel>
-                                    <Button x:Name="LosslessScalingBindingButton" Content="None" Width="140" HorizontalAlignment="Right" Click="LosslessScalingBindingButton_Click"/>
+                                    <Button x:Name="LosslessScalingBindingButton" Content="None" Width="140" HorizontalAlignment="Right" Click="LosslessScalingBindingButton_Click"
+                                        XYFocusUp="{Binding ElementName=ResolutionsComboBox}"/>
                                 </Grid>
                             </Border>
                         </StackPanel>
@@ -371,7 +387,7 @@
                             <TextBlock Text="AMD" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
                         <StackPanel Margin="0,8,0,16">
 
                             <!-- SECTION: UPSCALING & FRAME GEN -->
@@ -387,7 +403,9 @@
                                             <TextBlock Text="Spatial upscaling with sharpening filter" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDRadeonSuperResolutionToggle" IsEnabled="False" OffContent="Disabled" OnContent="{Binding ElementName=AMDRadeonSuperResolutionSharpnessSlider, Path=Value, Converter={StaticResource SharpnessPercentStringConverter}}"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"
+                                            XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
+                                            XYFocusDown="{Binding ElementName=AMDRadeonSuperResolutionSharpnessSlider}"/>
                                     </Grid>
                                     <Slider x:Name="AMDRadeonSuperResolutionSharpnessSlider"
                                         Minimum="0" Maximum="100"
@@ -396,7 +414,9 @@
                                         TickPlacement="BottomRight"
                                         IsEnabled="False"
                                         Margin="0,6,0,0"
-                                        Visibility="{Binding ElementName=AMDRadeonSuperResolutionToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        Visibility="{Binding ElementName=AMDRadeonSuperResolutionToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        XYFocusUp="{Binding ElementName=AMDRadeonSuperResolutionToggle}"
+                                        XYFocusDown="{Binding ElementName=AMDFluidMotionFrameToggle}"/>
 
                                     <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
 
@@ -408,7 +428,9 @@
                                             <TextBlock Text="Optical flow driver-level frame generation" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDFluidMotionFrameToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"
+                                            XYFocusUp="{Binding ElementName=AMDRadeonSuperResolutionToggle}"
+                                            XYFocusDown="{Binding ElementName=AMDRadeonAntiLagToggle}"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -426,7 +448,9 @@
                                             <TextBlock Text="Paces CPU work to minimize input latency" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDRadeonAntiLagToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"
+                                            XYFocusUp="{Binding ElementName=AMDFluidMotionFrameToggle}"
+                                            XYFocusDown="{Binding ElementName=AMDRadeonBoostToggle}"/>
                                     </Grid>
 
                                     <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
@@ -439,7 +463,9 @@
                                             <TextBlock Text="Dynamic resolution during fast camera motion" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDRadeonBoostToggle" IsEnabled="False" OffContent="Disabled" OnContent="{Binding ElementName=AMDRadeonBoostResolutionSlider, Path=Value, Converter={StaticResource RadeonBoostResolutionStringConverter}}"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"
+                                            XYFocusUp="{Binding ElementName=AMDRadeonAntiLagToggle}"
+                                            XYFocusDown="{Binding ElementName=AMDRadeonBoostResolutionSlider}"/>
                                     </Grid>
                                     <Slider x:Name="AMDRadeonBoostResolutionSlider"
                                         Minimum="0" Maximum="1"
@@ -448,7 +474,9 @@
                                         TickPlacement="BottomRight"
                                         IsEnabled="False"
                                         Margin="0,6,0,0"
-                                        Visibility="{Binding ElementName=AMDRadeonBoostToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                        Visibility="{Binding ElementName=AMDRadeonBoostToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                        XYFocusUp="{Binding ElementName=AMDRadeonBoostToggle}"
+                                        XYFocusDown="{Binding ElementName=AMDRadeonChillToggle}"/>
                                 </StackPanel>
                             </Border>
 
@@ -464,7 +492,9 @@
                                             <TextBlock Text="Power-saving dynamic FPS regulation" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDRadeonChillToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"
+                                            XYFocusUp="{Binding ElementName=AMDRadeonBoostToggle}"
+                                            XYFocusDown="{Binding ElementName=AMDRadeonChillMinFPSSlider}"/>
                                     </Grid>
                                     
                                     <StackPanel Visibility="{Binding ElementName=AMDRadeonChillToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,8,0,0">
@@ -477,7 +507,9 @@
                                             TickFrequency="5"
                                             SnapsTo="Ticks"
                                             TickPlacement="BottomRight"
-                                            IsEnabled="False"/>
+                                            IsEnabled="False"
+                                            XYFocusUp="{Binding ElementName=AMDRadeonChillToggle}"
+                                            XYFocusDown="{Binding ElementName=AMDRadeonChillMaxFPSSlider}"/>
                                             
                                         <TextBlock x:Name="AMDRadeonChillMaxFPSText" Text="{Binding ElementName=AMDRadeonChillMaxFPSSlider, Path=Value, Converter={StaticResource RadeonChillMaxFPSStringConverter}}"
                                             HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Margin="0,4,0,0"/>
@@ -486,7 +518,8 @@
                                             TickFrequency="5"
                                             SnapsTo="Ticks"
                                             TickPlacement="BottomRight"
-                                            IsEnabled="False"/>
+                                            IsEnabled="False"
+                                            XYFocusUp="{Binding ElementName=AMDRadeonChillMinFPSSlider}"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
@@ -515,7 +548,8 @@
                                             TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
                                         <TextBlock Text="Open NVIDIA App / GeForce Experience overlay" Style="{StaticResource SubtitleTextStyle}"/>
                                     </StackPanel>
-                                    <Button x:Name="LaunchNvidiaAppButton" Content="Open" Width="140" HorizontalAlignment="Right" Click="LaunchNvidiaAppButton_Click"/>
+                                    <Button x:Name="LaunchNvidiaAppButton" Content="Open" Width="140" HorizontalAlignment="Right" Click="LaunchNvidiaAppButton_Click"
+                                        XYFocusUp="{Binding ElementName=PerGameProfileToggle}"/>
                                 </Grid>
                             </Border>
                         </StackPanel>
