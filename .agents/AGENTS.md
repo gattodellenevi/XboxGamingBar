@@ -24,3 +24,9 @@
   * **Conditional Telemetry Updates**: Skip `hardwareProvider.Update()` in `HardwareManager.cs` if `onScreenDisplayLevel == 0` and no UWP app service is connected.
   * **NLog Disk Logging Verbosity**: Set `NLog.config` to `Info`/`Warn` to avoid disk I/O CPU spikes.
   * **Disable OSD**: Set `OnScreenDisplay` level to 0 in settings when overlays are not needed to halt RTSS/ADLX buffer updates.
+
+## WinRing0 & TDP Control Removal
+* **Permanent Removal**: TDP control, `RyzenAdj` (`libryzenadj.dll`), and `WinRing0` (`WinRing0x64.sys` / `WinRing0x64.dll` / `inpoutx64.dll`) have been completely removed from the project to eliminate all Windows Defender vulnerable driver blocklist warnings (CVE-2020-14979).
+* CPU power management in CouchGameBar now relies strictly on native Windows Power Scheme APIs (CPU Boost, Energy Performance Preference / EPP, and CPU Max Clock limits).
+
+

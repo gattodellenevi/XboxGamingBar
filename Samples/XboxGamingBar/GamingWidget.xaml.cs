@@ -48,10 +48,6 @@ namespace XboxGamingBar
 
         // Properties
         private readonly OSDProperty osd;
-        private readonly MinTDPProperty minTDP;
-        private readonly MaxTDPProperty maxTDP;
-        private readonly TDPControlSupportProperty tdpControlSupport;
-        private readonly TDPProperty tdp;
         private readonly RunningGameProperty runningGame;
         private readonly PerGameProfileProperty perGameProfile;
         private readonly CPUBoostProperty cpuBoost;
@@ -100,10 +96,6 @@ namespace XboxGamingBar
         public GamingWidget()
         {
             InitializeComponent();
-            minTDP = new MinTDPProperty(TDPSlider, this);
-            maxTDP = new MaxTDPProperty(TDPSlider, this);
-            tdpControlSupport = new TDPControlSupportProperty(TDPSlider, this, TDPHeaderGrid);
-            tdp = new TDPProperty(4, TDPSlider, this);
             osd = new OSDProperty(0, PerformanceOverlaySlider, this);
             runningGame = new RunningGameProperty(RunningGameText, PerGameProfileToggle, this);
             perGameProfile = new PerGameProfileProperty(PerGameProfileToggle, this);
@@ -165,10 +157,6 @@ namespace XboxGamingBar
 
             properties = new WidgetProperties(
                 osd,
-                minTDP,
-                maxTDP,
-                tdpControlSupport,
-                tdp,
                 runningGame,
                 perGameProfile,
                 cpuBoost,
@@ -590,7 +578,6 @@ namespace XboxGamingBar
             //{
             //    Logger.Info("AppService disconnected, disable UI elements");
             //    PerformanceOverlaySlider.IsEnabled = false;
-            //    TDPSlider.IsEnabled = false;
             //    PerGameProfileToggle.IsEnabled = false;
             //    CPUBoostToggle.IsEnabled = false;
             //    CPUEPPSlider.IsEnabled = false;

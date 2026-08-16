@@ -70,4 +70,4 @@ Follow the on-screen prompts until installation completes.
 Xbox Gaming Bar is 100% free and open source. It's built upon C#.
 Libraries used:
 - **[LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)** for performance statistics overlay.
-- **[RyzenAdj](https://github.com/FlyGoat/RyzenAdj)** for AMD TDP control.
+

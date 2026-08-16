@@ -10,7 +10,6 @@
     d:DesignHeight="670" d:DesignWidth="500">
 
     <Page.Resources>
-        <converter:WattStringConverter x:Key="WattStringConverter"/>
         <converter:MegahertzStringConverter x:Key="MegahertzStringConverter"/>
         <converter:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <converter:SharpnessPercentStringConverter x:Key="SharpnessPercentStringConverter"/>
@@ -62,20 +61,19 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/> <!-- 0: Overlay Text -->
                             <RowDefinition Height="Auto"/>   <!-- 1: Overlay Slider -->
-                            <RowDefinition Height="Auto"/>   <!-- 2: Spacer shortened -->
+                            <RowDefinition Height="Auto"/>   <!-- 2: Spacer -->
                             <RowDefinition Height="Auto"/>   <!-- 3: Overlay Labels -->
-                            <RowDefinition Height="Auto"/> <!-- 4: TDP Text (Shifted up) -->
-                            <RowDefinition Height="Auto"/> <!-- 5: TDP Slider -->
-                            <RowDefinition Height="Auto"/>   <!-- 6: CPU Boost -->
-                            <RowDefinition Height="Auto"/> <!-- 7: CPU EPP Text -->
-                            <RowDefinition Height="Auto"/>   <!-- 8: CPU EPP Slider -->
-                            <RowDefinition Height="Auto"/>   <!-- 9: Limit CPU Clock -->
-                            <RowDefinition Height="Auto"/>   <!-- 10: CPU Clock Slider -->
-                            <RowDefinition Height="Auto"/> <!-- 11: FPS Limit Text -->
-                            <RowDefinition Height="Auto"/>   <!-- 12: FPS Limit Slider -->
-                            <RowDefinition Height="Auto"/> <!-- 13: FPS Judder Free Markers -->
-                            <RowDefinition Height="Auto"/> <!-- 14: Judder Free FPS -->
-                            <RowDefinition Height="Auto"/> <!-- 15: Limiter Mode (RTSS) -->
+                            <RowDefinition Height="Auto"/> <!-- 4: FPS Limit Text -->
+                            <RowDefinition Height="Auto"/>   <!-- 5: FPS Limit Slider -->
+                            <RowDefinition Height="Auto"/>   <!-- 6: FPS Judder Free Slider -->
+                            <RowDefinition Height="Auto"/> <!-- 7: FPS Judder Free Markers -->
+                            <RowDefinition Height="Auto"/> <!-- 8: Judder Free FPS -->
+                            <RowDefinition Height="Auto"/> <!-- 9: Limiter Mode (RTSS) -->
+                            <RowDefinition Height="Auto"/>   <!-- 10: CPU Boost -->
+                            <RowDefinition Height="Auto"/> <!-- 11: CPU EPP Text -->
+                            <RowDefinition Height="Auto"/>   <!-- 12: CPU EPP Slider -->
+                            <RowDefinition Height="Auto"/>   <!-- 13: Limit CPU Clock -->
+                            <RowDefinition Height="Auto"/>   <!-- 14: CPU Clock Slider -->
                         </Grid.RowDefinitions>
 
                         <TextBlock x:Name="PerformanceOverlayText" Text="Performance Overlay" FontWeight="SemiBold"  FontSize="18" Grid.Row="0"/>
@@ -101,11 +99,6 @@
                             <TextBlock Text="ALL"      Grid.Column="4" HorizontalAlignment="Center" FontSize="16"/>
                         </Grid>
 
-                        <Grid Grid.Row="4" Visibility="Collapsed" x:Name="TDPHeaderGrid">
-                            <TextBlock x:Name="TDPLimitText" Text="Thermal Power (TDP) Limit" FontWeight="Normal" FontSize="18" Grid.Row="0"/>
-                            <TextBlock x:Name="TDPValueText" Text="{Binding ElementName=TDPSlider, Path=Value, Converter={StaticResource WattStringConverter}}" 
-                                VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                        </Grid>
                         <Grid Grid.Row="4">
                             <TextBlock x:Name="FPSLimitText" Text="Frame Limiter" FontWeight="SemiBold" FontSize="18"
                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" HorizontalAlignment="Left" VerticalAlignment="Center"/>
@@ -153,14 +146,7 @@
                                 <ComboBoxItem Content="NVIDIA Reflex"/>
                             </ComboBox>
                         </Grid>
-                        <Slider x:Name="TDPSlider" Grid.Row="10"
-                            Minimum="4" Maximum="32"
-                            TickFrequency="1"
-                            SnapsTo="Ticks"
-                            TickPlacement="BottomRight"
-                            IsEnabled="False"
-                            Visibility="Collapsed"/>
-                        <Grid Grid.Row="11">
+                        <Grid Grid.Row="10">
                             <TextBlock x:Name="CPUBoostText" Text="CPU Boost" FontWeight="SemiBold" FontSize="18"
                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                             <ToggleSwitch x:Name="CPUBoostToggle" IsEnabled="False" OffContent="Disabled" OnContent="Aggressive"
@@ -168,7 +154,7 @@
                                 XYFocusUp="{Binding ElementName=LimitFPSToggle}"
                                 XYFocusDown="{Binding ElementName=SetCPUEPPToggle}"/>
                         </Grid>
-                        <Grid Grid.Row="12">
+                        <Grid Grid.Row="11">
                             <TextBlock x:Name="CPUEPPText" Text="Energy Pref (EPP)" FontWeight="SemiBold" FontSize="18"
                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                             <ToggleSwitch x:Name="SetCPUEPPToggle" IsEnabled="False" OffContent="Disabled" OnContent="{Binding ElementName=CPUEPPSlider, Path=Value}"
@@ -176,7 +162,7 @@
                                 XYFocusUp="{Binding ElementName=CPUBoostToggle}"
                                 XYFocusDown="{Binding ElementName=CPUEPPSlider}"/>
                         </Grid>
-                        <Slider x:Name="CPUEPPSlider" Grid.Row="13"
+                        <Slider x:Name="CPUEPPSlider" Grid.Row="12"
                             Minimum="10" Maximum="95"
                             TickFrequency="5"
                             SnapsTo="Ticks"
@@ -185,7 +171,7 @@
                             Visibility="{Binding ElementName=SetCPUEPPToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"
                             XYFocusUp="{Binding ElementName=SetCPUEPPToggle}"
                             XYFocusDown="{Binding ElementName=LimitCPUClockToggle}"/>
-                        <Grid Grid.Row="14">
+                        <Grid Grid.Row="13">
                             <TextBlock x:Name="LimitCPUClockText" Text="Limit CPU Clock" FontWeight="SemiBold" FontSize="18"
                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                             <ToggleSwitch x:Name="LimitCPUClockToggle" IsEnabled="False" OffContent="Disabled" OnContent="{Binding ElementName=CPUClockMaxSlider, Path=Value, Converter={StaticResource MegahertzStringConverter}}"
@@ -193,7 +179,7 @@
                                 XYFocusUp="{Binding ElementName=SetCPUEPPToggle}"
                                 XYFocusDown="{Binding ElementName=CPUClockMaxSlider}"/>
                         </Grid>
-                        <Slider x:Name="CPUClockMaxSlider" Grid.Row="15"
+                        <Slider x:Name="CPUClockMaxSlider" Grid.Row="14"
                             Minimum="300" Maximum="5100"
                             TickFrequency="100"
                             SnapsTo="Ticks"

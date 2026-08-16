@@ -142,10 +142,6 @@ namespace XboxGamingBarHelper
                 properties = new HelperProperties(
                     systemManager.RunningGame,
                     onScreenDisplay,
-                    hardwareManager.MinTDP,
-                    hardwareManager.MaxTDP,
-                    hardwareManager.TDPControlSupport,
-                    hardwareManager.TDP,
                     profileManager.PerGameProfile,
                     powerManager.CPUBoost,
                     powerManager.CPUEPP,
@@ -187,7 +183,6 @@ namespace XboxGamingBarHelper
                 systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;
                 systemManager.ResumeFromSleep += SystemManager_ResumeFromSleep;
                 profileManager.PerGameProfile.PropertyChanged += PerGameProfile_PropertyChanged;
-                hardwareManager.TDP.PropertyChanged += TDP_PropertyChanged;
                 powerManager.CPUBoost.PropertyChanged += CPUBoost_PropertyChanged;
                 powerManager.CPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
                 powerManager.SetCPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
@@ -407,7 +402,6 @@ namespace XboxGamingBarHelper
             if (profileManager.CurrentProfile.Use || profileManager.CurrentProfile.IsGlobalProfile)
             {
                 Logger.Info($"Profile changed to {profileManager.CurrentProfile.GameId.Name}, apply it.");
-                hardwareManager.TDP.SetValue(profileManager.CurrentProfile.TDP);
                 powerManager.CPUBoost.SetValue(profileManager.CurrentProfile.CPUBoost);
                 powerManager.SetCPUEPP.SetValue(profileManager.CurrentProfile.SetCPUEPP);
                 powerManager.CPUEPP.SetValue(profileManager.CurrentProfile.CPUEPP);
@@ -446,12 +440,6 @@ namespace XboxGamingBarHelper
                 gameProfile = profileManager.GlobalProfile;
             }
             profileManager.CurrentProfile.SetValue(gameProfile);
-        }
-
-        private static void TDP_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s TDP from {profileManager.CurrentProfile.TDP} to {hardwareManager.TDP}.");
-            profileManager.CurrentProfile.TDP = hardwareManager.TDP;
         }
 
         private static void UpdateCurrentProfileFPSLimit()

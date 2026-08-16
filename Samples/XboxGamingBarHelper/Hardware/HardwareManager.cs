@@ -1,4 +1,4 @@
-﻿
+
 using NLog;
 using System;
 //using System.Collections;
@@ -84,7 +84,6 @@ namespace XboxGamingBarHelper.Hardware
         private readonly Device device;
 
         private readonly IHardwareProvider hardwareProvider;
-        private readonly IntPtr ryzenAdjHandle;
 
         public CPUUsageSensor CPUUsage { get; }
         public CPUClockSensor CPUClock { get; }
@@ -110,30 +109,6 @@ namespace XboxGamingBarHelper.Hardware
         public BatteryChargeRateSensor BatteryChargeRate { get; }
 
         private readonly List<HardwareSensor> hardwareSensors;
-
-        private readonly TDPProperty tdp;
-        public TDPProperty TDP
-        {
-            get { return tdp; }
-        }
-
-        private readonly MinTDPProperty minTDP;
-        public MinTDPProperty MinTDP
-        {
-            get { return minTDP; }
-        }
-
-        private readonly MaxTDPProperty maxTDP;
-        public MaxTDPProperty MaxTDP
-        {
-            get { return maxTDP; }
-        }
-
-        private readonly TDPControlSupportProperty tdpControlSupport;
-        public TDPControlSupportProperty TDPControlSupport
-        {
-            get { return tdpControlSupport; }
-        }
 
         internal HardwareManager(AppServiceConnection connection) : base(connection)
         {
@@ -202,47 +177,11 @@ namespace XboxGamingBarHelper.Hardware
 
             foreach (var sensor in CPUCoreUsages) hardwareSensors.Add(sensor);
             foreach (var sensor in CPUCoreClocks) hardwareSensors.Add(sensor);
-
-            var initialTDP = 25;
-#if !STORE
-            ryzenAdjHandle = RyzenAdj.init_ryzenadj();
-            if (ryzenAdjHandle == IntPtr.Zero)
-            {
-                Logger.Error("RyzenAdj initialized failed.");
-                tdpControlSupport = new TDPControlSupportProperty(false, this);
-            }
-            else
-            {
-                RyzenAdj.refresh_table(ryzenAdjHandle);
-                // RyzenAdj.set_fast_limit(ryzenAdjHandle, 30000);
-                initialTDP = (int)RyzenAdj.get_stapm_limit(ryzenAdjHandle);
-                Logger.Info($"RyzenAdj initialized successfully at {initialTDP}W.");
-                tdpControlSupport = new TDPControlSupportProperty(true, this);
-            }
-#else
-            Logger.Info("RyzenAdj is disabled due to Microsoft Store restrictions.");
-            tdpControlSupport = new TDPControlSupportProperty(false, this);
-#endif
-
-            minTDP = new MinTDPProperty(device.GetMinTDP(), this);
-            maxTDP = new MaxTDPProperty(device.GetMaxTDP(), this);
-            tdp = new TDPProperty(initialTDP, null, this);
         }
 
         public override void Update()
         {
             base.Update();
-
-            /*if (ryzenAdjHandle != IntPtr.Zero)
-            {
-                Logger.Info($"get_core_clk={RyzenAdj.get_core_clk(ryzenAdjHandle, 0)} get_core_power={RyzenAdj.get_core_power(ryzenAdjHandle, 0)} get_fclk={RyzenAdj.get_fclk(ryzenAdjHandle)} get_gfx_clk={RyzenAdj.get_gfx_clk(ryzenAdjHandle)} get_soc_power={RyzenAdj.get_soc_power(ryzenAdjHandle)} get_socket_power={RyzenAdj.get_socket_power(ryzenAdjHandle)}");
-                var setMaxResult = RyzenAdj.set_max_gfxclk_freq(ryzenAdjHandle, 2000);
-                var setMinResult = RyzenAdj.set_min_gfxclk_freq(ryzenAdjHandle, 1000);
-                //var nan2 = float.NaN;
-                //var setResult = RyzenAdj.set_gfx_clk(ryzenAdjHandle, (uint)nan2);
-                
-                Logger.Info($"set_max={setMaxResult} set_min={setMinResult} set={"123"}");
-            }*/
 
             hardwareProvider.Update();
 
@@ -272,35 +211,6 @@ namespace XboxGamingBarHelper.Hardware
             BatteryRemainingTime.Value = hardwareProvider.GetBatteryRemainingTime();
             BatteryDischargeRate.Value = hardwareProvider.GetBatteryDischargeRate();
             BatteryChargeRate.Value = hardwareProvider.GetBatteryChargeRate();
-        }
-
-        public int GetTDP()
-        {
-            if (ryzenAdjHandle == IntPtr.Zero)
-            {
-                Logger.Info("RyzenAdj not initialized");
-                return 10;
-            }
-
-            RyzenAdj.refresh_table(ryzenAdjHandle);
-            return (int)RyzenAdj.get_stapm_limit(ryzenAdjHandle);
-        }
-
-        public void SetTDP(int tdp)
-        {
-            if (ryzenAdjHandle == IntPtr.Zero)
-            {
-                Logger.Info("RyzenAdj not initialized");
-                return;
-            }
-            //RyzenAdj.refresh_table(ryzenAdjHandle);
-            RyzenAdj.set_fast_limit(ryzenAdjHandle, (uint)((tdp + 10) * 1000));
-            RyzenAdj.set_slow_limit(ryzenAdjHandle, (uint)((tdp + 5) * 1000));
-            RyzenAdj.set_stapm_limit(ryzenAdjHandle, (uint)(tdp * 1000));
-#if DEBUG
-            RyzenAdj.refresh_table(ryzenAdjHandle);
-            Logger.Info($"Set TDP to {tdp}, current TDP is {RyzenAdj.get_fast_limit(ryzenAdjHandle)}");
-#endif
         }
     }
 }

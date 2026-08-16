@@ -4,9 +4,6 @@ namespace Shared.Enums
     {
         None = 0,
         OSD,
-        MinTDP,
-        MaxTDP,
-        TDP,
         RunningGame,
         PerGameProfile,
         CPUBoost,
@@ -43,7 +40,6 @@ namespace Shared.Enums
         Settings_OnScreenDisplayProvider,
         Settings_OnScreenDisplayProviderInstalled,
 
-        Support_TDPControl,
         Support_PerformanceOverlay,
         Support_AMDSettings,
         LosslessScalingShortcut,

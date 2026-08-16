@@ -45,21 +45,6 @@ namespace Shared.Data
             }
         }
 
-        [XmlElement("TDP")]
-        private int tdp;
-        public int TDP
-        {
-            get { return tdp; }
-            set
-            {
-                if (tdp != value)
-                {
-                    tdp = value;
-                    Save();
-                }
-            }
-        }
-
         [XmlElement("CPUBoost")]
         private bool cpuBoost;
         public bool CPUBoost
@@ -183,7 +168,6 @@ namespace Shared.Data
         {
             GameId = new GameId(options.GameName, options.GamePath);
             use = options.InUse;
-            tdp = options.TDP;
             cpuBoost = options.CPUBoost;
             cpuEPP = options.CPUEPP;
             setCPUEPP = options.SetCPUEPP;

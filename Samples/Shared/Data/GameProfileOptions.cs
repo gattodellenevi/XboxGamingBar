@@ -7,7 +7,6 @@ namespace Shared.Data
         public string GameName { get; set; }
         public string GamePath { get; set; }
         public bool InUse { get; set; }
-        public int TDP { get; set; }
         public bool CPUBoost { get; set; }
         public int CPUEPP { get; set; }
         public bool SetCPUEPP { get; set; }
@@ -25,7 +24,6 @@ namespace Shared.Data
                 GameName = string.Empty,
                 GamePath = string.Empty,
                 InUse = true,
-                TDP = 25,
                 CPUBoost = true,
                 CPUEPP = 80,
                 SetCPUEPP = false,

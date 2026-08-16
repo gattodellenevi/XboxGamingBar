@@ -10,18 +10,6 @@ namespace XboxGamingBarHelper.Profile
         {
         }
 
-        public int TDP
-        {
-            get { return value.TDP; }
-            set
-            {
-                if (this.value.TDP != value)
-                {
-                    this.value.TDP = value;
-                }
-            }
-        }
-
         public bool CPUBoost
         {
             get { return value.CPUBoost; }
