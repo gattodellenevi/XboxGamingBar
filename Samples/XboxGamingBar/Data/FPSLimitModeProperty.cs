@@ -7,11 +7,14 @@ namespace XboxGamingBar.Data
 {
     internal class FPSLimitModeProperty : WidgetControlProperty<int, ComboBox>
     {
+        private bool isUpdatingFromBackend = false;
+
         public FPSLimitModeProperty(ComboBox inUI, Page inOwner) : base(0, Function.FPSLimitMode, inUI, inOwner)
         {
             if (UI != null)
             {
-                UI.SelectionChanged += ComboBox_SelectionChanged;
+                UI.DropDownClosed += ComboBox_DropDownClosed;
+                WidgetComboBoxSelectionProperty<int>.AttachNavigationHandler(UI);
                 if (UI.SelectedIndex < 0)
                 {
                     UI.SelectedIndex = 0;
@@ -19,10 +22,13 @@ namespace XboxGamingBar.Data
             }
         }
 
-        private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void ComboBox_DropDownClosed(object sender, object e)
         {
-            if (UI.SelectedIndex >= 0)
+            if (isUpdatingFromBackend) return;
+
+            if (UI != null && UI.SelectedIndex >= 0 && UI.SelectedIndex != Value)
             {
+                Logger.Info($"{Function} combo box dropdown closed, applying new mode {UI.SelectedIndex}.");
                 SetValue(UI.SelectedIndex);
             }
         }
@@ -31,9 +37,20 @@ namespace XboxGamingBar.Data
         {
             base.NotifyPropertyChanged(propertyName);
 
-            if (UI != null && UI.SelectedIndex != Value)
+            if (UI != null && UI.SelectedIndex != Value && Owner != null)
             {
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { UI.SelectedIndex = Value; });
+                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    isUpdatingFromBackend = true;
+                    try
+                    {
+                        UI.SelectedIndex = Value;
+                    }
+                    finally
+                    {
+                        isUpdatingFromBackend = false;
+                    }
+                });
             }
         }
     }
