@@ -47,6 +47,7 @@
     <AppxBundlePlatforms>x86|x64</AppxBundlePlatforms>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
     <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
+    <AppxLogTelemetryFromSideloadingScript>false</AppxLogTelemetryFromSideloadingScript>
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
     <EntryPointProjectUniqueName>..\XboxGamingBar\CouchGameBar.csproj</EntryPointProjectUniqueName>
     <PackageCertificateKeyFile>CouchGamingBarPackage_TemporaryKey.pfx</PackageCertificateKeyFile>
