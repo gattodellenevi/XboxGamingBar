@@ -134,8 +134,7 @@
                 <!-- Profile Switch -->
                 <ToggleSwitch x:Name="PerGameProfileToggle" Grid.Column="2" IsEnabled="False" 
                               OffContent="Global" OnContent="Per-game"
-                              VerticalAlignment="Center" HorizontalAlignment="Right"
-                              XYFocusDown="{Binding ElementName=MainPivot}"/>
+                              VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
         </Border>
 
@@ -194,39 +193,29 @@
                                             <Button x:Name="OSDLevel0Button" Grid.Column="0" Content="OFF" Tag="0" 
                                                     Style="{StaticResource SegmentedButtonStyle}" Click="OSDLevelButton_Click"
                                                     IsEnabled="{Binding ElementName=PerformanceOverlaySlider, Path=IsEnabled}"
-                                                    XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
-                                                    XYFocusDown="{Binding ElementName=LimitFPSToggle}"
                                                     XYFocusRight="{Binding ElementName=OSDLevel1Button}"/>
 
                                             <Button x:Name="OSDLevel1Button" Grid.Column="1" Content="FPS" Tag="1" 
                                                     Style="{StaticResource SegmentedButtonStyle}" Click="OSDLevelButton_Click"
                                                     IsEnabled="{Binding ElementName=PerformanceOverlaySlider, Path=IsEnabled}"
-                                                    XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
-                                                    XYFocusDown="{Binding ElementName=LimitFPSToggle}"
                                                     XYFocusLeft="{Binding ElementName=OSDLevel0Button}"
                                                     XYFocusRight="{Binding ElementName=OSDLevel2Button}"/>
 
                                             <Button x:Name="OSDLevel2Button" Grid.Column="2" Content="DETAIL" Tag="2" 
                                                     Style="{StaticResource SegmentedButtonStyle}" Click="OSDLevelButton_Click"
                                                     IsEnabled="{Binding ElementName=PerformanceOverlaySlider, Path=IsEnabled}"
-                                                    XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
-                                                    XYFocusDown="{Binding ElementName=LimitFPSToggle}"
                                                     XYFocusLeft="{Binding ElementName=OSDLevel1Button}"
                                                     XYFocusRight="{Binding ElementName=OSDLevel3Button}"/>
 
                                             <Button x:Name="OSDLevel3Button" Grid.Column="3" Content="FULL" Tag="3" 
                                                     Style="{StaticResource SegmentedButtonStyle}" Click="OSDLevelButton_Click"
                                                     IsEnabled="{Binding ElementName=PerformanceOverlaySlider, Path=IsEnabled}"
-                                                    XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
-                                                    XYFocusDown="{Binding ElementName=LimitFPSToggle}"
                                                     XYFocusLeft="{Binding ElementName=OSDLevel2Button}"
                                                     XYFocusRight="{Binding ElementName=OSDLevel4Button}"/>
 
                                             <Button x:Name="OSDLevel4Button" Grid.Column="4" Content="ALL" Tag="4" 
                                                     Style="{StaticResource SegmentedButtonStyle}" Click="OSDLevelButton_Click"
                                                     IsEnabled="{Binding ElementName=PerformanceOverlaySlider, Path=IsEnabled}"
-                                                    XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
-                                                    XYFocusDown="{Binding ElementName=LimitFPSToggle}"
                                                     XYFocusLeft="{Binding ElementName=OSDLevel3Button}"/>
                                         </Grid>
                                     </Border>
@@ -266,9 +255,7 @@
                                         </StackPanel>
                                         <ToggleSwitch x:Name="LimitFPSToggle" IsEnabled="False" 
                                             OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=OSDLevel0Button}"
-                                            XYFocusDown="{Binding ElementName=FPSLimitSlider}"/>
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                     </Grid>
 
                                     <!-- Expanded Frame Limiter Settings -->
@@ -280,9 +267,7 @@
                                             TickFrequency="1"
                                             SnapsTo="Ticks"
                                             TickPlacement="BottomRight"
-                                            IsEnabled="False"
-                                            XYFocusUp="{Binding ElementName=LimitFPSToggle}"
-                                            XYFocusDown="{Binding ElementName=JudderFreeFPSToggle}"/>
+                                            IsEnabled="False"/>
 
                                         <Slider x:Name="FPSLimitJudderFreeSlider"
                                             Minimum="0" Maximum="1"
@@ -304,9 +289,7 @@
                                                 <TextBlock Text="Snap slider to refresh rate divisors" Style="{StaticResource SubtitleTextStyle}"/>
                                             </StackPanel>
                                             <ToggleSwitch x:Name="JudderFreeFPSToggle" OffContent="All" OnContent="Judder Free"
-                                                VerticalAlignment="Center" HorizontalAlignment="Right"
-                                                XYFocusUp="{Binding ElementName=FPSLimitSlider}"
-                                                XYFocusDown="{Binding ElementName=FPSLimitModeComboBox}"/>
+                                                VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                         </Grid>
 
                                         <!-- Limiter Mode ComboBox -->
@@ -315,9 +298,7 @@
                                                 <TextBlock x:Name="FPSLimitModeText" Text="Limiter Mode" FontWeight="Normal" FontSize="14"/>
                                                 <TextBlock Text="RTSS frame synchronization method" Style="{StaticResource SubtitleTextStyle}"/>
                                             </StackPanel>
-                                            <ComboBox x:Name="FPSLimitModeComboBox" SelectedIndex="0" HorizontalAlignment="Right" VerticalAlignment="Center" Width="140" IsEnabled="False"
-                                                XYFocusUp="{Binding ElementName=JudderFreeFPSToggle}"
-                                                XYFocusDown="{Binding ElementName=CPUBoostToggle}">
+                                            <ComboBox x:Name="FPSLimitModeComboBox" SelectedIndex="0" HorizontalAlignment="Right" VerticalAlignment="Center" Width="140" IsEnabled="False">
                                                 <ComboBoxItem Content="Async"/>
                                                 <ComboBoxItem Content="Front Edge Sync"/>
                                                 <ComboBoxItem Content="Back Edge Sync"/>
@@ -328,7 +309,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- SECTION: CPU POWER & TUNING -->
+                            <!-- SECTION: CPU POWER & CLOCKS -->
                             <TextBlock Text="CPU POWER &amp; CLOCKS" Style="{StaticResource SectionHeaderTextStyle}"/>
 
                             <Border Style="{StaticResource SettingsCardStyle}">
@@ -347,9 +328,7 @@
                                             <TextBlock Text="Dynamic core clock frequency boosting" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="CPUBoostToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=LimitFPSToggle}"
-                                            XYFocusDown="{Binding ElementName=SetCPUEPPToggle}"/>
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                     </Grid>
 
                                     <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
@@ -368,9 +347,7 @@
                                             <TextBlock Text="Balance performance vs power efficiency" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="SetCPUEPPToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=CPUBoostToggle}"
-                                            XYFocusDown="{Binding ElementName=CPUEPPSlider}"/>
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                     </Grid>
 
                                     <Slider x:Name="CPUEPPSlider"
@@ -380,9 +357,7 @@
                                         TickPlacement="BottomRight"
                                         IsEnabled="False"
                                         Margin="0,6,0,0"
-                                        Visibility="{Binding ElementName=SetCPUEPPToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        XYFocusUp="{Binding ElementName=SetCPUEPPToggle}"
-                                        XYFocusDown="{Binding ElementName=LimitCPUClockToggle}"/>
+                                        Visibility="{Binding ElementName=SetCPUEPPToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
                                     <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
 
@@ -400,9 +375,7 @@
                                             <TextBlock Text="Cap maximum CPU frequency in MHz" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="LimitCPUClockToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=SetCPUEPPToggle}"
-                                            XYFocusDown="{Binding ElementName=CPUClockMaxSlider}"/>
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                     </Grid>
 
                                     <Slider x:Name="CPUClockMaxSlider"
@@ -412,8 +385,7 @@
                                         TickPlacement="BottomRight"
                                         IsEnabled="False"
                                         Margin="0,6,0,0"
-                                        Visibility="{Binding ElementName=LimitCPUClockToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        XYFocusUp="{Binding ElementName=LimitCPUClockToggle}"/>
+                                        Visibility="{Binding ElementName=LimitCPUClockToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -442,9 +414,7 @@
                                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
                                             <TextBlock Text="Active display refresh rate (Hz)" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
-                                        <ComboBox x:Name="RefreshRatesComboBox" PlaceholderText="60 Hz" Width="140" IsEnabled="False" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
-                                            XYFocusDown="{Binding ElementName=ResolutionsComboBox}">
+                                        <ComboBox x:Name="RefreshRatesComboBox" PlaceholderText="60 Hz" Width="140" IsEnabled="False" HorizontalAlignment="Right">
                                             <x:String>60 Hz</x:String>
                                         </ComboBox>
                                     </Grid>
@@ -457,9 +427,7 @@
                                                 TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
                                             <TextBlock Text="Active screen display resolution" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
-                                        <ComboBox x:Name="ResolutionsComboBox" PlaceholderText="1920x1080" Width="140" IsEnabled="False" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=RefreshRatesComboBox}"
-                                            XYFocusDown="{Binding ElementName=LosslessScalingBindingButton}">
+                                        <ComboBox x:Name="ResolutionsComboBox" PlaceholderText="1920x1080" Width="140" IsEnabled="False" HorizontalAlignment="Right">
                                             <x:String>1920x1080</x:String>
                                         </ComboBox>
                                     </Grid>
@@ -476,8 +444,7 @@
                                             TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
                                         <TextBlock Text="Hold gamepad combo to toggle frame generation" Style="{StaticResource SubtitleTextStyle}"/>
                                     </StackPanel>
-                                    <Button x:Name="LosslessScalingBindingButton" Content="None" Width="140" HorizontalAlignment="Right" Click="LosslessScalingBindingButton_Click"
-                                        XYFocusUp="{Binding ElementName=ResolutionsComboBox}"/>
+                                    <Button x:Name="LosslessScalingBindingButton" Content="None" Width="140" HorizontalAlignment="Right" Click="LosslessScalingBindingButton_Click"/>
                                 </Grid>
                             </Border>
                         </StackPanel>
@@ -522,9 +489,7 @@
                                             <TextBlock Text="Spatial upscaling with sharpening filter" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDRadeonSuperResolutionToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=PerGameProfileToggle}"
-                                            XYFocusDown="{Binding ElementName=AMDRadeonSuperResolutionSharpnessSlider}"/>
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                     </Grid>
                                     <Slider x:Name="AMDRadeonSuperResolutionSharpnessSlider"
                                         Minimum="0" Maximum="100"
@@ -533,9 +498,7 @@
                                         TickPlacement="BottomRight"
                                         IsEnabled="False"
                                         Margin="0,6,0,0"
-                                        Visibility="{Binding ElementName=AMDRadeonSuperResolutionToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        XYFocusUp="{Binding ElementName=AMDRadeonSuperResolutionToggle}"
-                                        XYFocusDown="{Binding ElementName=AMDFluidMotionFrameToggle}"/>
+                                        Visibility="{Binding ElementName=AMDRadeonSuperResolutionToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
 
                                     <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
 
@@ -553,9 +516,7 @@
                                             <TextBlock Text="Optical flow driver-level frame generation" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDFluidMotionFrameToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=AMDRadeonSuperResolutionToggle}"
-                                            XYFocusDown="{Binding ElementName=AMDRadeonAntiLagToggle}"/>
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -587,9 +548,7 @@
                                             <TextBlock Text="Paces CPU work to minimize input latency" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDRadeonAntiLagToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=AMDFluidMotionFrameToggle}"
-                                            XYFocusDown="{Binding ElementName=AMDRadeonBoostToggle}"/>
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                     </Grid>
 
                                     <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
@@ -608,9 +567,7 @@
                                             <TextBlock Text="Dynamic resolution during fast camera motion" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDRadeonBoostToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=AMDRadeonAntiLagToggle}"
-                                            XYFocusDown="{Binding ElementName=AMDRadeonBoostResolutionSlider}"/>
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                     </Grid>
                                     <Slider x:Name="AMDRadeonBoostResolutionSlider"
                                         Minimum="0" Maximum="1"
@@ -619,9 +576,7 @@
                                         TickPlacement="BottomRight"
                                         IsEnabled="False"
                                         Margin="0,6,0,0"
-                                        Visibility="{Binding ElementName=AMDRadeonBoostToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                        XYFocusUp="{Binding ElementName=AMDRadeonBoostToggle}"
-                                        XYFocusDown="{Binding ElementName=AMDRadeonChillToggle}"/>
+                                        Visibility="{Binding ElementName=AMDRadeonBoostToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                 </StackPanel>
                             </Border>
 
@@ -645,9 +600,7 @@
                                             <TextBlock Text="Power-saving dynamic FPS regulation" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                         <ToggleSwitch x:Name="AMDRadeonChillToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"
-                                            XYFocusUp="{Binding ElementName=AMDRadeonBoostToggle}"
-                                            XYFocusDown="{Binding ElementName=AMDRadeonChillMinFPSSlider}"/>
+                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
                                     </Grid>
                                     
                                     <StackPanel Visibility="{Binding ElementName=AMDRadeonChillToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,8,0,0">
@@ -660,9 +613,7 @@
                                             TickFrequency="5"
                                             SnapsTo="Ticks"
                                             TickPlacement="BottomRight"
-                                            IsEnabled="False"
-                                            XYFocusUp="{Binding ElementName=AMDRadeonChillToggle}"
-                                            XYFocusDown="{Binding ElementName=AMDRadeonChillMaxFPSSlider}"/>
+                                            IsEnabled="False"/>
                                             
                                         <TextBlock x:Name="AMDRadeonChillMaxFPSText" Text="{Binding ElementName=AMDRadeonChillMaxFPSSlider, Path=Value, Converter={StaticResource RadeonChillMaxFPSStringConverter}}"
                                             HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Margin="0,4,0,0"/>
@@ -671,8 +622,7 @@
                                             TickFrequency="5"
                                             SnapsTo="Ticks"
                                             TickPlacement="BottomRight"
-                                            IsEnabled="False"
-                                            XYFocusUp="{Binding ElementName=AMDRadeonChillMinFPSSlider}"/>
+                                            IsEnabled="False"/>
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
@@ -702,8 +652,7 @@
                                         <TextBlock Text="Open NVIDIA App / GeForce Experience overlay" Style="{StaticResource SubtitleTextStyle}"/>
                                     </StackPanel>
                                     <Button x:Name="LaunchNvidiaAppButton" Content="Open" Width="140" HorizontalAlignment="Right" Click="LaunchNvidiaAppButton_Click"
-                                        Background="#76B900" Foreground="Black" FontWeight="Bold" CornerRadius="6"
-                                        XYFocusUp="{Binding ElementName=PerGameProfileToggle}"/>
+                                        Background="#76B900" Foreground="Black" FontWeight="Bold" CornerRadius="6"/>
                                 </Grid>
                             </Border>
                         </StackPanel>
