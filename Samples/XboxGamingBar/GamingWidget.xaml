@@ -433,20 +433,6 @@
                                     </Grid>
                                 </StackPanel>
                             </Border>
-
-                            <!-- SECTION: KEY BINDINGS -->
-                            <TextBlock Text="CONTROLLER SHORTCUTS" Style="{StaticResource SectionHeaderTextStyle}"/>
-
-                            <Border Style="{StaticResource SettingsCardStyle}">
-                                <Grid Margin="0,2,0,2">
-                                    <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                        <TextBlock Text="Lossless Scaling" FontWeight="SemiBold" FontSize="15"
-                                            TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
-                                        <TextBlock Text="Hold gamepad combo to toggle frame generation" Style="{StaticResource SubtitleTextStyle}"/>
-                                    </StackPanel>
-                                    <Button x:Name="LosslessScalingBindingButton" Content="None" Width="140" HorizontalAlignment="Right" Click="LosslessScalingBindingButton_Click"/>
-                                </Grid>
-                            </Border>
                         </StackPanel>
                     </ScrollViewer>
                 </PivotItem>

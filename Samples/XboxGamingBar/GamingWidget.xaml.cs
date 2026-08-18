@@ -66,7 +66,6 @@ namespace XboxGamingBar
         private readonly OnScreenDisplayProviderInstalledProperty onScreenDisplayProviderInstalled;
         private readonly IsForegroundProperty isForeground;
         private readonly FocusingOnOSDSliderProperty focusingOnOSDSlider;
-        private readonly LosslessScalingShortcutProperty losslessScalingShortcut;
 
         // AMD properties
         private readonly AMDSettingsSupportedProperty amdSettingsSupported;
@@ -85,15 +84,11 @@ namespace XboxGamingBar
         private readonly AMDRadeonChillMinFPSProperty amdRadeonChillMinFPSProperty;
         private readonly AMDRadeonChillMaxFPSProperty amdRadeonChillMaxFPSProperty;
 
-        private readonly IsListeningForKeyBindingProperty isListeningForKeyBinding;
         private readonly FPSLimitProperty fpsLimit;
         private readonly FPSLimitModeProperty fpsLimitMode;
         private readonly JudderFreeFPSProperty judderFreeFPS;
 
         private readonly WidgetProperties properties;
-
-        //private bool isListeningForKeyBinding = false;
-        private bool isFirstKeyCaptured = false;
 
         public GamingWidget()
         {
@@ -131,8 +126,6 @@ namespace XboxGamingBar
             amdRadeonChillMinFPSProperty = new AMDRadeonChillMinFPSProperty(AMDRadeonChillMinFPSSlider, this);
             amdRadeonChillMaxFPSProperty = new AMDRadeonChillMaxFPSProperty(AMDRadeonChillMaxFPSSlider, this);
             focusingOnOSDSlider = new FocusingOnOSDSliderProperty(PerformanceOverlaySlider, this);
-            isListeningForKeyBinding = new IsListeningForKeyBindingProperty();
-            losslessScalingShortcut = new LosslessScalingShortcutProperty(LosslessScalingBindingButton, new List<int>());
             limitFPS = new LimitFPSProperty(LimitFPSToggle, this);
             fpsLimit = new FPSLimitProperty(60, FPSLimitSlider, this);
             fpsLimitMode = new FPSLimitModeProperty(FPSLimitModeComboBox, this);
@@ -191,8 +184,6 @@ namespace XboxGamingBar
                 amdRadeonChillMinFPSProperty,
                 amdRadeonChillMaxFPSProperty,
                 focusingOnOSDSlider,
-                isListeningForKeyBinding,
-                losslessScalingShortcut,
                 limitFPS,
                 fpsLimit,
                 fpsLimitMode,
@@ -200,74 +191,10 @@ namespace XboxGamingBar
             );
 
             this.KeyDown += GamingWidget_KeyDown;
-            this.MainPivot.SelectionChanged += MainPivot_SelectionChanged;
-            this.LosslessScalingBindingButton.LostFocus += LosslessScalingBindingButton_LostFocus;
-        }
-
-        private void LosslessScalingBindingButton_LostFocus(object sender, RoutedEventArgs e)
-        {
-            CancelListening();
-        }
-
-        private void MainPivot_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            CancelListening();
-        }
-
-        private void CancelListening()
-        {
-            if (isListeningForKeyBinding)
-            {
-                isListeningForKeyBinding.SetValue(false);
-                if (!isFirstKeyCaptured)
-                {
-                    losslessScalingShortcut.RefreshUI();
-                }
-                LosslessScalingBindingButton.IsEnabled = true;
-            }
         }
 
         private void GamingWidget_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (isListeningForKeyBinding)
-            {
-                // Capture the gamepad key
-                if (e.Key.ToString().Contains("Gamepad"))
-                {
-                    // Allow navigation if no key has been captured yet? 
-                    // Or prioritize capturing. Let's allow DPad/Stick navigation to cancel listening.
-                    if (e.Key == VirtualKey.GamepadDPadUp || e.Key == VirtualKey.GamepadDPadDown || 
-                        e.Key == VirtualKey.GamepadDPadLeft || e.Key == VirtualKey.GamepadDPadRight ||
-                        e.Key == VirtualKey.GamepadLeftThumbstickUp || e.Key == VirtualKey.GamepadLeftThumbstickDown ||
-                        e.Key == VirtualKey.GamepadLeftThumbstickLeft || e.Key == VirtualKey.GamepadLeftThumbstickRight)
-                    {
-                        CancelListening();
-                        return; // Let the event bubble up for navigation
-                    }
-
-                    List<int> keys;
-                    if (!isFirstKeyCaptured)
-                    {
-                        keys = new List<int>();
-                        isFirstKeyCaptured = true;
-                    }
-                    else
-                    {
-                        keys = new List<int>(losslessScalingShortcut.Value);
-                    }
-
-                    if (!keys.Contains((int)e.Key))
-                    {
-                        keys.Add((int)e.Key);
-                        losslessScalingShortcut.SetValue(keys);
-                    }
-                    e.Handled = true;
-                    // We stop listening after a short delay
-                    StopListeningWithDelay();
-                }
-                return;
-            }
-
             if (e.Key == VirtualKey.GamepadLeftTrigger || e.Key == VirtualKey.GamepadLeftShoulder)
             {
                 NavigatePivot(-1);
@@ -278,25 +205,6 @@ namespace XboxGamingBar
                 NavigatePivot(1);
                 e.Handled = true;
             }
-        }
-
-        private async void StopListeningWithDelay()
-        {
-            int currentKeyCount = losslessScalingShortcut.Value.Count;
-            await Task.Delay(1000);
-            if (losslessScalingShortcut.Value.Count == currentKeyCount && isListeningForKeyBinding)
-            {
-                isListeningForKeyBinding.SetValue(false);
-                LosslessScalingBindingButton.IsEnabled = true;
-            }
-        }
-
-        private void LosslessScalingBindingButton_Click(object sender, RoutedEventArgs e)
-        {
-            isListeningForKeyBinding.SetValue(true);
-            isFirstKeyCaptured = false;
-            
-            StartListeningTimeout();
         }
 
         private async void LaunchNvidiaAppButton_Click(object sender, RoutedEventArgs e)
@@ -360,26 +268,6 @@ namespace XboxGamingBar
                         buttons[i].FontWeight = Windows.UI.Text.FontWeights.SemiBold;
                     }
                 }
-            }
-        }
-
-        private async void StartListeningTimeout()
-        {
-            // Give the user 5 seconds to press any gamepad key
-            for (int i = 5; i > 0; i--)
-            {
-                if (!isListeningForKeyBinding || isFirstKeyCaptured)
-                {
-                    return;
-                }
-                LosslessScalingBindingButton.Content = i.ToString();
-                await Task.Delay(1000);
-            }
-
-            if (isListeningForKeyBinding && !isFirstKeyCaptured)
-            {
-                isListeningForKeyBinding.SetValue(false);
-                losslessScalingShortcut.RefreshUI();
             }
         }
 

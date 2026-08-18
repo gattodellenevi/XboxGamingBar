@@ -19,6 +19,7 @@
 * **Expected CPU Baseline**: Normal baseline CPU usage for `CouchGamingBarHelper.exe` is **< 0.5% average** (0.0%–0.2% idle, 0.1%–1.0% with active OSD/telemetry).
 * **Main Loop Pacing**: Default main loop delay is 500ms (`Task.Delay(500)` in `Program.cs`).
 * **CPU Reduction Strategies**:
+  * **XInput Shortcut Polling Removed**: Background XInput polling loop (~60Hz `InputManager`) has been completely removed from `CouchGamingBarHelper.exe` to eliminate idle controller polling overhead.
   * **Increase Loop Delay**: Increase `Task.Delay(500)` to `1000ms`+ in `Program.cs` to halve telemetry query frequency.
   * **Adaptive Sleep / Dynamic Polling Rate**: Use longer delay (e.g. `3000ms`) when idle (no active game/OSD) and `1000ms` when gaming or OSD is enabled.
   * **Conditional Telemetry Updates**: Skip `hardwareProvider.Update()` in `HardwareManager.cs` if `onScreenDisplayLevel == 0` and no UWP app service is connected.

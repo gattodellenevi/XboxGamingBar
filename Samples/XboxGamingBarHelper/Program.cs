@@ -12,7 +12,6 @@ using System.Windows.Forms;
 using XboxGamingBarHelper.AMD;
 using XboxGamingBarHelper.Core;
 using XboxGamingBarHelper.Hardware;
-using XboxGamingBarHelper.Input;
 using XboxGamingBarHelper.Nvidia;
 using XboxGamingBarHelper.OnScreenDisplay;
 using XboxGamingBarHelper.Power;
@@ -37,7 +36,6 @@ namespace XboxGamingBarHelper
         private static AMDManager amdManager;
         private static NvidiaManager nvidiaManager;
         private static SettingsManager settingsManager;
-        private static InputManager inputManager;
         private static List<IManager> Managers;
         private static AppServiceConnectionStatus appServiceConnectionStatus;
 
@@ -121,8 +119,6 @@ namespace XboxGamingBarHelper
                 amdManager = new AMDManager(connection);
                 Logger.Info("Initialize NVIDIA Manager.");
                 nvidiaManager = new NvidiaManager(connection);
-                Logger.Info("Initialize Input Manager.");
-                inputManager = new InputManager(connection);
                 
                 Managers = new List<IManager>
                 {
@@ -133,8 +129,7 @@ namespace XboxGamingBarHelper
                     powerManager,
                     amdManager,
                     nvidiaManager,
-                    settingsManager,
-                    inputManager
+                    settingsManager
                 };
 
                 Logger.Info("Initialize properties.");
@@ -160,7 +155,6 @@ namespace XboxGamingBarHelper
                     systemManager.TrackedGame,
                     settingsManager.OnScreenDisplayProviderInstalled,
                     settingsManager.IsForeground,
-                    settingsManager.IsListeningForKeyBinding,
                     amdManager.AMDSettingsSupported,
                     amdManager.AMDRadeonSuperResolutionEnabled,
                     amdManager.AMDRadeonSuperResolutionSupported,
@@ -178,7 +172,6 @@ namespace XboxGamingBarHelper
                     amdManager.AMDRadeonChillMaxFPS,
                     amdManager.FocusingOnOSDSlider,
                     settingsManager.OnScreenDisplayProvider,
-                    settingsManager.LosslessScalingShortcut,
                     nvidiaManager.LaunchNvidiaApp,
                     rtssManager.LimitFPS,
                     rtssManager.FPSLimit,

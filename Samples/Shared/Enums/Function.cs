@@ -42,8 +42,6 @@ namespace Shared.Enums
 
         Support_PerformanceOverlay,
         Support_AMDSettings,
-        LosslessScalingShortcut,
-        IsListeningForKeyBinding,
         LaunchNvidiaApp,
         AppExit = 100
     }
