@@ -1,4 +1,4 @@
-﻿using Microsoft.Win32;
+using Microsoft.Win32;
 using Shared.Enums;
 using Shared.Utilities;
 using System;
@@ -682,8 +682,18 @@ namespace XboxGamingBarHelper.AMD
             }
         }
 
+        private static Tuple<int, int> _cachedMetricsProfile = new Tuple<int, int>(0, 0);
+        private static DateTime _lastMetricsCheck = DateTime.MinValue;
+
         private static Tuple<int, int> ReadCurrentMetricsProfile()
         {
+            var now = DateTime.UtcNow;
+            if ((now - _lastMetricsCheck).TotalMilliseconds < 1000)
+            {
+                return _cachedMetricsProfile;
+            }
+            _lastMetricsCheck = now;
+
             try
             {
                 using (RegistryKey subKey = AMD_PERFORMANCE_KEY_ROOT.OpenSubKey(AMD_PERFORMANCE_KEY_PATH))
@@ -698,7 +708,8 @@ namespace XboxGamingBarHelper.AMD
                             var stateValue = (int)stateObject;
                             if (stateValue == 0)
                             {
-                                return new Tuple<int, int>(0, 0);
+                                _cachedMetricsProfile = new Tuple<int, int>(0, 0);
+                                return _cachedMetricsProfile;
                             }
                             else
                             {
@@ -707,31 +718,36 @@ namespace XboxGamingBarHelper.AMD
                                 {
                                     Logger.Debug($"Value of {AMD_PERFORMANCE_PROFILE_KEY_NAME} is {profileObject} of type {profileObject.GetType().Name}");
                                     var profileValue = (int)profileObject;
-                                    return new Tuple<int, int>(stateValue, profileValue);
+                                    _cachedMetricsProfile = new Tuple<int, int>(stateValue, profileValue);
+                                    return _cachedMetricsProfile;
                                 }
                                 else
                                 {
-                                    return new Tuple<int, int>(stateValue, 0);
+                                    _cachedMetricsProfile = new Tuple<int, int>(stateValue, 0);
+                                    return _cachedMetricsProfile;
                                 }
                             }
                         }
                         else
                         {
                             Logger.Warn($"Value '{AMD_PERFORMANCE_STATE_KEY_NAME}' not found in '{AMD_PERFORMANCE_KEY_PATH}'.");
-                            return new Tuple<int, int>(0, 0);
+                            _cachedMetricsProfile = new Tuple<int, int>(0, 0);
+                            return _cachedMetricsProfile;
                         }
                     }
                     else
                     {
                         Logger.Warn($"Registry key '{AMD_PERFORMANCE_KEY_PATH}' not found.");
-                        return new Tuple<int, int>(0, 0);
+                        _cachedMetricsProfile = new Tuple<int, int>(0, 0);
+                        return _cachedMetricsProfile;
                     }
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error($"An error occurred: {ex.Message}");
-                return new Tuple<int, int>(0, 0);
+                _cachedMetricsProfile = new Tuple<int, int>(0, 0);
+                return _cachedMetricsProfile;
             }
         }
 

@@ -1,7 +1,8 @@
-﻿using NLog;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -55,6 +56,34 @@ namespace XboxGamingBarHelper.Windows
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
         private static readonly List<string> ProtectedProcesses = new List<string>() { "parsecd", "Taskmgr" };
+
+        private struct CachedProcessInfo
+        {
+            public string ProcessName;
+            public string ExecutablePath;
+            public bool IsProtected;
+
+            public CachedProcessInfo(string processName, string executablePath, bool isProtected)
+            {
+                ProcessName = processName;
+                ExecutablePath = executablePath;
+                IsProtected = isProtected;
+            }
+        }
+
+        private static readonly Dictionary<int, CachedProcessInfo> ProcessCache = new Dictionary<int, CachedProcessInfo>();
+        private static readonly HashSet<int> CurrentScanPids = new HashSet<int>();
+
+        private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, int processId);
+
+        [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern bool QueryFullProcessImageName(IntPtr hProcess, int flags, StringBuilder lpExeName, ref int lpdwSize);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern bool CloseHandle(IntPtr hObject);
 
         [DllImport("user32.dll")]
         private static extern IntPtr GetForegroundWindow();
@@ -128,6 +157,84 @@ namespace XboxGamingBarHelper.Windows
             return sb.ToString();
         }
 
+        private static bool GetProcessInfo(int processId, out CachedProcessInfo info)
+        {
+            if (ProcessCache.TryGetValue(processId, out info))
+            {
+                return true;
+            }
+
+            string processName = string.Empty;
+            string executablePath = string.Empty;
+            bool isProtected = false;
+
+            IntPtr hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
+            if (hProcess != IntPtr.Zero)
+            {
+                try
+                {
+                    var sb = new StringBuilder(1024);
+                    int capacity = sb.Capacity;
+                    if (QueryFullProcessImageName(hProcess, 0, sb, ref capacity))
+                    {
+                        executablePath = sb.ToString();
+                        try
+                        {
+                            processName = Path.GetFileNameWithoutExtension(executablePath);
+                        }
+                        catch
+                        {
+                            processName = string.Empty;
+                        }
+                    }
+                }
+                finally
+                {
+                    CloseHandle(hProcess);
+                }
+            }
+
+            // Fallback to managed Process if native query didn't yield a path or process name (e.g. system kernel processes)
+            if (string.IsNullOrEmpty(executablePath) || string.IsNullOrEmpty(processName))
+            {
+                try
+                {
+                    using (var process = Process.GetProcessById(processId))
+                    {
+                        if (string.IsNullOrEmpty(processName))
+                        {
+                            processName = process.ProcessName;
+                        }
+
+                        if (string.IsNullOrEmpty(executablePath))
+                        {
+                            try
+                            {
+                                executablePath = process.MainModule?.FileName ?? string.Empty;
+                            }
+                            catch
+                            {
+                                // Suppress access denied on protected processes
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // Process may have already exited
+                }
+            }
+
+            if (!string.IsNullOrEmpty(processName))
+            {
+                isProtected = ProtectedProcesses.Contains(processName);
+            }
+
+            info = new CachedProcessInfo(processName, executablePath, isProtected);
+            ProcessCache[processId] = info;
+            return true;
+        }
+
         public static void GetOpenWindows(IDictionary<int, ProcessWindow> windows)
         {
             var shellWindow = GetShellWindow();
@@ -140,6 +247,8 @@ namespace XboxGamingBarHelper.Windows
             {
                 windows.Clear();
             }
+
+            CurrentScanPids.Clear();
 
             EnumWindows(delegate (IntPtr hWnd, int lParam)
             {
@@ -164,25 +273,40 @@ namespace XboxGamingBarHelper.Windows
                     return true; // Continue enumeration
                 }
 
-                var process = Process.GetProcessById(processId);
-                if (ProtectedProcesses.Contains(process.ProcessName))
+                CurrentScanPids.Add(processId);
+
+                if (!GetProcessInfo(processId, out var procInfo))
                 {
-                    Logger.Debug($"Ignore protected process {process.ProcessName}");
                     return true;
                 }
 
-                var fileName = string.Empty;
-                try
+                if (procInfo.IsProtected)
                 {
-                    fileName = process.MainModule.FileName;
+                    Logger.Debug($"Ignore protected process {procInfo.ProcessName}");
+                    return true;
                 }
-                catch (Exception e)
-                {
-                    Logger.Warn($"Can't get file name {e.Message} of process {process.ProcessName}.");
-                }
-                windows[processId] = new ProcessWindow(processId, hWnd, windowTitle, process.ProcessName, fileName, processId == foregroundWindowProcessId);
+
+                windows[processId] = new ProcessWindow(processId, hWnd, windowTitle, procInfo.ProcessName, procInfo.ExecutablePath, processId == foregroundWindowProcessId);
                 return true; // Continue enumeration
             }, 0);
+
+            // Prune cache if it grows large or contains dead PIDs (keep memory footprint tiny and prevent PID recycling collisions)
+            if (ProcessCache.Count > 100)
+            {
+                var stalePids = new List<int>();
+                foreach (var kvp in ProcessCache)
+                {
+                    if (!CurrentScanPids.Contains(kvp.Key))
+                    {
+                        stalePids.Add(kvp.Key);
+                    }
+                }
+
+                foreach (var stalePid in stalePids)
+                {
+                    ProcessCache.Remove(stalePid);
+                }
+            }
         }
 
         private const int ENUM_CURRENT_SETTINGS = -1;

@@ -22,6 +22,7 @@
   * **XInput Shortcut Polling Removed**: Background XInput polling loop (~60Hz `InputManager`) has been completely removed from `CouchGamingBarHelper.exe` to eliminate idle controller polling overhead.
   * **Increase Loop Delay**: Increase `Task.Delay(500)` to `1000ms`+ in `Program.cs` to halve telemetry query frequency.
   * **Adaptive Sleep / Dynamic Polling Rate**: Use longer delay (e.g. `3000ms`) when idle (no active game/OSD) and `1000ms` when gaming or OSD is enabled.
+  * **Process Path Caching / Native Query**: Cache `PID -> ExecutablePath` in `User32.GetOpenWindows()` (or use native `QueryFullProcessImageName`) to avoid repeatedly creating `Process` objects and querying `MainModule` every loop cycle.
   * **Conditional Telemetry Updates**: Skip `hardwareProvider.Update()` in `HardwareManager.cs` if `onScreenDisplayLevel == 0` and no UWP app service is connected.
   * **NLog Disk Logging Verbosity**: Set `NLog.config` to `Info`/`Warn` to avoid disk I/O CPU spikes.
   * **Disable OSD**: Set `OnScreenDisplay` level to 0 in settings when overlays are not needed to halt RTSS/ADLX buffer updates.
