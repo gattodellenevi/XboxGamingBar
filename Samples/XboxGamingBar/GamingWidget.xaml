@@ -154,11 +154,11 @@
                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" CharacterSpacing="30"/>
             </Border>
             
-            <Pivot x:Name="MainPivot" XYFocusKeyboardNavigation="Enabled" UseSystemFocusVisuals="True">
+            <Pivot x:Name="MainPivot" IsHeaderItemsCarouselEnabled="False" XYFocusKeyboardNavigation="Enabled" UseSystemFocusVisuals="True">
                 <!-- PERFORMANCE TAB -->
                 <PivotItem>
                     <PivotItem.Header>
-                        <StackPanel Orientation="Horizontal" Margin="25,0,0,0">
+                        <StackPanel Orientation="Horizontal" Margin="24,0,6,0">
                             <FontIcon Glyph="&#xE9D2;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
                             <TextBlock Text="Performance" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -395,7 +395,7 @@
                 <!-- SYSTEM TAB -->
                 <PivotItem>
                     <PivotItem.Header>
-                        <StackPanel Orientation="Horizontal" Margin="10,0,10,0">
+                        <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                             <FontIcon Glyph="&#xE770;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center"/>
                             <TextBlock Text="System" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -447,7 +447,7 @@
                 <!-- AMD SETTINGS TAB (Radeon Ruby Themed) -->
                 <PivotItem x:Name="AMDPivotItem" Visibility="Collapsed">
                     <PivotItem.Header>
-                        <StackPanel x:Name="AMDPivotItemStackPanel" Orientation="Horizontal" Margin="10,0,10,0" Visibility="Collapsed">
+                        <StackPanel x:Name="AMDPivotItemStackPanel" Orientation="Horizontal" Margin="6,0,6,0" Visibility="Collapsed">
                             <FontIcon Glyph="&#xE945;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource RadeonRubyBrush}"/>
                             <TextBlock Text="AMD" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
@@ -626,7 +626,7 @@
                 <!-- NVIDIA SETTINGS TAB (GeForce Green Themed) -->
                 <PivotItem x:Name="NvidiaPivotItem">
                     <PivotItem.Header>
-                        <StackPanel x:Name="NvidiaPivotItemStackPanel" Orientation="Horizontal" Margin="0,0,25,0">
+                        <StackPanel x:Name="NvidiaPivotItemStackPanel" Orientation="Horizontal" Margin="6,0,24,0">
                             <FontIcon Glyph="&#xE9D9;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource GeForceGreenBrush}"/>
                             <TextBlock Text="NVIDIA" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>

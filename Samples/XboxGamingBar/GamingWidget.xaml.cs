@@ -216,12 +216,12 @@ namespace XboxGamingBar
 
         private void GamingWidget_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key == VirtualKey.GamepadLeftTrigger || e.Key == VirtualKey.GamepadLeftShoulder)
+            if (e.Key == VirtualKey.GamepadLeftTrigger || e.Key == VirtualKey.GamepadLeftShoulder || e.Key == VirtualKey.PageUp)
             {
                 NavigatePivot(-1);
                 e.Handled = true;
             }
-            else if (e.Key == VirtualKey.GamepadRightTrigger || e.Key == VirtualKey.GamepadRightShoulder)
+            else if (e.Key == VirtualKey.GamepadRightTrigger || e.Key == VirtualKey.GamepadRightShoulder || e.Key == VirtualKey.PageDown)
             {
                 NavigatePivot(1);
                 e.Handled = true;
@@ -298,20 +298,18 @@ namespace XboxGamingBar
             if (count <= 1) return;
 
             int currentIndex = MainPivot.SelectedIndex;
-            int nextIndex = currentIndex;
+            int targetIndex = currentIndex + direction;
 
-            // Try to find the next visible PivotItem
-            for (int i = 0; i < count; i++)
+            // Linear navigation: Search in the given direction without circular wrapping
+            while (targetIndex >= 0 && targetIndex < count)
             {
-                nextIndex = (nextIndex + direction + count) % count;
-                if (MainPivot.Items[nextIndex] is PivotItem item && item.Visibility == Visibility.Visible)
+                if (MainPivot.Items[targetIndex] is PivotItem item && item.Visibility == Visibility.Visible)
                 {
-                    MainPivot.SelectedIndex = nextIndex;
+                    MainPivot.SelectedIndex = targetIndex;
                     break;
                 }
 
-                // If we've circled back to current, stop
-                if (nextIndex == currentIndex) break;
+                targetIndex += direction;
             }
         }
 
