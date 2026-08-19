@@ -99,6 +99,10 @@ namespace XboxGamingBarHelper.Systems
         private Dictionary<int, AppEntry> AppEntries { get; }
         private readonly Timer displayUpdateTimer;
 
+        private IntPtr lastForegroundHwnd = IntPtr.Zero;
+        private RunningGame lastDetectedGame = new RunningGame();
+        private DateTime lastWindowScanTime = DateTime.MinValue;
+
         public event ResumeFromSleepEventHandler ResumeFromSleep;
 
         public SystemManager(AppServiceConnection connection, IReadOnlyDictionary<GameId, GameProfile> profiles) : base(connection)
@@ -136,6 +140,22 @@ namespace XboxGamingBarHelper.Systems
 
         private RunningGame GetRunningGame()
         {
+            var foregroundHwnd = User32.GetForegroundWindow();
+            var now = DateTime.UtcNow;
+
+            // Fast-path: If foreground window hasn't changed, a game is running and alive, and within 3s heartbeat, skip full window enumeration
+            if (foregroundHwnd != IntPtr.Zero &&
+                foregroundHwnd == lastForegroundHwnd &&
+                lastDetectedGame.IsValid() &&
+                User32.IsProcessAlive(lastDetectedGame.ProcessId) &&
+                (now - lastWindowScanTime).TotalSeconds < 3.0)
+            {
+                return lastDetectedGame;
+            }
+
+            lastForegroundHwnd = foregroundHwnd;
+            lastWindowScanTime = now;
+
             try
             {
                 User32.GetOpenWindows(ProcessWindows);
@@ -225,12 +245,14 @@ namespace XboxGamingBarHelper.Systems
             if (possibleGames.Count == 0)
             {
                 Logger.Debug("Not found any game running.");
-                return new RunningGame();
+                lastDetectedGame = new RunningGame();
+                return lastDetectedGame;
             }
             else if (possibleGames.Count == 1)
             {
                 Logger.Debug($"Found single running game {possibleGames[0].GameId.Name}.");
-                return possibleGames[0];
+                lastDetectedGame = possibleGames[0];
+                return lastDetectedGame;
             }
             else
             {
@@ -240,7 +262,8 @@ namespace XboxGamingBarHelper.Systems
                     if (possibleGame.IsForeground)
                     {
                         Logger.Debug($"Found foreground running game {possibleGames[0].GameId.Name} in multiple running game.");
-                        return possibleGame;
+                        lastDetectedGame = possibleGame;
+                        return lastDetectedGame;
                     }
 
                     if (!highestFPSGame.IsValid())
@@ -254,7 +277,8 @@ namespace XboxGamingBarHelper.Systems
                 }
 
                 Logger.Debug($"Found highest FPS ({highestFPSGame.FPS}) game {highestFPSGame.GameId.Name} in multiple games.");
-                return highestFPSGame;
+                lastDetectedGame = highestFPSGame;
+                return lastDetectedGame;
             }
         }
 
