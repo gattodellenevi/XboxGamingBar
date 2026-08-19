@@ -191,6 +191,27 @@ namespace XboxGamingBar
             );
 
             this.KeyDown += GamingWidget_KeyDown;
+            InitializeAppVersion();
+        }
+
+        private void InitializeAppVersion()
+        {
+            string versionString;
+            try
+            {
+                var v = Package.Current.Id.Version;
+                versionString = $"v{v.Major}.{v.Minor}.{v.Build}";
+            }
+            catch
+            {
+                var v = typeof(GamingWidget).Assembly.GetName().Version;
+                versionString = $"v{v.Major}.{v.Minor}.{v.Build}";
+            }
+
+            if (AppVersionText != null)
+            {
+                AppVersionText.Text = $"CouchGameBar {versionString}";
+            }
         }
 
         private void GamingWidget_KeyDown(object sender, KeyRoutedEventArgs e)
