@@ -1,5 +1,3 @@
-﻿using Shared.Constants;
-using System;
 using System.Collections.Generic;
 using System.Drawing;
 using XboxGamingBarHelper.Hardware;
@@ -8,17 +6,13 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
 {
     internal class OSDItemBattery : OSDItem
     {
-        private HardwareSensor batteryPercentSensor;
         private HardwareSensor batteryDischargeRateSensor;
         private HardwareSensor batteryChargeRateSensor;
-        private HardwareSensor batteryRemainTimeSensor;
 
-        public OSDItemBattery(HardwareSensor batteryPercentSensor, HardwareSensor batteryDischargeRateSensor, HardwareSensor batteryChargeRateSensor, HardwareSensor batteryRemainTimeSensor) : base("BATT", Color.DarkSalmon)
+        public OSDItemBattery(HardwareSensor batteryDischargeRateSensor, HardwareSensor batteryChargeRateSensor) : base("BATT", Color.DarkSalmon)
         {
-            this.batteryPercentSensor = batteryPercentSensor;
             this.batteryDischargeRateSensor = batteryDischargeRateSensor;
             this.batteryChargeRateSensor = batteryChargeRateSensor;
-            this.batteryRemainTimeSensor = batteryRemainTimeSensor;
         }
 
         protected override List<OSDItemValue> GetValues(int osdLevel)
@@ -27,8 +21,6 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
 
             if (osdLevel >= 2)
             {
-                osdItems.Add(new OSDItemValue(batteryPercentSensor.Value, "%"));
-
                 if (batteryDischargeRateSensor.Value > 0)
                 {
                     osdItems.Add(new OSDItemValue(batteryDischargeRateSensor.Value, "W/H", "-"));
@@ -37,15 +29,6 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
                 if (batteryChargeRateSensor.Value > 0)
                 {
                     osdItems.Add(new OSDItemValue(batteryChargeRateSensor.Value, "W/H", "+"));
-                }
-
-                if (batteryRemainTimeSensor.Value > 0)
-                {
-                    var hours = (int) Math.Floor(batteryRemainTimeSensor.Value / MathConstants.SECONDS_PER_HOUR);
-                    var minutes = (int) Math.Floor((batteryRemainTimeSensor.Value - hours * MathConstants.SECONDS_PER_HOUR) / MathConstants.SECONDS_PER_MINUTE);
-                    osdItems.Add(new OSDItemValue(-1, $"{hours}<S=50> H<S> {minutes}<S=50> M<S>"));
-                    //osdItems.Add(new OSDItemValue((float)hours, "H"));
-                    //osdItems.Add(new OSDItemValue((float)minutes, "M"));
                 }
             }
 
