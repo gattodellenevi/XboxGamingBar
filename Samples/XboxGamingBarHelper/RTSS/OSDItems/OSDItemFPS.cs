@@ -9,7 +9,7 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
             formatter = formatter ?? SDRColorFormatter.Instance;
             var redColor = formatter.Format(Color.Red);
             var whiteColor = formatter.Format(Color.White);
-            return $"<C={redColor}><APP><C>{(osdLevel == 1 ? " " : (osdLevel == 2 ? "  " : "\t\t"))}<C={whiteColor}><FR><S=50> FPS<S><C>";
+            return $"<C={redColor}><APP><C>{(osdLevel == 1 ? " " : (osdLevel == 2 ? "  " : "\t\t"))}<C={whiteColor}><FR><S={RTSSManager.SubscriptFontScale}> FPS<S={RTSSManager.CurrentFontScale}><C>";
         }
     }
 }

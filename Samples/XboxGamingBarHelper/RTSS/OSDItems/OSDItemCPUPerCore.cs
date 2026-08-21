@@ -6,13 +6,21 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
 {
     internal class OSDItemCPUPerCore : OSDItem
     {
+        private readonly int coreIndex;
         private HardwareSensor cpuCoreUsageSensor;
         private HardwareSensor cpuCoreClockSensor;
 
-        public OSDItemCPUPerCore(int coreIndex, HardwareSensor cpuCoreUsageSensor, HardwareSensor cpuCoreClockSensor) : base($"CPU<S=50>{coreIndex}<S>", Color.Turquoise)
+        public OSDItemCPUPerCore(int coreIndex, HardwareSensor cpuCoreUsageSensor, HardwareSensor cpuCoreClockSensor) : base("CPU", Color.Turquoise)
         {
+            this.coreIndex = coreIndex;
             this.cpuCoreUsageSensor = cpuCoreUsageSensor;
             this.cpuCoreClockSensor = cpuCoreClockSensor;
+        }
+
+        protected override string GetNameString(IColorFormatter formatter = null)
+        {
+            formatter = formatter ?? SDRColorFormatter.Instance;
+            return $"<C={formatter.Format(baseColor)}>CPU<S={RTSSManager.SubscriptFontScale}>{coreIndex}<S={RTSSManager.CurrentFontScale}><C>";
         }
 
         protected override List<OSDItemValue> GetValues(int osdLevel)

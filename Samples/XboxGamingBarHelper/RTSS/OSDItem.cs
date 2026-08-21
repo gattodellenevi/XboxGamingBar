@@ -53,11 +53,11 @@ namespace XboxGamingBarHelper.RTSS
                 {
                     if (osdValue.ShouldFloorToInt)
                     {
-                        osdString += $"{osdValue.Prefix}{Math.Floor(osdValue.Value)}<S=50> {osdValue.Unit}<S>";
+                        osdString += $"{osdValue.Prefix}{Math.Floor(osdValue.Value)}<S={RTSSManager.SubscriptFontScale}> {osdValue.Unit}<S={RTSSManager.CurrentFontScale}>";
                     }
                     else
                     {
-                        osdString += $"{osdValue.Prefix}{osdValue.Value:F1}<S=50> {osdValue.Unit}<S>";
+                        osdString += $"{osdValue.Prefix}{osdValue.Value:F1}<S={RTSSManager.SubscriptFontScale}> {osdValue.Unit}<S={RTSSManager.CurrentFontScale}>";
                     }
                 }
 

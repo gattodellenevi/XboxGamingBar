@@ -77,11 +77,15 @@ namespace XboxGamingBarHelper.RTSS
 
             osdItems = osdItemsList.ToArray();
 
-            // Initial HDR detection & event subscription for zero-polling HDR state updates
+            // Initial HDR & display auto-scale detection, plus event subscription for zero-polling updates
             isHDRActive = HDRDetector.IsHDRActive();
             activeColorFormatter = isHDRActive ? (IColorFormatter)HDRColorFormatter.Instance : SDRColorFormatter.Instance;
+            UpdateAutoScale();
             SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
         }
+
+        public static int CurrentFontScale { get; private set; } = 100;
+        public static int SubscriptFontScale => Math.Max(25, (int)Math.Round(CurrentFontScale * 0.5));
 
         private void OnDisplaySettingsChanged(object sender, EventArgs e)
         {
@@ -91,6 +95,39 @@ namespace XboxGamingBarHelper.RTSS
                 isHDRActive = newHDRState;
                 activeColorFormatter = isHDRActive ? (IColorFormatter)HDRColorFormatter.Instance : SDRColorFormatter.Instance;
                 Logger.Info($"HDR state changed. New IsHDRActive: {isHDRActive}. Swapped RTSS color formatter.");
+            }
+
+            UpdateAutoScale();
+        }
+
+        private void UpdateAutoScale()
+        {
+            try
+            {
+                var (width, height) = User32.GetCurrentResolution();
+                if (height <= 0)
+                {
+                    height = 1080;
+                }
+
+                // Base resolution: 1080p = 100% scale
+                // 800p  -> ~74%
+                // 1080p -> 100%
+                // 1440p -> 133%
+                // 2160p (4K) -> 200%
+                int newScale = (int)Math.Round((height / 1080.0) * 100.0);
+                newScale = Math.Max(50, Math.Min(300, newScale));
+
+                if (newScale != CurrentFontScale)
+                {
+                    CurrentFontScale = newScale;
+                    Logger.Info($"Display resolution changed to {width}x{height}. Updated OSD font auto-scale to {CurrentFontScale}%.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to update OSD auto-scale.");
+                CurrentFontScale = 100;
             }
         }
 
@@ -180,7 +217,7 @@ namespace XboxGamingBarHelper.RTSS
                 }
             }
 
-            var osdString = onScreenDisplayLevel == 1 ? OSDSingleLineShortBackground : (onScreenDisplayLevel >= 3 ? OSDMultipleLinesBackground : OSDSingleLineFullwidthBackground);
+            var osdString = (onScreenDisplayLevel == 1 ? OSDSingleLineShortBackground : (onScreenDisplayLevel >= 3 ? OSDMultipleLinesBackground : OSDSingleLineFullwidthBackground)) + $"<S={CurrentFontScale}>";
             var needSeparator = false;
             var osdPadding = onScreenDisplayLevel >= 3 ? OSDNewLinePadding : string.Empty;
             var osdSeparator = onScreenDisplayLevel >= 3 ? OSDNewLine : GetVerticalLineSeparator();
