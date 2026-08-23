@@ -43,6 +43,7 @@ namespace Shared.Enums
         Support_PerformanceOverlay,
         Support_AMDSettings,
         LaunchNvidiaApp,
+        OSDTextSize,
         AppExit = 100
     }
 }

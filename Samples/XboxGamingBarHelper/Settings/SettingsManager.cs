@@ -6,6 +6,7 @@ using Windows.ApplicationModel.AppService;
 using Windows.Storage;
 using XboxGamingBarHelper.Core;
 using XboxGamingBarHelper.OnScreenDisplay;
+using XboxGamingBarHelper.RTSS;
 using XboxGamingBarHelper.Utilities;
 
 namespace XboxGamingBarHelper.Settings
@@ -82,6 +83,16 @@ namespace XboxGamingBarHelper.Settings
             onScreenDisplayProperty.PropertyChanged += PerformanceOverlayLevelChanged;
         }
 
+        private OSDTextSizeProperty osdTextSizePropertySettings;
+        public void SyncOnScreenDisplayTextSizeSettings(OSDTextSizeProperty osdTextSizeProperty)
+        {
+            if (osdTextSizePropertySettings != null)
+                osdTextSizePropertySettings.PropertyChanged -= PerformanceOverlayTextSizeChanged;
+            osdTextSizePropertySettings = osdTextSizeProperty;
+            osdTextSizeProperty.SetValue(setting.OnScreenDisplayTextSize > 0 ? setting.OnScreenDisplayTextSize : 100);
+            osdTextSizeProperty.PropertyChanged += PerformanceOverlayTextSizeChanged;
+        }
+
         private void OnScreenDisplayProviderChanged(object sender, PropertyChangedEventArgs e)
         {
             Logger.Info($"Save setting On-Screen Display Provider {onScreenDisplayProvider.Value}.");
@@ -102,6 +113,17 @@ namespace XboxGamingBarHelper.Settings
                 Logger.Info($"Save setting On-Screen Display {onScreenDisplayPropertySettings.Value}.");
 
                 setting.OnScreenDisplay = onScreenDisplayPropertySettings.Value;
+                XmlHelper.ToXMLFile(setting, settingsPath);
+            }
+        }
+
+        private void PerformanceOverlayTextSizeChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (osdTextSizePropertySettings != null)
+            {
+                Logger.Info($"Save setting On-Screen Display Text Size {osdTextSizePropertySettings.Value}.");
+
+                setting.OnScreenDisplayTextSize = osdTextSizePropertySettings.Value;
                 XmlHelper.ToXMLFile(setting, settingsPath);
             }
         }

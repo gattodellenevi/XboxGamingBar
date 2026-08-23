@@ -87,6 +87,7 @@ namespace XboxGamingBar
         private readonly FPSLimitProperty fpsLimit;
         private readonly FPSLimitModeProperty fpsLimitMode;
         private readonly JudderFreeFPSProperty judderFreeFPS;
+        private readonly OSDTextSizeProperty osdTextSize;
 
         private readonly WidgetProperties properties;
 
@@ -94,6 +95,7 @@ namespace XboxGamingBar
         {
             InitializeComponent();
             osd = new OSDProperty(0, PerformanceOverlaySlider, this);
+            osdTextSize = new OSDTextSizeProperty(100, OverlayTextSizeSlider, this);
             runningGame = new RunningGameProperty(RunningGameText, PerGameProfileToggle, this);
             perGameProfile = new PerGameProfileProperty(PerGameProfileToggle, this);
             cpuBoost = new CPUBoostProperty(CPUBoostToggle, this);
@@ -134,6 +136,7 @@ namespace XboxGamingBar
             JudderFreeFPSToggle.Toggled += JudderFreeFPSToggle_Toggled;
             LimitFPSToggle.Toggled += (s, e) => UpdateFPSLimitSliderJudderFree();
             FPSLimitJudderFreeSlider.ValueChanged += FPSLimitJudderFreeSlider_ValueChanged;
+            WidgetSliderProperty.AttachEngagementHandler(FPSLimitJudderFreeSlider);
             FPSLimitJudderFreeCanvas.SizeChanged += (s, e) => RenderJudderFreeMarkers();
             PerformanceOverlaySlider.ValueChanged += (s, e) => UpdateOSDSegmentedButtons((int)e.NewValue);
             UpdateOSDSegmentedButtons((int)PerformanceOverlaySlider.Value);
@@ -154,6 +157,7 @@ namespace XboxGamingBar
 
             properties = new WidgetProperties(
                 osd,
+                osdTextSize,
                 runningGame,
                 perGameProfile,
                 cpuBoost,

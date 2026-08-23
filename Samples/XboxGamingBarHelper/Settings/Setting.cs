@@ -11,10 +11,14 @@ namespace XboxGamingBarHelper.Settings
         [XmlElement("OnScreenDisplay")]
         public int OnScreenDisplay;
 
-        public Setting(int onScreenDisplayProvider, int onScreenDisplay)
+        [XmlElement("OnScreenDisplayTextSize")]
+        public int OnScreenDisplayTextSize;
+
+        public Setting(int onScreenDisplayProvider, int onScreenDisplay, int onScreenDisplayTextSize = 100)
         {
             OnScreenDisplayProvider = onScreenDisplayProvider;
             OnScreenDisplay = onScreenDisplay;
+            OnScreenDisplayTextSize = onScreenDisplayTextSize > 0 ? onScreenDisplayTextSize : 100;
         }
     }
 }

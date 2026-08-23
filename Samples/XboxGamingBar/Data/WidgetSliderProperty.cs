@@ -1,8 +1,10 @@
-﻿using System;
+using System;
 using Shared.Enums;
+using Windows.System;
 using Windows.UI.Core;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Controls.Primitives;
+using Windows.UI.Xaml.Input;
 
 namespace XboxGamingBar.Data
 {
@@ -13,20 +15,56 @@ namespace XboxGamingBar.Data
             if (UI != null)
             {
                 UI.ValueChanged += Slider_ValueChanged;
-                //UI.FocusDisengaged += Slider_FocusDisengaged;
-                //UI.FocusEngaged += Slider_FocusEngaged;
-                //UI.GettingFocus += Slider_GettingFocus;
-                //UI.GotFocus += Slider_GotFocus;
-                //UI.LosingFocus += Slider_LosingFocus;
-                //UI.LostFocus += Slider_LostFocus;
-                //UI.NoFocusCandidateFound += Slider_NoFocusCandidateFound;
-                //UI.DragEnter += Slider_DragEnter;
-                //UI.DragStarting += Slider_DragStarting;
-                //UI.DragOver += Slider_DragOver;
-                //UI.DragLeave += Slider_DragLeave;
+                AttachEngagementHandler(UI);
                 UI.Value = inValue;
             }
         }
+
+        internal static void AttachNavigationHandler(Slider slider)
+        {
+            if (slider == null) return;
+
+            slider.PreviewKeyDown += (sender, e) =>
+            {
+                if (sender is Slider s)
+                {
+                    switch (e.Key)
+                    {
+                        case VirtualKey.Up:
+                        case VirtualKey.GamepadDPadUp:
+                        case VirtualKey.GamepadLeftThumbstickUp:
+                            e.Handled = true;
+                            FocusManager.TryMoveFocus(FocusNavigationDirection.Up);
+                            break;
+
+                        case VirtualKey.Down:
+                        case VirtualKey.GamepadDPadDown:
+                        case VirtualKey.GamepadLeftThumbstickDown:
+                            e.Handled = true;
+                            FocusManager.TryMoveFocus(FocusNavigationDirection.Down);
+                            break;
+
+                        case VirtualKey.Left:
+                        case VirtualKey.GamepadDPadLeft:
+                        case VirtualKey.GamepadLeftThumbstickLeft:
+                            e.Handled = true;
+                            double stepLeft = s.StepFrequency > 0 ? s.StepFrequency : 1;
+                            s.Value = Math.Max(s.Minimum, s.Value - stepLeft);
+                            break;
+
+                        case VirtualKey.Right:
+                        case VirtualKey.GamepadDPadRight:
+                        case VirtualKey.GamepadLeftThumbstickRight:
+                            e.Handled = true;
+                            double stepRight = s.StepFrequency > 0 ? s.StepFrequency : 1;
+                            s.Value = Math.Min(s.Maximum, s.Value + stepRight);
+                            break;
+                    }
+                }
+            };
+        }
+
+        internal static void AttachEngagementHandler(Slider slider) => AttachNavigationHandler(slider);
 
         //private void Slider_NoFocusCandidateFound(Windows.UI.Xaml.UIElement sender, Windows.UI.Xaml.Input.NoFocusCandidateFoundEventArgs args)
         //{

@@ -34,6 +34,9 @@ namespace XboxGamingBarHelper.RTSS
         private readonly JudderFreeFPSProperty judderFreeFPS;
         public JudderFreeFPSProperty JudderFreeFPS => judderFreeFPS;
 
+        private readonly OSDTextSizeProperty osdTextSize;
+        public OSDTextSizeProperty OSDTextSize => osdTextSize;
+
         private const string OSDNewLine = "\n";
         private const string OSDNewLinePadding = " ";
         private const string OSDSingleLineShortBackground = "<M=8,4,8,4><P=0,0><L0><C=80000000><B=0,0>\b<C>";
@@ -55,6 +58,7 @@ namespace XboxGamingBarHelper.RTSS
             fpsLimitMode = new FPSLimitModeProperty(this);
             limitFPS = new LimitFPSProperty(false, this);
             judderFreeFPS = new JudderFreeFPSProperty(this);
+            osdTextSize = new OSDTextSizeProperty(100, this);
 
             var osdItemsList = new List<OSDItem>()
             {
@@ -84,8 +88,20 @@ namespace XboxGamingBarHelper.RTSS
             SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
         }
 
-        public static int CurrentFontScale { get; private set; } = 100;
-        public static int SubscriptFontScale => Math.Max(25, (int)Math.Round(CurrentFontScale * 0.5));
+        public static int UserTextSizePercent { get; set; } = 100;
+        public static int CurrentBaseAutoScale { get; private set; } = 100;
+        public static int CurrentFontScale => Math.Max(25, (int)Math.Round(CurrentBaseAutoScale * (UserTextSizePercent / 100.0)));
+        public static int SubscriptFontScale => Math.Max(20, (int)Math.Round(CurrentFontScale * 0.5));
+
+        public void SetTextSize(int size)
+        {
+            int clamped = Math.Max(50, Math.Min(200, size));
+            if (UserTextSizePercent != clamped)
+            {
+                UserTextSizePercent = clamped;
+                Logger.Info($"OSD text size set to {UserTextSizePercent}%. Effective font scale: {CurrentFontScale}%.");
+            }
+        }
 
         private void OnDisplaySettingsChanged(object sender, EventArgs e)
         {
@@ -115,19 +131,19 @@ namespace XboxGamingBarHelper.RTSS
                 // 1080p -> 100%
                 // 1440p -> 133%
                 // 2160p (4K) -> 200%
-                int newScale = (int)Math.Round((height / 1080.0) * 100.0);
-                newScale = Math.Max(50, Math.Min(300, newScale));
+                int newBaseScale = (int)Math.Round((height / 1080.0) * 100.0);
+                newBaseScale = Math.Max(50, Math.Min(300, newBaseScale));
 
-                if (newScale != CurrentFontScale)
+                if (newBaseScale != CurrentBaseAutoScale)
                 {
-                    CurrentFontScale = newScale;
-                    Logger.Info($"Display resolution changed to {width}x{height}. Updated OSD font auto-scale to {CurrentFontScale}%.");
+                    CurrentBaseAutoScale = newBaseScale;
+                    Logger.Info($"Display resolution changed to {width}x{height}. Base auto-scale: {CurrentBaseAutoScale}%. Effective font scale: {CurrentFontScale}%.");
                 }
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to update OSD auto-scale.");
-                CurrentFontScale = 100;
+                CurrentBaseAutoScale = 100;
             }
         }
 

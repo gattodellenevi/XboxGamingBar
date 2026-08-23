@@ -136,6 +136,7 @@ namespace XboxGamingBarHelper
                 onScreenDisplayProviders = new List<OnScreenDisplayManager>() { rtssManager, amdManager };
                 onScreenDisplay = new OnScreenDisplayProperty(settingsManager.Setting.OnScreenDisplay, null, onScreenDisplayProviders[settingsManager.OnScreenDisplayProvider]);
                 settingsManager.SyncOnScreenDisplaySettings(onScreenDisplay);
+                settingsManager.SyncOnScreenDisplayTextSizeSettings(rtssManager.OSDTextSize);
                 //onScreenDisplay = new OnScreenDisplayProperty(0, null, amdManager);
 
                 // Initialize properties.
@@ -176,7 +177,8 @@ namespace XboxGamingBarHelper
                     rtssManager.LimitFPS,
                     rtssManager.FPSLimit,
                     rtssManager.FPSLimitMode,
-                    rtssManager.JudderFreeFPS);
+                    rtssManager.JudderFreeFPS,
+                    rtssManager.OSDTextSize);
 
                 Logger.Info("Initialize callbacks.");
                 systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;
