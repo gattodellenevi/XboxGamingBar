@@ -16,7 +16,7 @@
   <mp:PhoneIdentity PhoneProductId="c2dd2cd0-7156-428e-b305-d3dd3505b10d" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>CouchGameBar</DisplayName>
+    <DisplayName>Couch Gaming Bar</DisplayName>
     <PublisherDisplayName>ZanchiSoft</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
@@ -34,7 +34,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="XboxGamingBar.App">
       <uap:VisualElements
-        DisplayName="CouchGameBar"
+        DisplayName="Couch Gaming Bar"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png"
         Description="Game Bar widget for changing system settings during game sessions with gamepad."
@@ -46,7 +46,7 @@
         <uap3:Extension Category="windows.appExtension">
           <uap3:AppExtension Name="microsoft.gameBarUIExtension"
                              Id="GamingWidget"
-                             DisplayName="CouchGameBar"
+                             DisplayName="CouchGamingBar"
                              Description="Game Bar widget for changing system settings during game sessions with gamepad."
                              PublicFolder="Assets">
             <uap3:Properties>
@@ -77,8 +77,8 @@
 		<uap3:Extension Category="windows.appExtension">
 			<uap3:AppExtension Name="microsoft.gameBarUIExtension"
 							Id="GamingWidgetSettings"
-							DisplayName="CouchGameBar Settings"
-							Description="CouchGameBar settings."
+							DisplayName="CouchGamingBar Settings"
+							Description="CouchGamingBar settings."
 							PublicFolder="Assets">
 				<uap3:Properties>
 					<GameBarWidget Type="Settings">

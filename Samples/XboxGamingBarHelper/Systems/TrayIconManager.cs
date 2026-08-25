@@ -40,7 +40,7 @@ namespace XboxGamingBarHelper.Systems
             {
                 Icon = SystemIcons.Application, // Fallback icon
                 ContextMenuStrip = contextMenu,
-                Text = "CouchGameBar Helper",
+                Text = "CouchGamingBar Helper",
                 Visible = true
             };
 

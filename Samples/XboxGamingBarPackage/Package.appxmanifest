@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -49,7 +49,7 @@
         <uap3:Extension Category="windows.appExtension">
           <uap3:AppExtension Name="microsoft.gameBarUIExtension"
                              Id="GamingWidget"
-                             DisplayName="CouchGameBar"
+                             DisplayName="CouchGamingBar"
                              Description="Game Bar widget for changing system settings during game sessions with gamepad."
                              PublicFolder="Images">
             <uap3:Properties>
@@ -80,8 +80,8 @@
         <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="microsoft.gameBarUIExtension"
                               Id="GamingWidgetSettings"
-                              DisplayName="CouchGameBar Settings"
-                              Description="CouchGameBar settings."
+                              DisplayName="CouchGamingBar Settings"
+                              Description="CouchGamingBar settings."
                               PublicFolder="Images">
               <uap3:Properties>
                 <GameBarWidget Type="Settings">

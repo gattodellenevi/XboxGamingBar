@@ -1,4 +1,4 @@
-# Project Rules & Guidelines for CouchGameBar / XboxGamingBar
+# Project Rules & Guidelines for CouchGamingBar / XboxGamingBar
 
 ## Task Scheduler & Autostart
 * When setting up autostart for `CouchGamingBarHelper.exe` via Windows Task Scheduler:
@@ -29,7 +29,7 @@
 
 ## WinRing0 & TDP Control Removal
 * **Permanent Removal**: TDP control, `RyzenAdj` (`libryzenadj.dll`), and `WinRing0` (`WinRing0x64.sys` / `WinRing0x64.dll` / `inpoutx64.dll`) have been completely removed from the project to eliminate all Windows Defender vulnerable driver blocklist warnings (CVE-2020-14979).
-* CPU power management in CouchGameBar now relies strictly on native Windows Power Scheme APIs (CPU Boost, Energy Performance Preference / EPP, and CPU Max Clock limits).
+* CPU power management in CouchGamingBar now relies strictly on native Windows Power Scheme APIs (CPU Boost, Energy Performance Preference / EPP, and CPU Max Clock limits).
 
 ## Package Installation & Streamlined Sideloading
 * **Post-Packaging Target**: `CouchGamingBarPackage.wapproj` invokes `Samples/Append-AutostartToInstaller.ps1` after `_CreateTestLayout` during MSIX packaging.

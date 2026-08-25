@@ -214,7 +214,7 @@ namespace XboxGamingBar
 
             if (AppVersionText != null)
             {
-                AppVersionText.Text = $"CouchGameBar {versionString}";
+                AppVersionText.Text = $"CouchGamingBar {versionString}";
             }
         }
 

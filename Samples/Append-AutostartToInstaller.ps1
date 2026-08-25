@@ -21,14 +21,14 @@ if (-not (Test-Path $AutostartScript)) {
 # Template for Install.cmd (double-clickable, auto-elevates, bypasses execution policy)
 $cmdContent = @"
 @echo off
-title CouchGameBar Installer
+title CouchGamingBar Installer
 cd /d "%~dp0"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& { if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Start-Process powershell.exe -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File \"\"%~dp0Install.ps1\"\"' -Verb RunAs } else { & \"%~dp0Install.ps1\" } }"
 "@
 
 # Template for streamlined, zero-prompt Install.ps1
 $installPs1Content = @'
-# Streamlined unattended installer for CouchGameBar
+# Streamlined unattended installer for CouchGamingBar
 [CmdletBinding()]
 param()
 
@@ -43,7 +43,7 @@ if (-not $isAdmin) {
 }
 
 Write-Host "=============================================" -ForegroundColor Cyan
-Write-Host "  Installing CouchGameBar                   " -ForegroundColor Cyan
+Write-Host "  Installing CouchGamingBar                   " -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 
 # 2. Install Developer Certificate to Trusted Root and Trusted People
@@ -126,7 +126,7 @@ try {
 } catch {}
 
 Write-Host "`n=============================================" -ForegroundColor Green
-Write-Host "  CouchGameBar installed successfully!       " -ForegroundColor Green
+Write-Host "  CouchGamingBar installed successfully!       " -ForegroundColor Green
 Write-Host "=============================================`n" -ForegroundColor Green
 Start-Sleep -Seconds 2
 '@

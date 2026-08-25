@@ -264,7 +264,8 @@ namespace XboxGamingBarHelper
                     var packages = packageManager.FindPackagesForUser(string.Empty);
                     foreach (var package in packages)
                     {
-                        if (package.Id.Name.Equals("CouchGameBar", StringComparison.OrdinalIgnoreCase))
+                        if (package.Id.Name.Equals("CouchGamingBar", StringComparison.OrdinalIgnoreCase) ||
+                            package.Id.Name.Equals("Zanchisoft.CouchGamingBar", StringComparison.OrdinalIgnoreCase))
                         {
                             packageFamilyName = package.Id.FamilyName;
                             Logger.Info($"Found installed package family name via PackageManager: {packageFamilyName}");
@@ -274,7 +275,7 @@ namespace XboxGamingBarHelper
                 }
                 catch (Exception pmEx)
                 {
-                    Logger.Error(pmEx, "Failed to query PackageManager for CouchGameBar package family name.");
+                    Logger.Error(pmEx, "Failed to query PackageManager for CouchGamingBar package family name.");
                 }
             }
 

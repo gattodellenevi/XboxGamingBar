@@ -20,7 +20,7 @@ namespace XboxGamingBarHelper.Utilities
             catch (Exception ex)
             {
                 Logger.Info($"ApplicationData.Current not available ({ex.Message}), falling back to LocalApplicationData directory.");
-                string fallbackFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchGameBar");
+                string fallbackFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CouchGamingBar");
                 Directory.CreateDirectory(fallbackFolder);
                 return fallbackFolder;
             }

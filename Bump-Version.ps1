@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Bumps version numbers across all CouchGameBar / XboxGamingBar manifests, C# project files, and assembly metadata.
+    Bumps version numbers across all CouchGamingBar / XboxGamingBar manifests, C# project files, and assembly metadata.
 
 .DESCRIPTION
     This script updates the version in:
@@ -42,7 +42,7 @@ $v4 = "$($parsedVersion.Major).$($parsedVersion.Minor).$build.$revision"
 $v3 = "$($parsedVersion.Major).$($parsedVersion.Minor).$build"
 
 Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "  CouchGameBar Version Bump Tool" -ForegroundColor Cyan
+Write-Host "  CouchGamingBar Version Bump Tool" -ForegroundColor Cyan
 Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host " Target 4-part version (Manifests/AssemblyInfo) : $v4" -ForegroundColor Green
 Write-Host " Target 3-part version (Csproj ApplicationVersion): $v3" -ForegroundColor Green

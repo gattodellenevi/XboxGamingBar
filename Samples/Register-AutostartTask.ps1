@@ -8,7 +8,7 @@ param (
 if ([string]::IsNullOrWhiteSpace($ExePath)) {
     # 1. Search for installed AppX/MSIX package executable
     try {
-        $packages = Get-AppxPackage | Where-Object { $_.Name -like "*CouchGameBar*" -or $_.Name -like "*XboxGamingBar*" -or $_.Name -like "*CouchGamingBar*" }
+        $packages = Get-AppxPackage | Where-Object { $_.Name -like "*CouchGamingBar*" -or $_.Name -like "*XboxGamingBar*" }
         foreach ($pkg in $packages) {
             if ($pkg.InstallLocation) {
                 $c1 = Join-Path $pkg.InstallLocation "CouchGamingBarHelper\CouchGamingBarHelper.exe"
