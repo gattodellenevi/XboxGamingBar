@@ -120,6 +120,7 @@
     <Compile Include="Data\PerGameProfileProperty.cs" />
     <Compile Include="Data\OSDProperty.cs" />
     <Compile Include="Data\AMDRadeonSuperResolutionSupportedProperty.cs" />
+    <Compile Include="Data\HelperElevationProperty.cs" />
     <Compile Include="Data\RefreshRateProperty.cs" />
     <Compile Include="Data\RefreshRatesProperty.cs" />
     <Compile Include="Data\OnScreenDisplayProviderInstalledProperty.cs" />

@@ -88,6 +88,7 @@ namespace XboxGamingBar
         private readonly FPSLimitModeProperty fpsLimitMode;
         private readonly JudderFreeFPSProperty judderFreeFPS;
         private readonly OSDTextSizeProperty osdTextSize;
+        private readonly HelperElevationProperty helperElevation;
 
         private readonly WidgetProperties properties;
 
@@ -107,6 +108,7 @@ namespace XboxGamingBar
             refreshRate = new RefreshRateProperty(RefreshRatesComboBox, this, FPSLimitSlider);
             resolutions = new ResolutionsProperty(ResolutionsComboBox, this);
             resolution = new ResolutionProperty(ResolutionsComboBox, this);
+            helperElevation = new HelperElevationProperty(HelperElevationBadge, HelperElevationBadgeText, HelperStatusSubtitleText, this);
             trackedGame = new TrackedGameProperty(new TrackedGame());
             onScreenDisplayProviderInstalled = new OnScreenDisplayProviderInstalledProperty(PerformanceOverlaySlider, this);
             isForeground = new IsForegroundProperty();
@@ -191,7 +193,8 @@ namespace XboxGamingBar
                 limitFPS,
                 fpsLimit,
                 fpsLimitMode,
-                judderFreeFPS
+                judderFreeFPS,
+                helperElevation
             );
 
             this.KeyDown += GamingWidget_KeyDown;
@@ -553,26 +556,7 @@ namespace XboxGamingBar
                 Logger.Info("Stopped widget activity.");
             }
 
-            //await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-            //{
-            //    Logger.Info("AppService disconnected, disable UI elements");
-            //    PerformanceOverlaySlider.IsEnabled = false;
-            //    PerGameProfileToggle.IsEnabled = false;
-            //    CPUBoostToggle.IsEnabled = false;
-            //    CPUEPPSlider.IsEnabled = false;
-            //    LimitCPUClockToggle.IsEnabled = false;
-            //    CPUClockMaxSlider.IsEnabled = false;
-            //    RefreshRatesComboBox.IsEnabled = false;
-            //    AMDRadeonSuperResolutionToggle.IsEnabled = false;
-            //    AMDRadeonSuperResolutionSharpnessSlider.IsEnabled = false;
-            //    AMDFluidMotionFrameToggle.IsEnabled = false;
-            //    AMDRadeonAntiLagToggle.IsEnabled = false;
-            //    AMDRadeonBoostToggle.IsEnabled = false;
-            //    AMDRadeonBoostResolutionSlider.IsEnabled = false;
-            //    AMDRadeonChillToggle.IsEnabled = false;
-            //    AMDRadeonChillMinFPSSlider.IsEnabled = false;
-            //    AMDRadeonChillMaxFPSSlider.IsEnabled = false;
-            //});
+            helperElevation?.SetDisconnectedState();
 
             var eventArgs = e as BackgroundTaskCancellationEventArgs;
             if (eventArgs != null && eventArgs.Reason != BackgroundTaskCancellationReason.Terminating)

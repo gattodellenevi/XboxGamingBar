@@ -16,25 +16,7 @@ namespace XboxGamingBarHelper.AMD
 
         public override bool On3DSettingsChanged(IADLX3DSettingsChangedEvent p3DSettingsChangedEvent)
         {
-            //try
-            //{
-            //    var p3DSettingsChangedEvent2 = (IADLX3DSettingsChangedEvent2)p3DSettingsChangedEvent;
-            //    Logger.Info($"AMD 3D settings changed event 2 {p3DSettingsChangedEvent2.IsAMDFluidMotionFramesChanged()}.");
-            //}
-            //catch (InvalidCastException)
-            //{
-            //    Logger.Info("AMD 3D settings changed event is not IADLX3DSettingsChangedEvent2.");
-            //}
-
-            //try
-            //{
-            //    var p3DSettingsChangedEvent1 = (IADLX3DSettingsChangedEvent1)p3DSettingsChangedEvent;
-            //    Logger.Info($"AMD 3D settings changed event 1 {p3DSettingsChangedEvent1.IsAMDFluidMotionFramesChanged()}.");
-            //}
-            //catch (InvalidCastException)
-            //{
-            //    Logger.Info("AMD 3D settings changed event is not IADLX3DSettingsChangedEvent1.");
-            //}
+         
 
             if (p3DSettingsChangedEvent.IsAntiLagChanged())
             {

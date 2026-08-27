@@ -71,3 +71,8 @@ Xbox Gaming Bar is 100% free and open source. It's built upon C#.
 Libraries used:
 - **[LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor)** for performance statistics overlay.
 
+## Privacy & License
+- [Privacy Policy](PRIVACY.md)
+- [MIT License](LICENSE)
+
+

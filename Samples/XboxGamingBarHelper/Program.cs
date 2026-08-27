@@ -178,7 +178,8 @@ namespace XboxGamingBarHelper
                     rtssManager.FPSLimit,
                     rtssManager.FPSLimitMode,
                     rtssManager.JudderFreeFPS,
-                    rtssManager.OSDTextSize);
+                    rtssManager.OSDTextSize,
+                    systemManager.HelperElevation);
 
                 Logger.Info("Initialize callbacks.");
                 systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;

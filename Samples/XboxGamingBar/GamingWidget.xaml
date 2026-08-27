@@ -460,6 +460,28 @@
                                 </StackPanel>
                             </Border>
 
+                            <!-- SECTION: HELPER SERVICE -->
+                            <TextBlock Text="HELPER SERVICE" Style="{StaticResource SectionHeaderTextStyle}"/>
+
+                            <Border Style="{StaticResource SettingsCardStyle}">
+                                <StackPanel>
+                                    <Grid Margin="0,2,0,2">
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock x:Name="HelperStatusTitleText" Text="Helper Process" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <Border x:Name="HelperElevationBadge" Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                        Background="#5A5A5A" BorderBrush="#5A5A5A">
+                                                    <TextBlock x:Name="HelperElevationBadgeText" Text="OFFLINE" 
+                                                               Style="{StaticResource ValueBadgeTextStyle}" Foreground="White"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock x:Name="HelperStatusSubtitleText" Text="Helper process is not running or disconnected" Style="{StaticResource SubtitleTextStyle}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
                             <!-- APPLICATION VERSION FOOTER -->
                             <StackPanel HorizontalAlignment="Center" Margin="0,24,0,8" Opacity="0.65">
                                 <TextBlock x:Name="AppVersionText" Text="CouchGamingBar" FontSize="11" 

@@ -19,18 +19,7 @@ namespace Shared.Data
         public ValueType Value
         {
             get { return  value; }
-            //set
-            //{
-            //    if (!EqualityComparer<ValueType>.Default.Equals(this.value, value))
-            //    {
-            //        this.value = value;
-            //        NotifyPropertyChanged();
-            //    }
-            //    else
-            //    {
-            //        Logger.Debug($"Property {GetType().Name} has same value, nothing changed.");
-            //    }
-            //}
+            
         }
 
         private long lastUpdatedTime;
@@ -211,50 +200,6 @@ namespace Shared.Data
             return true;
         }
 
-        //public override bool TrySetValue<InValueType>(InValueType newValue, long updatedTime)
-        //{
-        //    if (updatedTime < lastUpdatedTime)
-        //    {
-        //        Logger.Warn($"Skip value {value} because it is older than current value {updatedTime} vs {lastUpdatedTime}.");
-        //        return false;
-        //    }
-
-        //    if (typeof(ValueType).IsAssignableFrom(typeof(InValueType)))
-        //    {
-        //        var newValue = (ValueType)(object)value;
-
-        //        if (EqualityComparer<ValueType>.Default.Equals(value, newValue))
-        //        {
-        //            Logger.Warn($"Skip value {newValue} because it equals to current value.");
-        //            lastUpdatedTime = updatedTime;
-        //            return false;
-        //        }
-
-        //        return true;
-        //    }
-
-        //    Logger.Error($"Can't try set value {value} of type {typeof(InValueType).Name} to property {Function}");
-        //    return false;
-        //}
-
-        //public override bool TryGetValue<OutValueType>(out OutValueType value)
-        //{
-        //    if (typeof(OutValueType) == typeof(string))
-        //    {
-        //        value = (OutValueType)(object)Value.ToString();
-        //        return true;
-        //    }
-
-        //    if (typeof(OutValueType).IsAssignableFrom(typeof(ValueType)))
-        //    {
-        //        value = (OutValueType)(object)Value;
-        //        return true;
-        //    }
-
-        //    Logger.Error($"Can't try get value of type {typeof(OutValueType).Name} from property {Function}");
-        //    value = default;
-        //    return false;
-        //}
 
         public override bool SetValue(object newValue, long updatedTime = 0)
         {

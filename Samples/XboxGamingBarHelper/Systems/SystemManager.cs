@@ -92,6 +92,12 @@ namespace XboxGamingBarHelper.Systems
             get { return trackedGame; }
         }
 
+        private readonly HelperElevationProperty helperElevation;
+        public HelperElevationProperty HelperElevation
+        {
+            get { return helperElevation; }
+        }
+
         private IReadOnlyDictionary<GameId, GameProfile> Profiles { get; }
 
         // Keep track to current opening windows to determine currently running game.
@@ -105,6 +111,23 @@ namespace XboxGamingBarHelper.Systems
 
         public event ResumeFromSleepEventHandler ResumeFromSleep;
 
+        private static bool CheckIsElevated()
+        {
+            try
+            {
+                using (var identity = System.Security.Principal.WindowsIdentity.GetCurrent())
+                {
+                    var principal = new System.Security.Principal.WindowsPrincipal(identity);
+                    return principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to check process elevation.");
+                return false;
+            }
+        }
+
         public SystemManager(AppServiceConnection connection, IReadOnlyDictionary<GameId, GameProfile> profiles) : base(connection)
         {
             Logger.Info("Create process windows.");
@@ -115,6 +138,9 @@ namespace XboxGamingBarHelper.Systems
             Profiles = profiles;
 
             trackedGame = new TrackedGameProperty(this);
+            bool isElevated = CheckIsElevated();
+            Logger.Info($"Check helper elevation status: {isElevated}.");
+            helperElevation = new HelperElevationProperty(isElevated, this);
             Logger.Info("Check current running game.");
             runningGame = new RunningGameProperty(this);
             Logger.Info("Check supported refresh rates.");

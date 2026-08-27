@@ -44,6 +44,7 @@ namespace Shared.Enums
         Support_AMDSettings,
         LaunchNvidiaApp,
         OSDTextSize,
+        HelperElevation,
         AppExit = 100
     }
 }
