@@ -8,13 +8,5 @@ namespace XboxGamingBar.Data
         public OnScreenDisplayProviderInstalledProperty(Slider inUI, Page inOwner) : base(Function.Settings_OnScreenDisplayProviderInstalled, inUI, inOwner)
         {
         }
-
-        //protected override void NotifyPropertyChanged(string propertyName = "")
-        //{
-        //    Logger.Info($"Settings_OnScreenDisplayProviderInstalled to {value}???");
-        //    base.NotifyPropertyChanged(propertyName);
-
-            
-        //}
     }
 }

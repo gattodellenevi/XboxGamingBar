@@ -537,13 +537,6 @@ namespace XboxGamingBarHelper.AMD
                 return;
             }
 
-            //var now = DateTime.Now.Ticks;
-            //if (now - lastUpdate < TimeSpan.TicksPerSecond * 2)
-            //{
-            //    return;
-            //}
-            //lastUpdate = now;
-
             if (!AMDHelper.IsInstalled(out string amdInstallDir))
             {
                 Logger.Warn("AMD Software: Adrenaline Edition is not installed.");

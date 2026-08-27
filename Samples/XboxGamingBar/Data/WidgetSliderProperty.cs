@@ -66,60 +66,7 @@ namespace XboxGamingBar.Data
 
         internal static void AttachEngagementHandler(Slider slider) => AttachNavigationHandler(slider);
 
-        //private void Slider_NoFocusCandidateFound(Windows.UI.Xaml.UIElement sender, Windows.UI.Xaml.Input.NoFocusCandidateFoundEventArgs args)
-        //{
-        //    Logger.Info($"Slider {UI.Name} of function {function} NoFocusCandidateFound");
-        //}
-
-        //private void Slider_LostFocus(object sender, Windows.UI.Xaml.RoutedEventArgs e)
-        //{
-        //    Logger.Info($"Slider {UI.Name} of function {function} LostFocus");
-        //}
-
-        //private void Slider_LosingFocus(Windows.UI.Xaml.UIElement sender, Windows.UI.Xaml.Input.LosingFocusEventArgs args)
-        //{
-        //    Logger.Info($"Slider {UI.Name} of function {function} LosingFocus");
-        //}
-
-        //private void Slider_GotFocus(object sender, Windows.UI.Xaml.RoutedEventArgs e)
-        //{
-        //    Logger.Info($"Slider {UI.Name} of function {function} GotFocus");
-        //}
-
-        //private void Slider_GettingFocus(Windows.UI.Xaml.UIElement sender, Windows.UI.Xaml.Input.GettingFocusEventArgs args)
-        //{
-        //    Logger.Info($"Slider {UI.Name} of function {function} GettingFocus");
-        //}
-
-        //private void Slider_FocusEngaged(Control sender, FocusEngagedEventArgs args)
-        //{
-        //    Logger.Info($"Slider {UI.Name} of function {function} FocusEngaged");
-        //}
-
-        //private void Slider_FocusDisengaged(Control sender, FocusDisengagedEventArgs args)
-        //{
-        //    Logger.Info($"Slider {UI.Name} of function {function} FocusDisengaged");
-        //}
-
-        //private void Slider_DragLeave(object sender, Windows.UI.Xaml.DragEventArgs e)
-        //{
-        //    Logger.Info($"{Function} Slider drag leave {e.Data.ToString()}.");
-        //}
-
-        //private void Slider_DragOver(object sender, Windows.UI.Xaml.DragEventArgs e)
-        //{
-        //    Logger.Info($"{Function} Slider drag over {e.Data.ToString()}.");
-        //}
-
-        //private void Slider_DragStarting(Windows.UI.Xaml.UIElement sender, Windows.UI.Xaml.DragStartingEventArgs args)
-        //{
-        //    Logger.Info($"{Function} Slider drag starting {args.Data.ToString()}.");
-        //}
-
-        //private void Slider_DragEnter(object sender, Windows.UI.Xaml.DragEventArgs e)
-        //{
-        //    Logger.Info($"{Function} Slider drag enter {e.Data.ToString()}.");
-        //}
+       
 
         private void Slider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {

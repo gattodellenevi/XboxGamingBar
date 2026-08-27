@@ -10,73 +10,7 @@ using XboxGamingBarHelper.Hardware.Sensors;
 
 namespace XboxGamingBarHelper.Hardware
 {
-    //internal class HardwareSensors : IDictionary<string, HardwareSensor>
-    //{
-    //    HardwareSensor IDictionary<string, HardwareSensor>.this[string key] { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-    //    ICollection<string> IDictionary<string, HardwareSensor>.Keys => throw new NotImplementedException();
-
-    //    ICollection<HardwareSensor> IDictionary<string, HardwareSensor>.Values => throw new NotImplementedException();
-
-    //    int ICollection<KeyValuePair<string, HardwareSensor>>.Count => throw new NotImplementedException();
-
-    //    bool ICollection<KeyValuePair<string, HardwareSensor>>.IsReadOnly => throw new NotImplementedException();
-
-    //    void IDictionary<string, HardwareSensor>.Add(string key, HardwareSensor value)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    void ICollection<KeyValuePair<string, HardwareSensor>>.Add(KeyValuePair<string, HardwareSensor> item)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    void ICollection<KeyValuePair<string, HardwareSensor>>.Clear()
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    bool ICollection<KeyValuePair<string, HardwareSensor>>.Contains(KeyValuePair<string, HardwareSensor> item)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    bool IDictionary<string, HardwareSensor>.ContainsKey(string key)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    void ICollection<KeyValuePair<string, HardwareSensor>>.CopyTo(KeyValuePair<string, HardwareSensor>[] array, int arrayIndex)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    IEnumerator<KeyValuePair<string, HardwareSensor>> IEnumerable<KeyValuePair<string, HardwareSensor>>.GetEnumerator()
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    IEnumerator IEnumerable.GetEnumerator()
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    bool IDictionary<string, HardwareSensor>.Remove(string key)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    bool ICollection<KeyValuePair<string, HardwareSensor>>.Remove(KeyValuePair<string, HardwareSensor> item)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-
-    //    bool IDictionary<string, HardwareSensor>.TryGetValue(string key, out HardwareSensor value)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
-    //}
+   
 
     internal class HardwareManager : Manager
     {
