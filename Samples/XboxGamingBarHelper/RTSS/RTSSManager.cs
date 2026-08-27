@@ -37,6 +37,9 @@ namespace XboxGamingBarHelper.RTSS
         private readonly OSDTextSizeProperty osdTextSize;
         public OSDTextSizeProperty OSDTextSize => osdTextSize;
 
+        private readonly RTSSElevationProperty rtssElevation;
+        public RTSSElevationProperty RTSSElevation => rtssElevation;
+
         private const string OSDNewLine = "\n";
         private const string OSDNewLinePadding = " ";
         private const string OSDSingleLineShortBackground = "<M=8,4,8,4><P=0,0><L0><C=80000000><B=0,0>\b<C>";
@@ -59,6 +62,7 @@ namespace XboxGamingBarHelper.RTSS
             limitFPS = new LimitFPSProperty(false, this);
             judderFreeFPS = new JudderFreeFPSProperty(this);
             osdTextSize = new OSDTextSizeProperty(100, this);
+            rtssElevation = new RTSSElevationProperty(RTSSHelper.GetRTSSElevationStatus(), this);
 
             var osdItemsList = new List<OSDItem>()
             {
@@ -156,6 +160,13 @@ namespace XboxGamingBarHelper.RTSS
         public override void Update()
         {
             base.Update();
+
+            var currentElevationStatus = RTSSHelper.GetRTSSElevationStatus();
+            if (rtssElevation.Value != currentElevationStatus)
+            {
+                Logger.Info($"RTSS elevation status changed from {rtssElevation.Value} to {currentElevationStatus}.");
+                rtssElevation.SetValue(currentElevationStatus, DateTime.UtcNow.Ticks);
+            }
 
             if (!RTSSHelper.IsInstalled(out string installDir))
             {

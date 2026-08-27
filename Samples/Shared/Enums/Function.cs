@@ -45,6 +45,7 @@ namespace Shared.Enums
         LaunchNvidiaApp,
         OSDTextSize,
         HelperElevation,
+        RTSSElevation,
         AppExit = 100
     }
 }

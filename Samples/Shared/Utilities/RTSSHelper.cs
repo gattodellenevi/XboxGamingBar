@@ -1,12 +1,115 @@
 using Microsoft.Win32;
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace Shared.Utilities
 {
     public static partial class RTSSHelper
     {
         public const string RTSS_FILE_NAME = "RTSS";
+
+        private const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
+        private const uint TOKEN_QUERY = 0x0008;
+        private const int TokenElevation = 20;
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool OpenProcessToken(IntPtr ProcessHandle, uint DesiredAccess, out IntPtr TokenHandle);
+
+        [DllImport("advapi32.dll", SetLastError = true)]
+        private static extern bool GetTokenInformation(IntPtr TokenHandle, int TokenInformationClass, IntPtr TokenInformation, uint TokenInformationLength, out uint ReturnLength);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        private static extern IntPtr OpenProcess(uint processAccess, bool bInheritHandle, int processId);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool CloseHandle(IntPtr hObject);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct TOKEN_ELEVATION
+        {
+            public int TokenIsElevated;
+        }
+
+        public static bool? IsProcessElevated(int processId)
+        {
+            IntPtr hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, processId);
+            if (hProcess == IntPtr.Zero)
+            {
+                if (Marshal.GetLastWin32Error() == 5) // ERROR_ACCESS_DENIED: caller is standard, target is elevated
+                {
+                    return true;
+                }
+                return null;
+            }
+
+            try
+            {
+                if (!OpenProcessToken(hProcess, TOKEN_QUERY, out IntPtr hToken))
+                {
+                    if (Marshal.GetLastWin32Error() == 5)
+                    {
+                        return true;
+                    }
+                    return null;
+                }
+
+                try
+                {
+                    int size = Marshal.SizeOf<TOKEN_ELEVATION>();
+                    IntPtr pElevation = Marshal.AllocHGlobal(size);
+                    try
+                    {
+                        if (GetTokenInformation(hToken, TokenElevation, pElevation, (uint)size, out _))
+                        {
+                            var elevation = Marshal.PtrToStructure<TOKEN_ELEVATION>(pElevation);
+                            return elevation.TokenIsElevated != 0;
+                        }
+                    }
+                    finally
+                    {
+                        Marshal.FreeHGlobal(pElevation);
+                    }
+                }
+                finally
+                {
+                    CloseHandle(hToken);
+                }
+            }
+            finally
+            {
+                CloseHandle(hProcess);
+            }
+
+            return null;
+        }
+
+        public static int GetRTSSElevationStatus()
+        {
+            if (!IsInstalled(out _))
+            {
+                return -1; // Not installed
+            }
+
+            var process = GetProcess();
+            if (process == null)
+            {
+                return 0; // Not running / Offline
+            }
+
+            var isElevated = IsProcessElevated(process.Id);
+            if (isElevated == true)
+            {
+                return 2; // Elevated
+            }
+            else if (isElevated == false)
+            {
+                return 1; // Standard
+            }
+
+            return 0;
+        }
 
         private static Process _cachedRtssProcess;
         private static DateTime _lastProcessCheckTime = DateTime.MinValue;

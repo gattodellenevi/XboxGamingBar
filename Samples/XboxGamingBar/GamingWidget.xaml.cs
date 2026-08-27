@@ -89,6 +89,7 @@ namespace XboxGamingBar
         private readonly JudderFreeFPSProperty judderFreeFPS;
         private readonly OSDTextSizeProperty osdTextSize;
         private readonly HelperElevationProperty helperElevation;
+        private readonly RTSSElevationProperty rtssElevation;
 
         private readonly WidgetProperties properties;
 
@@ -109,6 +110,7 @@ namespace XboxGamingBar
             resolutions = new ResolutionsProperty(ResolutionsComboBox, this);
             resolution = new ResolutionProperty(ResolutionsComboBox, this);
             helperElevation = new HelperElevationProperty(HelperElevationBadge, HelperElevationBadgeText, HelperStatusSubtitleText, this);
+            rtssElevation = new RTSSElevationProperty(RTSSElevationBadge, RTSSElevationBadgeText, RTSSStatusSubtitleText, this);
             trackedGame = new TrackedGameProperty(new TrackedGame());
             onScreenDisplayProviderInstalled = new OnScreenDisplayProviderInstalledProperty(PerformanceOverlaySlider, this);
             isForeground = new IsForegroundProperty();
@@ -194,7 +196,8 @@ namespace XboxGamingBar
                 fpsLimit,
                 fpsLimitMode,
                 judderFreeFPS,
-                helperElevation
+                helperElevation,
+                rtssElevation
             );
 
             this.KeyDown += GamingWidget_KeyDown;
@@ -557,6 +560,7 @@ namespace XboxGamingBar
             }
 
             helperElevation?.SetDisconnectedState();
+            rtssElevation?.SetDisconnectedState();
 
             var eventArgs = e as BackgroundTaskCancellationEventArgs;
             if (eventArgs != null && eventArgs.Reason != BackgroundTaskCancellationReason.Terminating)

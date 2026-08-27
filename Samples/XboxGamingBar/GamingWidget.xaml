@@ -460,11 +460,12 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- SECTION: HELPER SERVICE -->
-                            <TextBlock Text="HELPER SERVICE" Style="{StaticResource SectionHeaderTextStyle}"/>
+                            <!-- SECTION: BACKGROUND SERVICES -->
+                            <TextBlock Text="BACKGROUND SERVICES" Style="{StaticResource SectionHeaderTextStyle}"/>
 
                             <Border Style="{StaticResource SettingsCardStyle}">
                                 <StackPanel>
+                                    <!-- Helper Process Row -->
                                     <Grid Margin="0,2,0,2">
                                         <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -477,6 +478,25 @@
                                                 </Border>
                                             </StackPanel>
                                             <TextBlock x:Name="HelperStatusSubtitleText" Text="Helper process is not running or disconnected" Style="{StaticResource SubtitleTextStyle}"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Divider between Helper and RTSS -->
+                                    <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
+
+                                    <!-- RTSS Process Row -->
+                                    <Grid Margin="0,2,0,2">
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                <TextBlock x:Name="RTSSStatusTitleText" Text="RTSS Process" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <Border x:Name="RTSSElevationBadge" Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                        Background="#5A5A5A" BorderBrush="#5A5A5A">
+                                                    <TextBlock x:Name="RTSSElevationBadgeText" Text="OFFLINE" 
+                                                               Style="{StaticResource ValueBadgeTextStyle}" Foreground="White"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock x:Name="RTSSStatusSubtitleText" Text="RivaTuner Statistics Server is not running" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
