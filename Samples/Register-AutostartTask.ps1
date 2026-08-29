@@ -8,7 +8,7 @@ param (
 if ([string]::IsNullOrWhiteSpace($ExePath)) {
     # 1. Search for installed AppX/MSIX package executable
     try {
-        $packages = Get-AppxPackage | Where-Object { $_.Name -like "*CouchGamingBar*" -or $_.Name -like "*XboxGamingBar*" }
+        $packages = Get-AppxPackage | Where-Object { $_.Name -like "*CouchGamingBar*" }
         foreach ($pkg in $packages) {
             if ($pkg.InstallLocation) {
                 $c1 = Join-Path $pkg.InstallLocation "CouchGamingBarHelper\CouchGamingBarHelper.exe"
@@ -34,14 +34,14 @@ if ([string]::IsNullOrWhiteSpace($ExePath)) {
         $CandidatePaths = @(
             (Join-Path $curr "CouchGamingBarHelper.exe"),
             (Join-Path $curr "CouchGamingBarHelper\CouchGamingBarHelper.exe"),
-            (Join-Path $curr "XboxGamingBarHelper\bin\x64\Release\net8.0-windows10.0.22000.0\CouchGamingBarHelper.exe"),
-            (Join-Path $curr "XboxGamingBarHelper\bin\x64\Debug\net8.0-windows10.0.22000.0\CouchGamingBarHelper.exe"),
-            (Join-Path $curr "XboxGamingBarHelper\bin\Release\net8.0-windows10.0.22000.0\CouchGamingBarHelper.exe"),
-            (Join-Path $curr "XboxGamingBarHelper\bin\Debug\net8.0-windows10.0.22000.0\CouchGamingBarHelper.exe"),
-            (Join-Path $curr "XboxGamingBarHelper\bin\Release\CouchGamingBarHelper.exe"),
-            (Join-Path $curr "XboxGamingBarHelper\bin\Debug\CouchGamingBarHelper.exe"),
-            (Join-Path $curr "XboxGamingBarHelper\bin\x64\Release\CouchGamingBarHelper.exe"),
-            (Join-Path $curr "XboxGamingBarHelper\bin\x64\Debug\CouchGamingBarHelper.exe")
+            (Join-Path $curr "CouchGamingBarHelper\bin\x64\Release\net8.0-windows10.0.22000.0\CouchGamingBarHelper.exe"),
+            (Join-Path $curr "CouchGamingBarHelper\bin\x64\Debug\net8.0-windows10.0.22000.0\CouchGamingBarHelper.exe"),
+            (Join-Path $curr "CouchGamingBarHelper\bin\Release\net8.0-windows10.0.22000.0\CouchGamingBarHelper.exe"),
+            (Join-Path $curr "CouchGamingBarHelper\bin\Debug\net8.0-windows10.0.22000.0\CouchGamingBarHelper.exe"),
+            (Join-Path $curr "CouchGamingBarHelper\bin\Release\CouchGamingBarHelper.exe"),
+            (Join-Path $curr "CouchGamingBarHelper\bin\Debug\CouchGamingBarHelper.exe"),
+            (Join-Path $curr "CouchGamingBarHelper\bin\x64\Release\CouchGamingBarHelper.exe"),
+            (Join-Path $curr "CouchGamingBarHelper\bin\x64\Debug\CouchGamingBarHelper.exe")
         )
 
         foreach ($Path in $CandidatePaths) {
