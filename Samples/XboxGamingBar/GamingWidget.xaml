@@ -98,8 +98,40 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-
-        <ProgressRing x:Name="LoadingProgressRing" Grid.RowSpan="2" IsActive="True" Visibility="Collapsed" Width="100" Height="100" VerticalAlignment="Center" HorizontalAlignment="Center" Canvas.ZIndex="10"/>
+        <!-- Option 4: Fluent 2 Modal Loading Card (Input Guard) -->
+        <Grid x:Name="LoadingModalOverlay" Grid.RowSpan="2" Canvas.ZIndex="100" 
+              Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Visibility="Collapsed">
+            <Border Width="320" CornerRadius="12" Padding="24,28,24,24" 
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                    BorderThickness="1">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <!-- Icon in Pill Badge -->
+                    <Border Width="48" Height="48" CornerRadius="10" 
+                            Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                            HorizontalAlignment="Center" Margin="0,0,0,16">
+                        <FontIcon Glyph="&#xE7FC;" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                  Foreground="{StaticResource XboxGreenBrush}"/>
+                    </Border>
+                    
+                    <!-- Progress Ring -->
+                    <ProgressRing x:Name="LoadingModalProgressRing" Width="36" Height="36" IsActive="True" 
+                                  Foreground="{StaticResource XboxGreenBrush}" 
+                                  HorizontalAlignment="Center" Margin="0,0,0,16"/>
+                    
+                    <!-- Title -->
+                    <TextBlock x:Name="LoadingModalTitleText" Text="Connecting to Helper..." 
+                               FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center" 
+                               Margin="0,0,0,6" TextAlignment="Center"/>
+                    
+                    <!-- Subtitle -->
+                    <TextBlock x:Name="LoadingModalSubtitleText" Text="Initializing hardware sensors &amp; power controls..." 
+                               FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" 
+                               HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+        </Grid>
 
         <!-- Running Game Info (Hero Card) -->
         <Border Grid.Row="0" Margin="10,10,10,6" CornerRadius="10" 

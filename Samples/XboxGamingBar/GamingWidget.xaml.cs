@@ -353,13 +353,53 @@ namespace XboxGamingBar
             Logger.Info($"App.Connection:{(App.Connection == null ? "NULL" : "NOT_NULL")} FullTrustAppContract:{(ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0) ? "PRESENT" : "NOT_PRESENT")}");
             if (App.Connection != null)
             {
+                HideLoadingModal();
                 ReconnectAppService();
             }
             else
             {
+                ShowLoadingModal();
                 await EnsureHelperConnectionOrLaunchAsync();
             }
             Logger.Info("GamingWidget OnNavigatedTo finished.");
+        }
+
+        private async void ShowLoadingModal(string title = "Connecting to Helper...", string subtitle = "Initializing hardware sensors & power controls...")
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                if (LoadingModalTitleText != null)
+                {
+                    LoadingModalTitleText.Text = title;
+                }
+                if (LoadingModalSubtitleText != null)
+                {
+                    LoadingModalSubtitleText.Text = subtitle;
+                }
+                if (LoadingModalProgressRing != null)
+                {
+                    LoadingModalProgressRing.IsActive = true;
+                }
+                if (LoadingModalOverlay != null)
+                {
+                    LoadingModalOverlay.Visibility = Visibility.Visible;
+                }
+            });
+        }
+
+        private async void HideLoadingModal()
+        {
+            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            {
+                if (LoadingModalProgressRing != null)
+                {
+                    LoadingModalProgressRing.IsActive = false;
+                }
+                if (LoadingModalOverlay != null)
+                {
+                    LoadingModalOverlay.Visibility = Visibility.Collapsed;
+                }
+            });
         }
 
         private void EnsureWidgetActivity()
@@ -382,6 +422,7 @@ namespace XboxGamingBar
         {
             if (App.Connection != null)
             {
+                HideLoadingModal();
                 return;
             }
 
@@ -396,10 +437,12 @@ namespace XboxGamingBar
                 if (IsHelperProcessRunning())
                 {
                     Logger.Info("Helper process is already running. Skipping launch and waiting for AppService connection.");
+                    ShowLoadingModal("Connecting to Helper...", "Establishing communication channel...");
                 }
                 else
                 {
                     EnsureWidgetActivity();
+                    ShowLoadingModal("Starting CouchGamingBar Helper...", "Initializing hardware sensors & power controls...");
                     try
                     {
                         Logger.Info("Helper process is not running. Launching full trust process (helper).");
@@ -409,12 +452,14 @@ namespace XboxGamingBar
                     catch (Exception ex)
                     {
                         Logger.Error(ex, "Failed to launch full trust helper process.");
+                        HideLoadingModal();
                     }
                 }
             }
             else
             {
                 Logger.Info("FullTrustAppContract not present. Cannot launch full trust helper process.");
+                HideLoadingModal();
             }
         }
 
@@ -514,6 +559,8 @@ namespace XboxGamingBar
         private async void GamingWidget_AppServiceConnected(object sender, AppServiceTriggerDetails _)
         {
             Logger.Info("GamingWidget AppService connected.");
+            HideLoadingModal();
+
             if (widget != null)
             {
                 EnsureWidgetActivity();
@@ -568,6 +615,7 @@ namespace XboxGamingBar
             var eventArgs = e as BackgroundTaskCancellationEventArgs;
             if (eventArgs != null && eventArgs.Reason != BackgroundTaskCancellationReason.Terminating)
             {
+                ShowLoadingModal("Reconnecting to Helper...", "Waiting for background service...");
                 if (IsHelperProcessRunning())
                 {
                     Logger.Info($"AppService disconnected due to {eventArgs.Reason}, but helper process is already running. Skipping relaunch.");
@@ -583,12 +631,14 @@ namespace XboxGamingBar
                     catch (Exception ex)
                     {
                         Logger.Error(ex, "Failed to relaunch full trust helper process on disconnect.");
+                        HideLoadingModal();
                     }
                 }
             }
             else
             {
                 Logger.Info($"AppService disconnected due to {eventArgs.Reason}, not relaunching.");
+                HideLoadingModal();
                 if (widgetActivity != null)
                 {
                     widgetActivity.Complete();
@@ -614,7 +664,12 @@ namespace XboxGamingBar
         private void SetBackgroundColor()
         {
             this.RequestedTheme = widget.RequestedTheme;
-            RootGrid.Background = (widget.RequestedTheme == ElementTheme.Dark) ? widgetDarkThemeBrush : widgetLightThemeBrush;
+            var themeBrush = (widget.RequestedTheme == ElementTheme.Dark) ? widgetDarkThemeBrush : widgetLightThemeBrush;
+            RootGrid.Background = themeBrush;
+            if (LoadingModalOverlay != null)
+            {
+                LoadingModalOverlay.Background = themeBrush;
+            }
         }
 
         /// <summary>
