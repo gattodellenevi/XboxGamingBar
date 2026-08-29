@@ -343,6 +343,7 @@ namespace XboxGamingBar
                 await widget.CenterWindowAsync();
                 widget.RequestedThemeChanged += GamingWidget_RequestedThemeChanged;
                 widget.SettingsClicked += GamingWidget_SettingsClicked;
+                EnsureWidgetActivity();
             }
             else
             {
@@ -359,6 +360,22 @@ namespace XboxGamingBar
                 await EnsureHelperConnectionOrLaunchAsync();
             }
             Logger.Info("GamingWidget OnNavigatedTo finished.");
+        }
+
+        private void EnsureWidgetActivity()
+        {
+            if (widget != null && widgetActivity == null)
+            {
+                try
+                {
+                    widgetActivity = new XboxGameBarWidgetActivity(widget, "XboxGamingBarActivity");
+                    Logger.Info("Created widget activity to keep Game Bar active.");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"Could not create widget activity: {ex.Message}");
+                }
+            }
         }
 
         private async Task EnsureHelperConnectionOrLaunchAsync()
@@ -382,9 +399,17 @@ namespace XboxGamingBar
                 }
                 else
                 {
-                    Logger.Info("Helper process is not running. Launching full trust process (helper).");
-                    await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
-                    Logger.Info("FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync() completed.");
+                    EnsureWidgetActivity();
+                    try
+                    {
+                        Logger.Info("Helper process is not running. Launching full trust process (helper).");
+                        await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+                        Logger.Info("FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync() completed.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "Failed to launch full trust helper process.");
+                    }
                 }
             }
             else
@@ -491,22 +516,7 @@ namespace XboxGamingBar
             Logger.Info("GamingWidget AppService connected.");
             if (widget != null)
             {
-                if (widgetActivity == null)
-                {
-                    try
-                    {
-                        widgetActivity = new XboxGameBarWidgetActivity(widget, "XboxGamingBarActivity");
-                        Logger.Info("Create new activity to keep the widget runs in the background.");
-                    }
-                    catch (ArgumentException argumentException)
-                    {
-                        Logger.Warn($"Can't create widget acitvity: {argumentException}.");
-                    }
-                }
-                else
-                {
-                    Logger.Info("Widget activity already created.");
-                }
+                EnsureWidgetActivity();
 
                 if (appTargetTracker == null)
                 {
@@ -552,13 +562,6 @@ namespace XboxGamingBar
         /// </summary>
         private async void GamingWidget_AppServiceDisconnected(object sender, EventArgs e)
         {
-            if (widgetActivity != null)
-            {
-                widgetActivity.Complete();
-                widgetActivity = null;
-                Logger.Info("Stopped widget activity.");
-            }
-
             helperElevation?.SetDisconnectedState();
             rtssElevation?.SetDisconnectedState();
 
@@ -571,13 +574,27 @@ namespace XboxGamingBar
                 }
                 else
                 {
-                    Logger.Info($"AppService disconnected due to {eventArgs.Reason}, trying to relaunch.");
-                    await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+                    EnsureWidgetActivity();
+                    try
+                    {
+                        Logger.Info($"AppService disconnected due to {eventArgs.Reason}, trying to relaunch.");
+                        await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "Failed to relaunch full trust helper process on disconnect.");
+                    }
                 }
             }
             else
             {
                 Logger.Info($"AppService disconnected due to {eventArgs.Reason}, not relaunching.");
+                if (widgetActivity != null)
+                {
+                    widgetActivity.Complete();
+                    widgetActivity = null;
+                    Logger.Info("Stopped widget activity on terminating disconnect.");
+                }
             }
         }
 
