@@ -17,6 +17,7 @@ if (-not (Test-Path $AutostartScript)) {
     Write-Warning "Autostart script '$AutostartScript' not found."
     exit 0
 }
+$AutostartCmd = Join-Path $ScriptDir "Register-AutostartTask.cmd"
 
 # Template for Install.cmd (double-clickable, auto-elevates, bypasses execution policy)
 $cmdContent = @"
@@ -146,8 +147,11 @@ Write-Host "Found $($packageDirs.Count) package directories to configure."
 foreach ($dir in $packageDirs) {
     Write-Host "Configuring streamlined installer in: $dir"
     
-    # 1. Copy Register-AutostartTask.ps1
+    # 1. Copy Register-AutostartTask.ps1 and Register-AutostartTask.cmd
     Copy-Item -Path $AutostartScript -Destination $dir -Force
+    if (Test-Path $AutostartCmd) {
+        Copy-Item -Path $AutostartCmd -Destination $dir -Force
+    }
     
     # 2. Write Install.ps1 (streamlined, zero-prompt version)
     $installPs1Path = Join-Path $dir "Install.ps1"
