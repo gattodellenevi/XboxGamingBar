@@ -90,6 +90,7 @@ namespace XboxGamingBar
         private readonly OSDTextSizeProperty osdTextSize;
         private readonly HelperElevationProperty helperElevation;
         private readonly RTSSElevationProperty rtssElevation;
+        private bool isElevationFlyoutOpen = false;
 
         private readonly WidgetProperties properties;
 
@@ -200,8 +201,41 @@ namespace XboxGamingBar
                 rtssElevation
             );
 
+            if (HelperElevationFlyout != null)
+            {
+                HelperElevationFlyout.Opened += (s, e) =>
+                {
+                    isElevationFlyoutOpen = true;
+                    CloseElevationHelpButton?.Focus(FocusState.Programmatic);
+                };
+                HelperElevationFlyout.Closed += (s, e) =>
+                {
+                    isElevationFlyoutOpen = false;
+                };
+            }
+            if (HelperElevationFlyoutContent != null)
+            {
+                HelperElevationFlyoutContent.PreviewKeyDown += HelperElevationFlyoutContent_PreviewKeyDown;
+            }
+
             this.KeyDown += GamingWidget_KeyDown;
             InitializeAppVersion();
+        }
+
+        private void HelperElevationFlyoutContent_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.GamepadB || e.Key == VirtualKey.Escape)
+            {
+                HelperElevationFlyout?.Hide();
+                HelperElevationHelpButton?.Focus(FocusState.Programmatic);
+                e.Handled = true;
+            }
+        }
+
+        private void CloseElevationHelpButton_Click(object sender, RoutedEventArgs e)
+        {
+            HelperElevationFlyout?.Hide();
+            HelperElevationHelpButton?.Focus(FocusState.Programmatic);
         }
 
         private void InitializeAppVersion()
@@ -226,6 +260,14 @@ namespace XboxGamingBar
 
         private void GamingWidget_KeyDown(object sender, KeyRoutedEventArgs e)
         {
+            if (isElevationFlyoutOpen && (e.Key == VirtualKey.GamepadB || e.Key == VirtualKey.Escape))
+            {
+                HelperElevationFlyout?.Hide();
+                HelperElevationHelpButton?.Focus(FocusState.Programmatic);
+                e.Handled = true;
+                return;
+            }
+
             if (e.Key == VirtualKey.GamepadLeftTrigger || e.Key == VirtualKey.GamepadLeftShoulder || e.Key == VirtualKey.PageUp)
             {
                 NavigatePivot(-1);
