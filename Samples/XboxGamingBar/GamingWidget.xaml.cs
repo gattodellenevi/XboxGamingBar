@@ -206,7 +206,7 @@ namespace XboxGamingBar
                 HelperElevationFlyout.Opened += (s, e) =>
                 {
                     isElevationFlyoutOpen = true;
-                    CloseElevationHelpButton?.Focus(FocusState.Programmatic);
+                    HelperElevationWikiButton?.Focus(FocusState.Programmatic);
                 };
                 HelperElevationFlyout.Closed += (s, e) =>
                 {
@@ -229,6 +229,18 @@ namespace XboxGamingBar
                 HelperElevationFlyout?.Hide();
                 HelperElevationHelpButton?.Focus(FocusState.Programmatic);
                 e.Handled = true;
+            }
+        }
+
+        private async void HelperElevationWikiButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await Launcher.LaunchUriAsync(new Uri("https://github.com/gattodellenevi/XboxGamingBar/wiki/Elevate-Process-Permissions"));
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to launch elevation wiki URI.");
             }
         }
 

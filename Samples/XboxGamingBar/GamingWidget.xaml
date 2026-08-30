@@ -534,9 +534,10 @@
                                                             <Setter Property="BorderThickness" Value="1"/>
                                                             <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
                                                             <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+                                                            <Setter Property="IsTabStop" Value="False"/>
                                                         </Style>
                                                     </Flyout.FlyoutPresenterStyle>
-                                                    <StackPanel x:Name="HelperElevationFlyoutContent" Width="280">
+                                                    <StackPanel x:Name="HelperElevationFlyoutContent" Width="280" XYFocusKeyboardNavigation="Enabled">
                                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
                                                             <FontIcon Glyph="&#xE897;" FontSize="16" Margin="0,0,8,0" Foreground="{StaticResource XboxGreenBrush}"/>
                                                             <TextBlock Text="Helper Elevation" FontWeight="SemiBold" FontSize="15" Foreground="White"/>
@@ -545,19 +546,30 @@
                                                                    Style="{StaticResource SubtitleTextStyle}"
                                                                    Foreground="#D0D0D0"
                                                                    TextWrapping="Wrap"
-                                                                   Margin="0,0,0,12"/>
-                                                        <HyperlinkButton x:Name="HelperElevationWikiLink"
-                                                                         Content="Open Elevation Guide (Wiki)"
-                                                                         NavigateUri="https://github.com/gattodellenevi/XboxGamingBar/wiki/Elevate-Process-Permissions"
-                                                                         Padding="0"
-                                                                         FontSize="12"
-                                                                         Margin="0,0,0,12"
-                                                                         HorizontalAlignment="Left"/>
+                                                                   Margin="0,0,0,14"/>
+                                                        <Button x:Name="HelperElevationWikiButton"
+                                                                HorizontalAlignment="Stretch"
+                                                                Margin="0,0,0,10"
+                                                                Padding="10,6,10,6"
+                                                                CornerRadius="6"
+                                                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                BorderThickness="1"
+                                                                IsTabStop="True"
+                                                                XYFocusDown="{Binding ElementName=CloseElevationHelpButton}"
+                                                                Click="HelperElevationWikiButton_Click">
+                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                <FontIcon Glyph="&#xE8A7;" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                                                                <TextBlock Text="View Elevation Guide (Wiki)" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                            </StackPanel>
+                                                        </Button>
                                                         <Button x:Name="CloseElevationHelpButton"
                                                                 Content="Close"
-                                                                HorizontalAlignment="Right"
-                                                                Padding="16,4,16,4"
-                                                                CornerRadius="4"
+                                                                HorizontalAlignment="Stretch"
+                                                                Padding="0,6,0,6"
+                                                                CornerRadius="6"
+                                                                IsTabStop="True"
+                                                                XYFocusUp="{Binding ElementName=HelperElevationWikiButton}"
                                                                 Click="CloseElevationHelpButton_Click"/>
                                                     </StackPanel>
                                                 </Flyout>
