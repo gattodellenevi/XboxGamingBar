@@ -558,7 +558,7 @@
                                                             <FontIcon Glyph="&#xE897;" FontSize="16" Margin="0,0,8,0" Foreground="{StaticResource XboxGreenBrush}"/>
                                                             <TextBlock Text="Helper Elevation" FontWeight="SemiBold" FontSize="15" Foreground="White"/>
                                                         </StackPanel>
-                                                        <TextBlock Text="Running the helper with administrator privileges allows CouchGamingBar to control advanced hardware power management and system settings (CPU Boost, EPP, and max clock limits)."
+                                                        <TextBlock Text="Running the helper with administrator privileges allows CouchGamingBar to fully control RTSS and system settings. Frame limiting may not work without administrator privileges."
                                                                    Style="{StaticResource SubtitleTextStyle}"
                                                                    Foreground="#D0D0D0"
                                                                    TextWrapping="Wrap"
