@@ -1,4 +1,4 @@
-﻿using Shared.Constants;
+using Shared.Constants;
 using Shared.Enums;
 using System;
 using System.Collections.Generic;
@@ -13,11 +13,16 @@ namespace XboxGamingBar.Data
         {
         }
 
+        protected override bool ShouldSendNotifyMessage()
+        {
+            return false;
+        }
+
         protected override async void NotifyPropertyChanged(string propertyName = "")
         {
             base.NotifyPropertyChanged(propertyName);
 
-            if (UI != null && Owner != null)
+            if (UI != null && Owner != null && Value != null)
             {
                 Logger.Info($"Update {Function} slider value {Value}.");
                 await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>

@@ -1,4 +1,4 @@
-﻿using Shared.Enums;
+using Shared.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +16,11 @@ namespace XboxGamingBar.Data
     {
         public WidgetControlEnabledProperty(Function inFunction, UIType inUI, Page inOwner) : base(false, inFunction, inUI, inOwner)
         {
+        }
+
+        protected override bool ShouldSendNotifyMessage()
+        {
+            return false;
         }
 
         protected override async void NotifyPropertyChanged(string propertyName = "")

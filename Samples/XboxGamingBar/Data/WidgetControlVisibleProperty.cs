@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Shared.Enums;
 using Windows.UI.Core;
 using Windows.UI.Xaml;
@@ -18,6 +18,11 @@ namespace XboxGamingBar.Data
         public WidgetControlVisibleProperty(bool inValue, Function inFunction, UIType inUI, Page inOwner, params UIType[] inAdditionalUIs) : base(inValue, inFunction, inUI, inOwner)
         {
             additionalUIs = inAdditionalUIs;
+        }
+
+        protected override bool ShouldSendNotifyMessage()
+        {
+            return false;
         }
 
         protected override async void NotifyPropertyChanged(string propertyName = "")

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Shared.Data;
 using Shared.Enums;
 using Windows.UI.Core;
@@ -12,11 +12,21 @@ namespace XboxGamingBar.Data
         {
         }
 
+        protected override bool ShouldSendNotifyMessage()
+        {
+            return false;
+        }
+
+        protected override void SetControlEnabled(bool isEnabled)
+        {
+            // Resolutions combo box should be enabled/disabled by ResolutionProperty, not this.
+        }
+
         protected override async void NotifyPropertyChanged(string propertyName = "")
         {
             base.NotifyPropertyChanged(propertyName);
 
-            if (UI != null && Owner != null)
+            if (UI != null && Owner != null && Value.AvailableResolutions != null)
             {
                 Logger.Info($"Update {Function} combo box value {Value}.");
                 await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>

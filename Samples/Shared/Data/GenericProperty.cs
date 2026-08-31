@@ -110,19 +110,19 @@ namespace Shared.Data
         public GenericProperty(ValueType inValue) : base()
         {
             value = inValue;
-            lastUpdatedTime = 0L;
+            lastUpdatedTime = DateTime.UtcNow.Ticks;
         }
 
         public GenericProperty(ValueType inValue, IProperty inParentProperty) : base(inParentProperty)
         {
             value = inValue;
-            lastUpdatedTime = 0L;
+            lastUpdatedTime = DateTime.UtcNow.Ticks;
         }
 
         public GenericProperty(ValueType inValue, IProperty inParentProperty, Function inFunction) : base(inParentProperty, inFunction)
         {
             value = inValue;
-            lastUpdatedTime = 0L;
+            lastUpdatedTime = DateTime.UtcNow.Ticks;
         }
 
         public override TSharedValueSet AddValueSetContent(in TSharedValueSet inValueSet)
@@ -205,7 +205,7 @@ namespace Shared.Data
         {
             if (updatedTime == 0)
             {
-                updatedTime = DateTime.Now.Ticks;
+                updatedTime = DateTime.UtcNow.Ticks;
             }
 
             ValueType myTypeValue;
