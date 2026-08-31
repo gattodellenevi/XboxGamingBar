@@ -110,7 +110,7 @@ namespace XboxGamingBar
             refreshRate = new RefreshRateProperty(RefreshRatesComboBox, this, FPSLimitSlider);
             resolutions = new ResolutionsProperty(ResolutionsComboBox, this);
             resolution = new ResolutionProperty(ResolutionsComboBox, this);
-            helperElevation = new HelperElevationProperty(HelperElevationBadge, HelperElevationBadgeText, HelperStatusSubtitleText, this);
+            helperElevation = new HelperElevationProperty(HelperElevationBadge, HelperElevationBadgeText, HelperStatusSubtitleText, HeroElevationWarningButton, HeroElevationWarningIcon, HeroElevationWarningText, this);
             rtssElevation = new RTSSElevationProperty(RTSSElevationBadge, RTSSElevationBadgeText, RTSSStatusSubtitleText, this);
             trackedGame = new TrackedGameProperty(new TrackedGame());
             onScreenDisplayProviderInstalled = new OnScreenDisplayProviderInstalledProperty(PerformanceOverlaySlider, this);
@@ -206,6 +206,10 @@ namespace XboxGamingBar
                 HelperElevationFlyout.Opened += (s, e) =>
                 {
                     isElevationFlyoutOpen = true;
+                    if (lastElevationFlyoutInvoker == null)
+                    {
+                        lastElevationFlyoutInvoker = HelperElevationHelpButton;
+                    }
                     HelperElevationWikiButton?.Focus(FocusState.Programmatic);
                 };
                 HelperElevationFlyout.Closed += (s, e) =>
@@ -222,12 +226,14 @@ namespace XboxGamingBar
             InitializeAppVersion();
         }
 
+        private Control lastElevationFlyoutInvoker;
+
         private void HelperElevationFlyoutContent_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key == VirtualKey.GamepadB || e.Key == VirtualKey.Escape)
             {
                 HelperElevationFlyout?.Hide();
-                HelperElevationHelpButton?.Focus(FocusState.Programmatic);
+                (lastElevationFlyoutInvoker ?? HelperElevationHelpButton)?.Focus(FocusState.Programmatic);
                 e.Handled = true;
             }
         }
@@ -247,7 +253,13 @@ namespace XboxGamingBar
         private void CloseElevationHelpButton_Click(object sender, RoutedEventArgs e)
         {
             HelperElevationFlyout?.Hide();
-            HelperElevationHelpButton?.Focus(FocusState.Programmatic);
+            (lastElevationFlyoutInvoker ?? HelperElevationHelpButton)?.Focus(FocusState.Programmatic);
+        }
+
+        private void HeroElevationWarningButton_Click(object sender, RoutedEventArgs e)
+        {
+            lastElevationFlyoutInvoker = HeroElevationWarningButton;
+            HelperElevationFlyout?.ShowAt(HeroElevationWarningButton);
         }
 
         private void InitializeAppVersion()
@@ -275,7 +287,7 @@ namespace XboxGamingBar
             if (isElevationFlyoutOpen && (e.Key == VirtualKey.GamepadB || e.Key == VirtualKey.Escape))
             {
                 HelperElevationFlyout?.Hide();
-                HelperElevationHelpButton?.Focus(FocusState.Programmatic);
+                (lastElevationFlyoutInvoker ?? HelperElevationHelpButton)?.Focus(FocusState.Programmatic);
                 e.Handled = true;
                 return;
             }
