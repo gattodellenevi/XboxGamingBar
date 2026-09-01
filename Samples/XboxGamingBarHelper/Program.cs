@@ -19,6 +19,7 @@ using XboxGamingBarHelper.Profile;
 using XboxGamingBarHelper.RTSS;
 using XboxGamingBarHelper.Settings;
 using XboxGamingBarHelper.Systems;
+using XboxGamingBarHelper.Windows;
 
 namespace XboxGamingBarHelper
 {
@@ -50,6 +51,24 @@ namespace XboxGamingBarHelper
 
         static void Main(string[] args)
         {
+            try
+            {
+                User32.SetProcessDpiAwarenessContext(User32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to set DPI awareness context.");
+            }
+
+            try
+            {
+                Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to set HighDpiMode.");
+            }
+
             bool createdNew = false;
             try
             {

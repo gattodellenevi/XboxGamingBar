@@ -124,6 +124,11 @@ namespace XboxGamingBarHelper.Windows
         [DllImport("user32.dll")]
         private static extern IntPtr GetShellWindow();
 
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
+
+        public static readonly IntPtr DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = new IntPtr(-4);
+
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern bool EnumDisplaySettings(string lpszDeviceName, int iModeNum, ref DEVMODE lpDevMode);
 
@@ -428,9 +433,12 @@ namespace XboxGamingBarHelper.Windows
             DEVMODE dm = new DEVMODE();
             dm.dmSize = (short)Marshal.SizeOf(typeof(DEVMODE));
 
-            EnumDisplaySettings(null, -1, ref dm);
+            if (EnumDisplaySettings(null, -1, ref dm) && dm.dmPelsWidth > 0 && dm.dmPelsHeight > 0)
+            {
+                return (dm.dmPelsWidth, dm.dmPelsHeight);
+            }
 
-            return (dm.dmPelsWidth, dm.dmPelsHeight);
+            return (1920, 1080);
         }
 
         public static List<(int width, int height)> GetSupportedResolutions()
@@ -442,7 +450,10 @@ namespace XboxGamingBarHelper.Windows
 
             while (EnumDisplaySettings(null, modeNum, ref dm))
             {
-                modes.Add((dm.dmPelsWidth, dm.dmPelsHeight));
+                if (dm.dmPelsWidth > 0 && dm.dmPelsHeight > 0)
+                {
+                    modes.Add((dm.dmPelsWidth, dm.dmPelsHeight));
+                }
                 modeNum++;
             }
             return modes;
@@ -453,17 +464,18 @@ namespace XboxGamingBarHelper.Windows
             var allModes = GetSupportedResolutions();
             var native = GetNativeResolution();
 
-            double nativeRatio = (double)native.width / native.height;
+            double nativeRatio = native.height > 0 ? (double)native.width / native.height : (16.0 / 9.0);
 
             var filtered = new List<(int width, int height)>();
             var seen = new HashSet<string>();
 
             foreach (var m in allModes)
             {
+                if (m.height <= 0) continue;
                 double ratio = (double)m.width / m.height;
 
-                // Accept resolutions very close to the same aspect ratio
-                if (Math.Abs(ratio - nativeRatio) < 0.0001)
+                // Accept resolutions very close to the same aspect ratio (tolerance 0.01)
+                if (Math.Abs(ratio - nativeRatio) < 0.01)
                 {
                     string key = $"{m.width}x{m.height}";
                     if (!seen.Contains(key))
@@ -473,6 +485,20 @@ namespace XboxGamingBarHelper.Windows
                     }
                 }
             }
+
+            // Always ensure the native resolution is present
+            if (native.width > 0 && native.height > 0)
+            {
+                string nativeKey = $"{native.width}x{native.height}";
+                if (!seen.Contains(nativeKey))
+                {
+                    filtered.Add(native);
+                    seen.Add(nativeKey);
+                }
+            }
+
+            // Sort resolutions descending by pixel count (e.g. 3840x2160, 2560x1440, 1920x1080, 1280x720)
+            filtered.Sort((a, b) => (b.width * b.height).CompareTo(a.width * a.height));
 
             return filtered;
         }

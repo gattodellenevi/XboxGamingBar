@@ -22,6 +22,7 @@
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <Configurations>Debug;Release;Store</Configurations>
     <StartupObject />
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <ApplicationManifest Condition="'$(Configuration)' != 'Store'">app.manifest</ApplicationManifest>
     <ApplicationManifest Condition="'$(Configuration)' == 'Store'">app.Store.manifest</ApplicationManifest>
     <Platforms>x64;x86</Platforms>

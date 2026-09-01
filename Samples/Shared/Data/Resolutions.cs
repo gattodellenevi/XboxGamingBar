@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System;
 using System.Collections.Generic;
 using System.Xml.Serialization;
@@ -87,12 +87,22 @@ namespace Shared.Data
         public override int GetHashCode()
         {
             var hashCode = 0;
-            foreach (var res in AvailableResolutions)
+            if (AvailableResolutions != null)
             {
-                hashCode ^= res.GetHashCode();
+                foreach (var res in AvailableResolutions)
+                {
+                    hashCode ^= res.GetHashCode();
+                }
             }
 
             return hashCode;
+        }
+
+        public override string ToString()
+        {
+            if (AvailableResolutions == null || AvailableResolutions.Count == 0)
+                return string.Empty;
+            return string.Join(",", AvailableResolutions);
         }
 
         public bool Equals(Resolutions other)

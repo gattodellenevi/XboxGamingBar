@@ -31,10 +31,21 @@ namespace XboxGamingBar.Data
                 Logger.Info($"Update {Function} combo box value {Value}.");
                 await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
+                    var previousSelection = UI.SelectedItem;
                     UI.Items.Clear();
-                    foreach (var value in Value.AvailableResolutions)
+                    int matchedIndex = -1;
+                    for (int i = 0; i < Value.AvailableResolutions.Count; i++)
                     {
-                        UI.Items.Add(value);
+                        var res = Value.AvailableResolutions[i];
+                        UI.Items.Add(res);
+                        if (previousSelection != null && res.Equals(previousSelection))
+                        {
+                            matchedIndex = i;
+                        }
+                    }
+                    if (matchedIndex >= 0)
+                    {
+                        UI.SelectedIndex = matchedIndex;
                     }
                 });
             }

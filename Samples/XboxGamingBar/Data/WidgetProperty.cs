@@ -1,7 +1,9 @@
-﻿using System;
+using System;
 using Shared.Data;
 using Shared.Enums;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.Core;
+using Windows.UI.Core;
 
 namespace XboxGamingBar.Data
 {
@@ -9,6 +11,27 @@ namespace XboxGamingBar.Data
     {
         public WidgetProperty(ValueType inValue, IProperty inParentProperty, Function inFunction) : base(inValue, inParentProperty, inFunction)
         {
+        }
+
+        protected override void NotifyPropertyChanged(string propertyName = "")
+        {
+            try
+            {
+                var dispatcher = CoreApplication.MainView?.CoreWindow?.Dispatcher;
+                if (dispatcher != null && !dispatcher.HasThreadAccess)
+                {
+                    _ = dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
+                        base.NotifyPropertyChanged(propertyName);
+                    });
+                    return;
+                }
+            }
+            catch
+            {
+            }
+
+            base.NotifyPropertyChanged(propertyName);
         }
 
         protected override Task<WidgetAppServiceResponse> SendMessageAsync(WidgetValueSet request)

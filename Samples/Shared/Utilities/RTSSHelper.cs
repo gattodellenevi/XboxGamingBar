@@ -1,6 +1,7 @@
 using Microsoft.Win32;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Shared.Utilities
@@ -87,14 +88,13 @@ namespace Shared.Utilities
 
         public static int GetRTSSElevationStatus()
         {
-            if (!IsInstalled(out _))
-            {
-                return -1; // Not installed
-            }
-
             var process = GetProcess();
             if (process == null)
             {
+                if (!IsInstalled(out _))
+                {
+                    return -1; // Not installed
+                }
                 return 0; // Not running / Offline
             }
 
@@ -108,7 +108,7 @@ namespace Shared.Utilities
                 return 1; // Standard
             }
 
-            return 0;
+            return 1; // Default to Standard (running) if elevation check is ambiguous
         }
 
         private static Process _cachedRtssProcess;
@@ -131,14 +131,14 @@ namespace Shared.Utilities
                 {
                 }
 
-                _cachedRtssProcess.Dispose();
+                try { _cachedRtssProcess.Dispose(); } catch { }
                 _cachedRtssProcess = null;
             }
 
             var now = DateTime.UtcNow;
             if ((now - _lastProcessCheckTime).TotalMilliseconds < 1500)
             {
-                return null;
+                return _cachedRtssProcess;
             }
             _lastProcessCheckTime = now;
 
@@ -150,7 +150,7 @@ namespace Shared.Utilities
                     _cachedRtssProcess = rtssProcesses[0];
                     for (int i = 1; i < rtssProcesses.Length; i++)
                     {
-                        rtssProcesses[i].Dispose();
+                        try { rtssProcesses[i].Dispose(); } catch { }
                     }
                     return _cachedRtssProcess;
                 }
@@ -182,22 +182,93 @@ namespace Shared.Utilities
 
         public static bool IsInstalled(out string installDir)
         {
-            if (!string.IsNullOrEmpty(_cachedInstallDir))
+            if (!string.IsNullOrEmpty(_cachedInstallDir) && Directory.Exists(_cachedInstallDir))
             {
                 installDir = _cachedInstallDir;
                 return true;
             }
 
-            if ((DateTime.UtcNow - _lastInstallCheckTime).TotalSeconds < 5.0)
+            // Check if RTSS process is currently running
+            var process = GetProcess();
+            if (process != null)
             {
-                installDir = null;
-                return false;
+                try
+                {
+                    var procPath = process.MainModule?.FileName;
+                    if (!string.IsNullOrEmpty(procPath) && File.Exists(procPath))
+                    {
+                        _cachedInstallDir = Path.GetDirectoryName(procPath);
+                        installDir = _cachedInstallDir;
+                        return true;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            if ((DateTime.UtcNow - _lastInstallCheckTime).TotalSeconds < 5.0 && !string.IsNullOrEmpty(_cachedInstallDir))
+            {
+                installDir = _cachedInstallDir;
+                return true;
             }
             _lastInstallCheckTime = DateTime.UtcNow;
 
-            installDir = RegistryHelper.ReadStringValue(Registry.LocalMachine, @"Software\WOW6432Node\Unwinder\RTSS", "InstallDir");
-            _cachedInstallDir = installDir;
-            return !string.IsNullOrEmpty(installDir);
+            // Check registry in both 32-bit and 64-bit views for both HKLM and HKCU
+            string[] subKeys = { @"Software\Unwinder\RTSS", @"Software\WOW6432Node\Unwinder\RTSS" };
+            RegistryView[] views = { RegistryView.Registry32, RegistryView.Registry64, RegistryView.Default };
+            RegistryHive[] hives = { RegistryHive.LocalMachine, RegistryHive.CurrentUser };
+
+            foreach (var hive in hives)
+            {
+                foreach (var view in views)
+                {
+                    foreach (var subKey in subKeys)
+                    {
+                        try
+                        {
+                            using (var baseKey = RegistryKey.OpenBaseKey(hive, view))
+                            using (var key = baseKey.OpenSubKey(subKey))
+                            {
+                                if (key != null)
+                                {
+                                    var val = key.GetValue("InstallDir") as string;
+                                    if (!string.IsNullOrEmpty(val) && Directory.Exists(val))
+                                    {
+                                        _cachedInstallDir = val;
+                                        installDir = _cachedInstallDir;
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                        catch
+                        {
+                        }
+                    }
+                }
+            }
+
+            // Check default installation directory paths
+            string[] defaultPaths = {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "RivaTuner Statistics Server"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "RivaTuner Statistics Server"),
+                @"C:\Program Files (x86)\RivaTuner Statistics Server",
+                @"C:\Program Files\RivaTuner Statistics Server"
+            };
+
+            foreach (var defaultPath in defaultPaths)
+            {
+                if (Directory.Exists(defaultPath) && File.Exists(Path.Combine(defaultPath, $"{RTSS_FILE_NAME}.exe")))
+                {
+                    _cachedInstallDir = defaultPath;
+                    installDir = _cachedInstallDir;
+                    return true;
+                }
+            }
+
+            installDir = null;
+            return false;
         }
 
         public static System.Collections.Generic.List<int> GetJudderFreeFPSValues(int refreshRate, int minFPS = 30)

@@ -340,8 +340,14 @@ namespace XboxGamingBar
             }
         }
 
-        private void UpdateOSDSegmentedButtons(int level)
+        private async void UpdateOSDSegmentedButtons(int level)
         {
+            if (Dispatcher != null && !Dispatcher.HasThreadAccess)
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateOSDSegmentedButtons(level));
+                return;
+            }
+
             Button[] buttons = new Button[] { OSDLevel0Button, OSDLevel1Button, OSDLevel2Button, OSDLevel3Button, OSDLevel4Button };
             var accentBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65)); // Xbox Green
             var transparentBrush = new SolidColorBrush(Windows.UI.Colors.Transparent);
@@ -771,8 +777,14 @@ namespace XboxGamingBar
             }
         }
 
-        private void UpdateFPSLimitSliderJudderFree()
+        private async void UpdateFPSLimitSliderJudderFree()
         {
+            if (Dispatcher != null && !Dispatcher.HasThreadAccess)
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateFPSLimitSliderJudderFree());
+                return;
+            }
+
             if (FPSLimitSlider == null || FPSLimitJudderFreeSlider == null || refreshRate == null || refreshRate.Value <= 0)
                 return;
 
@@ -837,8 +849,14 @@ namespace XboxGamingBar
             FPSLimitSlider.TickPlacement = TickPlacement.BottomRight;
         }
 
-        private void RenderJudderFreeMarkers()
+        private async void RenderJudderFreeMarkers()
         {
+            if (Dispatcher != null && !Dispatcher.HasThreadAccess)
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => RenderJudderFreeMarkers());
+                return;
+            }
+
             if (FPSLimitJudderFreeCanvas == null || refreshRate == null || refreshRate.Value <= 0)
                 return;
 
