@@ -46,6 +46,7 @@ namespace Shared.Enums
         OSDTextSize,
         HelperElevation,
         RTSSElevation,
+        OpenUri,
         AppExit = 100
     }
 }

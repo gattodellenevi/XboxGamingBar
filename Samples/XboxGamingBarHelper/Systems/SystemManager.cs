@@ -98,6 +98,12 @@ namespace XboxGamingBarHelper.Systems
             get { return helperElevation; }
         }
 
+        private readonly OpenUriProperty openUri;
+        public OpenUriProperty OpenUri
+        {
+            get { return openUri; }
+        }
+
         private IReadOnlyDictionary<GameId, GameProfile> Profiles { get; }
 
         // Keep track to current opening windows to determine currently running game.
@@ -138,6 +144,7 @@ namespace XboxGamingBarHelper.Systems
             Profiles = profiles;
 
             trackedGame = new TrackedGameProperty(this);
+            openUri = new OpenUriProperty(this);
             bool isElevated = CheckIsElevated();
             Logger.Info($"Check helper elevation status: {isElevated}.");
             helperElevation = new HelperElevationProperty(isElevated, this);

@@ -238,16 +238,55 @@ namespace XboxGamingBar
             }
         }
 
-        private async void HelperElevationWikiButton_Click(object sender, RoutedEventArgs e)
+        private async Task LaunchExternalUriAsync(string uriString)
         {
+            Logger.Info($"LaunchExternalUriAsync called with: {uriString}");
+
+            if (App.Connection != null)
+            {
+                try
+                {
+                    var valueSet = new ValueSet();
+                    valueSet.Add(nameof(Command), (int)Command.Set);
+                    valueSet.Add(nameof(Function), (int)Function.OpenUri);
+                    valueSet.Add(nameof(Content), uriString);
+                    valueSet.Add(nameof(UpdatedTime), DateTime.UtcNow.Ticks);
+
+                    var response = await App.Connection.SendMessageAsync(valueSet);
+                    Logger.Info($"SendMessageAsync OpenUri status: {response?.Status}");
+                    if (response?.Status == AppServiceResponseStatus.Success)
+                    {
+                        return;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to send OpenUri message to helper.");
+                }
+            }
+            else
+            {
+                Logger.Warn("App.Connection is null when attempting to launch URI via helper.");
+            }
+
+            // Fallback: Attempt UWP Launcher directly
             try
             {
-                await Launcher.LaunchUriAsync(new Uri("https://github.com/gattodellenevi/XboxGamingBar/wiki/Elevate-Process-Permissions"));
+                if (Uri.TryCreate(uriString, UriKind.Absolute, out var uri))
+                {
+                    bool launched = await Launcher.LaunchUriAsync(uri);
+                    Logger.Info($"Fallback Launcher.LaunchUriAsync result: {launched}");
+                }
             }
             catch (Exception ex)
             {
-                Logger.Warn(ex, "Failed to launch elevation wiki URI.");
+                Logger.Warn(ex, $"Fallback Launcher.LaunchUriAsync failed for {uriString}.");
             }
+        }
+
+        private async void HelperElevationWikiButton_Click(object sender, RoutedEventArgs e)
+        {
+            await LaunchExternalUriAsync("https://github.com/gattodellenevi/XboxGamingBar/wiki/Elevate-Process-Permissions");
         }
 
         private void CloseElevationHelpButton_Click(object sender, RoutedEventArgs e)

@@ -199,7 +199,8 @@ namespace XboxGamingBarHelper
                     rtssManager.JudderFreeFPS,
                     rtssManager.OSDTextSize,
                     rtssManager.RTSSElevation,
-                    systemManager.HelperElevation);
+                    systemManager.HelperElevation,
+                    systemManager.OpenUri);
 
                 Logger.Info("Initialize callbacks.");
                 systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;
