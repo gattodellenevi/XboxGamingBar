@@ -210,7 +210,7 @@ namespace XboxGamingBar
                     {
                         lastElevationFlyoutInvoker = HelperElevationHelpButton;
                     }
-                    HelperElevationWikiButton?.Focus(FocusState.Programmatic);
+                    RestartElevatedButton?.Focus(FocusState.Programmatic);
                 };
                 HelperElevationFlyout.Closed += (s, e) =>
                 {
@@ -332,11 +332,6 @@ namespace XboxGamingBar
                 Logger.Warn("App.Connection is null when attempting to restart elevated.");
                 await EnsureHelperConnectionOrLaunchAsync();
             }
-        }
-
-        private async void HelperElevationWikiButton_Click(object sender, RoutedEventArgs e)
-        {
-            await LaunchExternalUriAsync("https://github.com/gattodellenevi/XboxGamingBar/wiki/Elevate-Process-Permissions");
         }
 
         private void CloseElevationHelpButton_Click(object sender, RoutedEventArgs e)

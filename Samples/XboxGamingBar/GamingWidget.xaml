@@ -565,22 +565,6 @@
                                                                    Margin="0,0,0,14"/>
                                                         <Button x:Name="RestartElevatedButton"
                                                                 HorizontalAlignment="Stretch"
-                                                                Margin="0,0,0,8"
-                                                                Padding="10,6,10,6"
-                                                                CornerRadius="6"
-                                                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
-                                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                                BorderThickness="1"
-                                                                IsTabStop="True"
-                                                                XYFocusDown="{Binding ElementName=HelperElevationWikiButton}"
-                                                                Click="RestartElevatedButton_Click">
-                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                <FontIcon Glyph="&#xE7EF;" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
-                                                                <TextBlock x:Name="RestartElevatedButtonText" Text="Restart as Administrator" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                                            </StackPanel>
-                                                        </Button>
-                                                        <Button x:Name="HelperElevationWikiButton"
-                                                                HorizontalAlignment="Stretch"
                                                                 Margin="0,0,0,10"
                                                                 Padding="10,6,10,6"
                                                                 CornerRadius="6"
@@ -588,12 +572,11 @@
                                                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                                                 BorderThickness="1"
                                                                 IsTabStop="True"
-                                                                XYFocusUp="{Binding ElementName=RestartElevatedButton}"
                                                                 XYFocusDown="{Binding ElementName=CloseElevationHelpButton}"
-                                                                Click="HelperElevationWikiButton_Click">
+                                                                Click="RestartElevatedButton_Click">
                                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                <FontIcon Glyph="&#xE8A7;" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                                                                <TextBlock Text="View Elevation Guide (Wiki)" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                                <FontIcon Glyph="&#xE7EF;" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                                                                <TextBlock x:Name="RestartElevatedButtonText" Text="Restart as Administrator" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                                                             </StackPanel>
                                                         </Button>
                                                         <Button x:Name="CloseElevationHelpButton"
@@ -602,7 +585,7 @@
                                                                 Padding="0,6,0,6"
                                                                 CornerRadius="6"
                                                                 IsTabStop="True"
-                                                                XYFocusUp="{Binding ElementName=HelperElevationWikiButton}"
+                                                                XYFocusUp="{Binding ElementName=RestartElevatedButton}"
                                                                 Click="CloseElevationHelpButton_Click"/>
                                                     </StackPanel>
                                                 </Flyout>
