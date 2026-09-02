@@ -200,7 +200,8 @@ namespace XboxGamingBarHelper
                     rtssManager.OSDTextSize,
                     rtssManager.RTSSElevation,
                     systemManager.HelperElevation,
-                    systemManager.OpenUri);
+                    systemManager.OpenUri,
+                    systemManager.RestartElevated);
 
                 Logger.Info("Initialize callbacks.");
                 systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;

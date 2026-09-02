@@ -284,6 +284,56 @@ namespace XboxGamingBar
             }
         }
 
+        private async void RestartElevatedButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("RestartElevatedButton clicked.");
+            if (App.Connection != null)
+            {
+                try
+                {
+                    if (RestartElevatedButtonText != null)
+                    {
+                        RestartElevatedButtonText.Text = "Restarting...";
+                    }
+                    if (RestartElevatedButton != null)
+                    {
+                        RestartElevatedButton.IsEnabled = false;
+                    }
+
+                    var valueSet = new ValueSet();
+                    valueSet.Add(nameof(Command), (int)Command.Set);
+                    valueSet.Add(nameof(Function), (int)Function.RestartElevated);
+                    valueSet.Add(nameof(Content), true);
+                    valueSet.Add(nameof(UpdatedTime), DateTime.UtcNow.Ticks);
+
+                    var response = await App.Connection.SendMessageAsync(valueSet);
+                    Logger.Info($"SendMessageAsync RestartElevated status: {response?.Status}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to send RestartElevated message to helper.");
+                }
+                finally
+                {
+                    await Task.Delay(1500);
+                    if (RestartElevatedButtonText != null)
+                    {
+                        RestartElevatedButtonText.Text = "Restart as Administrator";
+                    }
+                    if (RestartElevatedButton != null)
+                    {
+                        RestartElevatedButton.IsEnabled = true;
+                    }
+                    HelperElevationFlyout?.Hide();
+                }
+            }
+            else
+            {
+                Logger.Warn("App.Connection is null when attempting to restart elevated.");
+                await EnsureHelperConnectionOrLaunchAsync();
+            }
+        }
+
         private async void HelperElevationWikiButton_Click(object sender, RoutedEventArgs e)
         {
             await LaunchExternalUriAsync("https://github.com/gattodellenevi/XboxGamingBar/wiki/Elevate-Process-Permissions");

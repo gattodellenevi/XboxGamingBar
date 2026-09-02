@@ -1,4 +1,4 @@
-﻿using Shared.Data;
+using Shared.Data;
 using System.Collections;
 using System.Linq;
 using Windows.Foundation.Collections;
@@ -16,22 +16,27 @@ namespace XboxGamingBar.Data
 
         public WidgetValueSet(ValueSet inValueSet)
         {
-            ValueSet = inValueSet;
+            ValueSet = inValueSet ?? new ValueSet();
         }
 
         public override object this[string key]
         {
-            get { return ValueSet[key]; }
+            get { return ValueSet != null ? ValueSet[key] : null; }
         }
 
         public override void Add(string key, object value)
         {
-            ValueSet.Add(key, value);
+            ValueSet?.Add(key, value);
         }
 
         public override bool TryGetValue(string key, out object value)
         {
-            return ValueSet.TryGetValue(key, out value);
+            if (ValueSet != null)
+            {
+                return ValueSet.TryGetValue(key, out value);
+            }
+            value = null;
+            return false;
         }
 
         public override string ToDebugString()

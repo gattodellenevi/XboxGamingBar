@@ -47,6 +47,7 @@ namespace Shared.Enums
         HelperElevation,
         RTSSElevation,
         OpenUri,
+        RestartElevated,
         AppExit = 100
     }
 }

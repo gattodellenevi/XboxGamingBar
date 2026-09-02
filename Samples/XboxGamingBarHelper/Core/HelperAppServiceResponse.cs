@@ -1,4 +1,4 @@
-﻿using Shared.Data;
+using Shared.Data;
 using Windows.ApplicationModel.AppService;
 
 namespace XboxGamingBarHelper.Core
@@ -9,7 +9,14 @@ namespace XboxGamingBarHelper.Core
 
         public override SharedValueSet Message
         {
-            get { return new HelperValueSet(AppServiceResponse.Message); }
+            get
+            {
+                if (AppServiceResponse?.Message != null)
+                {
+                    return new HelperValueSet(AppServiceResponse.Message);
+                }
+                return null;
+            }
         }
 
         public HelperAppServiceResponse(AppServiceResponse appServiceResponse)
