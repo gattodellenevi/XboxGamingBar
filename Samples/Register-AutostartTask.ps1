@@ -25,38 +25,26 @@ if (-not $isElevated) {
     }
 }
 
-# Locate installed AppX/MSIX package in WindowsApps and deploy to LocalAppData
+# Locate installed AppX/MSIX package in WindowsApps
 if ([string]::IsNullOrWhiteSpace($ExePath)) {
     try {
         $packages = Get-AppxPackage | Where-Object { $_.Name -like "*CouchGamingBar*" }
         foreach ($pkg in $packages) {
             if ($pkg.InstallLocation) {
-                $candidate1 = Join-Path $pkg.InstallLocation "CouchGamingBarHelper"
-                $candidate2 = $pkg.InstallLocation
-                $sourceDir = $null
+                $candidate1 = Join-Path $pkg.InstallLocation "CouchGamingBarHelper\CouchGamingBarHelper.exe"
+                $candidate2 = Join-Path $pkg.InstallLocation "CouchGamingBarHelper.exe"
 
-                if (Test-Path (Join-Path $candidate1 "CouchGamingBarHelper.exe")) {
-                    $sourceDir = $candidate1
-                } elseif (Test-Path (Join-Path $candidate2 "CouchGamingBarHelper.exe")) {
-                    $sourceDir = $candidate2
-                }
-
-                if ($sourceDir) {
-                    $targetDir = Join-Path $env:LOCALAPPDATA "CouchGamingBarHelper"
-                    if (-not (Test-Path $targetDir)) {
-                        New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
-                    }
-                    Copy-Item -Path (Join-Path $sourceDir "*") -Destination $targetDir -Recurse -Force -ErrorAction Stop
-                    $targetExe = Join-Path $targetDir "CouchGamingBarHelper.exe"
-                    if (Test-Path $targetExe) {
-                        $ExePath = $targetExe
-                        break
-                    }
+                if (Test-Path $candidate1) {
+                    $ExePath = $candidate1
+                    break
+                } elseif (Test-Path $candidate2) {
+                    $ExePath = $candidate2
+                    break
                 }
             }
         }
     } catch {
-        Write-Warning "Could not extract helper from package: $($_.Exception.Message)"
+        Write-Warning "Could not locate helper in package: $($_.Exception.Message)"
     }
 }
 
