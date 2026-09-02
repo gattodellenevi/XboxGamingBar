@@ -174,6 +174,58 @@
                         Visibility="Collapsed"
                         ToolTipService.ToolTip="Helper running without Administrator privileges. Hardware power controls are limited."
                         Click="HeroElevationWarningButton_Click">
+                    <Button.Flyout>
+                        <Flyout x:Name="HelperElevationFlyout" Placement="Bottom" LightDismissOverlayMode="On">
+                            <Flyout.FlyoutPresenterStyle>
+                                <Style TargetType="FlyoutPresenter">
+                                    <Setter Property="MaxWidth" Value="320"/>
+                                    <Setter Property="Padding" Value="14,14,14,14"/>
+                                    <Setter Property="CornerRadius" Value="8"/>
+                                    <Setter Property="Background" Value="#252525"/>
+                                    <Setter Property="BorderBrush" Value="#484848"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
+                                    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+                                    <Setter Property="IsTabStop" Value="False"/>
+                                </Style>
+                            </Flyout.FlyoutPresenterStyle>
+                            <StackPanel x:Name="HelperElevationFlyoutContent" Width="280" XYFocusKeyboardNavigation="Enabled">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
+                                    <FontIcon Glyph="&#xE897;" FontSize="16" Margin="0,0,8,0" Foreground="{StaticResource XboxGreenBrush}"/>
+                                    <TextBlock Text="Helper Elevation" FontWeight="SemiBold" FontSize="15" Foreground="White"/>
+                                </StackPanel>
+                                <TextBlock Text="Running the helper with administrator privileges allows CouchGamingBar to fully control RTSS and system settings. Frame limiting may not work without administrator privileges."
+                                           Style="{StaticResource SubtitleTextStyle}"
+                                           Foreground="#D0D0D0"
+                                           TextWrapping="Wrap"
+                                           Margin="0,0,0,14"/>
+                                <Button x:Name="RestartElevatedButton"
+                                        HorizontalAlignment="Stretch"
+                                        Margin="0,0,0,10"
+                                        Padding="10,6,10,6"
+                                        CornerRadius="6"
+                                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        IsTabStop="True"
+                                        XYFocusDown="{Binding ElementName=CloseElevationHelpButton}"
+                                        Click="RestartElevatedButton_Click">
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                        <FontIcon Glyph="&#xE7EF;" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                                        <TextBlock x:Name="RestartElevatedButtonText" Text="Restart as Administrator" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="CloseElevationHelpButton"
+                                        Content="Close"
+                                        HorizontalAlignment="Stretch"
+                                        Padding="0,6,0,6"
+                                        CornerRadius="6"
+                                        IsTabStop="True"
+                                        XYFocusUp="{Binding ElementName=RestartElevatedButton}"
+                                        Click="CloseElevationHelpButton_Click"/>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <FontIcon x:Name="HeroElevationWarningIcon" Glyph="&#xE7BA;" FontSize="12" Foreground="#F59E0B" Margin="0,0,5,0" VerticalAlignment="Center"/>
                         <TextBlock x:Name="HeroElevationWarningText" Text="Admin Needed" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" VerticalAlignment="Center"/>
@@ -515,7 +567,7 @@
                                 <StackPanel>
                                     <!-- Helper Process Row -->
                                     <Grid Margin="0,2,0,2">
-                                        <StackPanel VerticalAlignment="Center" Margin="0,0,36,0">
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
                                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                                 <TextBlock x:Name="HelperStatusTitleText" Text="Helper Process" FontWeight="SemiBold" FontSize="15"
                                                     TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
@@ -527,70 +579,6 @@
                                             </StackPanel>
                                             <TextBlock x:Name="HelperStatusSubtitleText" Text="Helper process is not running or disconnected" Style="{StaticResource SubtitleTextStyle}"/>
                                         </StackPanel>
-                                        <Button x:Name="HelperElevationHelpButton"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Center"
-                                                Width="30" Height="30"
-                                                Padding="0"
-                                                CornerRadius="15"
-                                                Background="Transparent"
-                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                BorderThickness="1"
-                                                ToolTipService.ToolTip="Elevation Information">
-                                            <FontIcon Glyph="&#xE897;" FontSize="13" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                                            <Button.Flyout>
-                                                <Flyout x:Name="HelperElevationFlyout" Placement="TopEdgeAlignedRight" LightDismissOverlayMode="On">
-                                                    <Flyout.FlyoutPresenterStyle>
-                                                        <Style TargetType="FlyoutPresenter">
-                                                            <Setter Property="MaxWidth" Value="320"/>
-                                                            <Setter Property="Padding" Value="14,14,14,14"/>
-                                                            <Setter Property="CornerRadius" Value="8"/>
-                                                            <Setter Property="Background" Value="#252525"/>
-                                                            <Setter Property="BorderBrush" Value="#484848"/>
-                                                            <Setter Property="BorderThickness" Value="1"/>
-                                                            <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
-                                                            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
-                                                            <Setter Property="IsTabStop" Value="False"/>
-                                                        </Style>
-                                                    </Flyout.FlyoutPresenterStyle>
-                                                    <StackPanel x:Name="HelperElevationFlyoutContent" Width="280" XYFocusKeyboardNavigation="Enabled">
-                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
-                                                            <FontIcon Glyph="&#xE897;" FontSize="16" Margin="0,0,8,0" Foreground="{StaticResource XboxGreenBrush}"/>
-                                                            <TextBlock Text="Helper Elevation" FontWeight="SemiBold" FontSize="15" Foreground="White"/>
-                                                        </StackPanel>
-                                                        <TextBlock Text="Running the helper with administrator privileges allows CouchGamingBar to fully control RTSS and system settings. Frame limiting may not work without administrator privileges."
-                                                                   Style="{StaticResource SubtitleTextStyle}"
-                                                                   Foreground="#D0D0D0"
-                                                                   TextWrapping="Wrap"
-                                                                   Margin="0,0,0,14"/>
-                                                        <Button x:Name="RestartElevatedButton"
-                                                                HorizontalAlignment="Stretch"
-                                                                Margin="0,0,0,10"
-                                                                Padding="10,6,10,6"
-                                                                CornerRadius="6"
-                                                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
-                                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                                BorderThickness="1"
-                                                                IsTabStop="True"
-                                                                XYFocusDown="{Binding ElementName=CloseElevationHelpButton}"
-                                                                Click="RestartElevatedButton_Click">
-                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                <FontIcon Glyph="&#xE7EF;" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
-                                                                <TextBlock x:Name="RestartElevatedButtonText" Text="Restart as Administrator" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                                            </StackPanel>
-                                                        </Button>
-                                                        <Button x:Name="CloseElevationHelpButton"
-                                                                Content="Close"
-                                                                HorizontalAlignment="Stretch"
-                                                                Padding="0,6,0,6"
-                                                                CornerRadius="6"
-                                                                IsTabStop="True"
-                                                                XYFocusUp="{Binding ElementName=RestartElevatedButton}"
-                                                                Click="CloseElevationHelpButton_Click"/>
-                                                    </StackPanel>
-                                                </Flyout>
-                                            </Button.Flyout>
-                                        </Button>
                                     </Grid>
 
                                     <!-- Divider between Helper and RTSS -->

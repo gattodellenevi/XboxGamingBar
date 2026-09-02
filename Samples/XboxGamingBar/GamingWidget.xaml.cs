@@ -208,7 +208,7 @@ namespace XboxGamingBar
                     isElevationFlyoutOpen = true;
                     if (lastElevationFlyoutInvoker == null)
                     {
-                        lastElevationFlyoutInvoker = HelperElevationHelpButton;
+                        lastElevationFlyoutInvoker = HeroElevationWarningButton;
                     }
                     RestartElevatedButton?.Focus(FocusState.Programmatic);
                 };
@@ -233,7 +233,7 @@ namespace XboxGamingBar
             if (e.Key == VirtualKey.GamepadB || e.Key == VirtualKey.Escape)
             {
                 HelperElevationFlyout?.Hide();
-                (lastElevationFlyoutInvoker ?? HelperElevationHelpButton)?.Focus(FocusState.Programmatic);
+                (lastElevationFlyoutInvoker ?? HeroElevationWarningButton)?.Focus(FocusState.Programmatic);
                 e.Handled = true;
             }
         }
@@ -337,7 +337,7 @@ namespace XboxGamingBar
         private void CloseElevationHelpButton_Click(object sender, RoutedEventArgs e)
         {
             HelperElevationFlyout?.Hide();
-            (lastElevationFlyoutInvoker ?? HelperElevationHelpButton)?.Focus(FocusState.Programmatic);
+            (lastElevationFlyoutInvoker ?? HeroElevationWarningButton)?.Focus(FocusState.Programmatic);
         }
 
         private void HeroElevationWarningButton_Click(object sender, RoutedEventArgs e)
@@ -371,7 +371,7 @@ namespace XboxGamingBar
             if (isElevationFlyoutOpen && (e.Key == VirtualKey.GamepadB || e.Key == VirtualKey.Escape))
             {
                 HelperElevationFlyout?.Hide();
-                (lastElevationFlyoutInvoker ?? HelperElevationHelpButton)?.Focus(FocusState.Programmatic);
+                (lastElevationFlyoutInvoker ?? HeroElevationWarningButton)?.Focus(FocusState.Programmatic);
                 e.Handled = true;
                 return;
             }
