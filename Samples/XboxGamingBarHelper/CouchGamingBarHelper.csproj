@@ -60,14 +60,14 @@
     </Reference>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
-    <PackageReference Include="System.Management" Version="9.0.0" />
+    <PackageReference Include="System.Management" Version="10.0.2" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
-    <PackageReference Include="HidSharp" Version="2.1.0" Condition="'$(Configuration)' != 'Store'" />
-    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.4" Condition="'$(Configuration)' != 'Store'" />
+    <PackageReference Include="HidSharp" Version="2.6.4" Condition="'$(Configuration)' != 'Store'" />
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" Condition="'$(Configuration)' != 'Store'" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
     <PackageReference Include="NLog" Version="6.0.4" />
     <PackageReference Include="System.Buffers" Version="4.5.1" />
-    <PackageReference Include="System.CodeDom" Version="9.0.0" />
+    <PackageReference Include="System.CodeDom" Version="10.0.2" />
     <PackageReference Include="System.IO.Pipelines" Version="8.0.0" />
     <PackageReference Include="System.Memory" Version="4.5.5" />
     <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />

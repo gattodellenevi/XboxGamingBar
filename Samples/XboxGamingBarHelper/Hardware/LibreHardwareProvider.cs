@@ -89,7 +89,15 @@ namespace XboxGamingBarHelper.Hardware
                                 if (coreNum > maxCores) maxCores = coreNum;
                             }
                         }
+                        else if (sensor.SensorType == SensorType.Load && sensor.Name.StartsWith("CPU Core #"))
+                        {
+                            if (int.TryParse(sensor.Name.Replace("CPU Core #", ""), out int coreNum))
+                            {
+                                if (coreNum > maxCores) maxCores = coreNum;
+                            }
+                        }
                     }
+                    if (maxCores == 0) maxCores = Environment.ProcessorCount;
                     cpuCoreCount = Math.Min(maxCores, 8);
                     cpuCoreUsageSensors = new ISensor[cpuCoreCount];
                     cpuCoreClockSensors = new ISensor[cpuCoreCount];
