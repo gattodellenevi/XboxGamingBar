@@ -110,6 +110,12 @@ namespace XboxGamingBarHelper.Systems
             get { return restartElevated; }
         }
 
+        private readonly SendShortcutProperty sendShortcut;
+        public SendShortcutProperty SendShortcut
+        {
+            get { return sendShortcut; }
+        }
+
         private IReadOnlyDictionary<GameId, GameProfile> Profiles { get; }
 
         // Keep track to current opening windows to determine currently running game.
@@ -152,6 +158,7 @@ namespace XboxGamingBarHelper.Systems
             trackedGame = new TrackedGameProperty(this);
             openUri = new OpenUriProperty(this);
             restartElevated = new RestartElevatedProperty(this);
+            sendShortcut = new SendShortcutProperty(this);
             bool isElevated = CheckIsElevated();
             Logger.Info($"Check helper elevation status: {isElevated}.");
             helperElevation = new HelperElevationProperty(isElevated, this);

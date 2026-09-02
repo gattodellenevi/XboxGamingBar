@@ -48,6 +48,7 @@ namespace Shared.Enums
         RTSSElevation,
         OpenUri,
         RestartElevated,
+        SendShortcut,
         AppExit = 100
     }
 }

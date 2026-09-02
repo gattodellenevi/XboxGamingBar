@@ -224,6 +224,7 @@ namespace XboxGamingBar
 
             this.KeyDown += GamingWidget_KeyDown;
             InitializeAppVersion();
+            InitializeShortcuts();
         }
 
         private Control lastElevationFlyoutInvoker;
@@ -374,6 +375,72 @@ namespace XboxGamingBar
                 (lastElevationFlyoutInvoker ?? HeroElevationWarningButton)?.Focus(FocusState.Programmatic);
                 e.Handled = true;
                 return;
+            }
+
+            if (ShortcutEditorOverlay != null && ShortcutEditorOverlay.Visibility == Visibility.Visible)
+            {
+                if (isRecordingKeys)
+                {
+                    if (e.Key == VirtualKey.Control)
+                    {
+                        if (EditorCtrlToggle != null) EditorCtrlToggle.IsChecked = true;
+                        UpdateEditorPreview();
+                        e.Handled = true;
+                        return;
+                    }
+                    if (e.Key == VirtualKey.Menu)
+                    {
+                        if (EditorAltToggle != null) EditorAltToggle.IsChecked = true;
+                        UpdateEditorPreview();
+                        e.Handled = true;
+                        return;
+                    }
+                    if (e.Key == VirtualKey.Shift)
+                    {
+                        if (EditorShiftToggle != null) EditorShiftToggle.IsChecked = true;
+                        UpdateEditorPreview();
+                        e.Handled = true;
+                        return;
+                    }
+                    if (e.Key == VirtualKey.LeftWindows || e.Key == VirtualKey.RightWindows)
+                    {
+                        if (EditorWinToggle != null) EditorWinToggle.IsChecked = true;
+                        UpdateEditorPreview();
+                        e.Handled = true;
+                        return;
+                    }
+
+                    int vk = (int)e.Key;
+                    if (EditorKeyComboBox != null)
+                    {
+                        int keyIdx = ShortcutManager.AvailableKeys.FindIndex(k => k.VirtualKey == vk);
+                        if (keyIdx >= 0)
+                        {
+                            EditorKeyComboBox.SelectedIndex = keyIdx;
+                        }
+                        else
+                        {
+                            var dynamicKey = new ShortcutKeyOption { Name = ShortcutItem.GetKeyDisplayName(vk), VirtualKey = vk };
+                            ShortcutManager.AvailableKeys.Add(dynamicKey);
+                            EditorKeyComboBox.ItemsSource = null;
+                            EditorKeyComboBox.ItemsSource = ShortcutManager.AvailableKeys;
+                            EditorKeyComboBox.SelectedItem = dynamicKey;
+                        }
+                    }
+
+                    isRecordingKeys = false;
+                    UpdateRecordButtonState(false);
+                    UpdateEditorPreview();
+                    e.Handled = true;
+                    return;
+                }
+
+                if (e.Key == VirtualKey.GamepadB || e.Key == VirtualKey.Escape)
+                {
+                    EditorCancelButton_Click(this, null);
+                    e.Handled = true;
+                    return;
+                }
             }
 
             if (e.Key == VirtualKey.GamepadLeftTrigger || e.Key == VirtualKey.GamepadLeftShoulder || e.Key == VirtualKey.PageUp)
@@ -1008,5 +1075,441 @@ namespace XboxGamingBar
 
             FPSLimitJudderFreeCanvas.Children.Add(textBlock);
         }
+
+        #region Shortcuts Logic
+
+        private List<ShortcutItem> shortcuts = new List<ShortcutItem>();
+        private ShortcutItem editingShortcut = null;
+        private bool isRecordingKeys = false;
+
+        private void InitializeShortcuts()
+        {
+            try
+            {
+                if (EditorPresetComboBox != null)
+                {
+                    EditorPresetComboBox.ItemsSource = ShortcutManager.Presets;
+                    EditorPresetComboBox.SelectedIndex = 0;
+                    WidgetComboBoxSelectionProperty<int>.AttachNavigationHandler(EditorPresetComboBox);
+                }
+
+                if (EditorIconComboBox != null)
+                {
+                    EditorIconComboBox.ItemsSource = ShortcutManager.Icons;
+                    EditorIconComboBox.SelectedIndex = 0;
+                    WidgetComboBoxSelectionProperty<int>.AttachNavigationHandler(EditorIconComboBox);
+                }
+
+                if (EditorKeyComboBox != null)
+                {
+                    EditorKeyComboBox.ItemsSource = ShortcutManager.AvailableKeys;
+                    EditorKeyComboBox.SelectedIndex = 0;
+                    WidgetComboBoxSelectionProperty<int>.AttachNavigationHandler(EditorKeyComboBox);
+                }
+
+                shortcuts = ShortcutManager.LoadShortcuts();
+                RefreshShortcutsGrid();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to initialize shortcuts.");
+            }
+        }
+
+        private void RefreshShortcutsGrid()
+        {
+            if (ShortcutsGridView != null)
+            {
+                ShortcutsGridView.ItemsSource = null;
+                ShortcutsGridView.ItemsSource = shortcuts;
+            }
+
+            if (NoShortcutsPlaceholder != null)
+            {
+                NoShortcutsPlaceholder.Visibility = (shortcuts == null || shortcuts.Count == 0) ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        private async void ShortcutButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is ShortcutItem shortcut)
+            {
+                Logger.Info($"Shortcut clicked: '{shortcut.Name}' ({shortcut.DisplayKeyCombo})");
+                await SendShortcutAsync(shortcut);
+            }
+        }
+
+        private void ShortcutButton_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.ContextFlyout is MenuFlyout flyout)
+            {
+                flyout.ShowAt(fe);
+                e.Handled = true;
+            }
+        }
+
+        private void ShortcutButton_Holding(object sender, HoldingRoutedEventArgs e)
+        {
+            if (e.HoldingState == Windows.UI.Input.HoldingState.Started && sender is FrameworkElement fe && fe.ContextFlyout is MenuFlyout flyout)
+            {
+                flyout.ShowAt(fe);
+                e.Handled = true;
+            }
+        }
+
+        private async void MenuExecute_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is ShortcutItem shortcut)
+            {
+                await SendShortcutAsync(shortcut);
+            }
+        }
+
+        private void MenuEdit_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is ShortcutItem shortcut)
+            {
+                OpenShortcutEditor(shortcut);
+            }
+        }
+
+        private void MenuDelete_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is ShortcutItem shortcut)
+            {
+                shortcuts.RemoveAll(s => s.Id == shortcut.Id);
+                ShortcutManager.SaveShortcuts(shortcuts);
+                RefreshShortcutsGrid();
+            }
+        }
+
+        private void AddShortcutButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                OpenShortcutEditor(null);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in AddShortcutButton_Click.");
+            }
+        }
+
+        private void OpenShortcutEditor(ShortcutItem itemToEdit)
+        {
+            try
+            {
+                editingShortcut = itemToEdit;
+                isRecordingKeys = false;
+                UpdateRecordButtonState(false);
+
+                if (itemToEdit == null)
+                {
+                    if (EditorModalTitleText != null) EditorModalTitleText.Text = "Add Shortcut";
+                    if (EditorPresetComboBox != null) EditorPresetComboBox.SelectedIndex = 0;
+                    if (EditorNameTextBox != null) EditorNameTextBox.Text = "";
+                    if (EditorIconComboBox != null) EditorIconComboBox.SelectedIndex = 0;
+                    if (EditorCtrlToggle != null) EditorCtrlToggle.IsChecked = false;
+                    if (EditorAltToggle != null) EditorAltToggle.IsChecked = false;
+                    if (EditorShiftToggle != null) EditorShiftToggle.IsChecked = false;
+                    if (EditorWinToggle != null) EditorWinToggle.IsChecked = false;
+                    if (EditorKeyComboBox != null) EditorKeyComboBox.SelectedIndex = 0;
+                }
+                else
+                {
+                    if (EditorModalTitleText != null) EditorModalTitleText.Text = "Edit Shortcut";
+                    if (EditorPresetComboBox != null) EditorPresetComboBox.SelectedIndex = 0;
+                    if (EditorNameTextBox != null) EditorNameTextBox.Text = itemToEdit.Name ?? "";
+
+                    if (EditorIconComboBox != null)
+                    {
+                        int iconIdx = ShortcutManager.Icons.FindIndex(ic => ic.Glyph == itemToEdit.IconGlyph);
+                        EditorIconComboBox.SelectedIndex = iconIdx >= 0 ? iconIdx : 0;
+                    }
+
+                    if (EditorCtrlToggle != null) EditorCtrlToggle.IsChecked = itemToEdit.Ctrl;
+                    if (EditorAltToggle != null) EditorAltToggle.IsChecked = itemToEdit.Alt;
+                    if (EditorShiftToggle != null) EditorShiftToggle.IsChecked = itemToEdit.Shift;
+                    if (EditorWinToggle != null) EditorWinToggle.IsChecked = itemToEdit.Win;
+
+                    if (EditorKeyComboBox != null)
+                    {
+                        int keyIdx = ShortcutManager.AvailableKeys.FindIndex(k => k.VirtualKey == itemToEdit.VirtualKey);
+                        EditorKeyComboBox.SelectedIndex = keyIdx >= 0 ? keyIdx : 0;
+                    }
+                }
+
+                UpdateEditorPreview();
+                if (ShortcutEditorOverlay != null)
+                {
+                    ShortcutEditorOverlay.Visibility = Visibility.Visible;
+                    try
+                    {
+                        EditorNameTextBox?.Focus(FocusState.Programmatic);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn(ex, "Failed to focus EditorNameTextBox.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in OpenShortcutEditor.");
+            }
+        }
+
+        private void EditorPresetComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (EditorPresetComboBox?.SelectedItem is ShortcutPreset preset && preset.VirtualKey > 0)
+                {
+                    if (EditorNameTextBox != null) EditorNameTextBox.Text = preset.Name;
+                    if (EditorCtrlToggle != null) EditorCtrlToggle.IsChecked = preset.Ctrl;
+                    if (EditorAltToggle != null) EditorAltToggle.IsChecked = preset.Alt;
+                    if (EditorShiftToggle != null) EditorShiftToggle.IsChecked = preset.Shift;
+                    if (EditorWinToggle != null) EditorWinToggle.IsChecked = preset.Win;
+
+                    if (EditorIconComboBox != null)
+                    {
+                        int iconIdx = ShortcutManager.Icons.FindIndex(ic => ic.Glyph == preset.IconGlyph);
+                        if (iconIdx >= 0) EditorIconComboBox.SelectedIndex = iconIdx;
+                    }
+
+                    if (EditorKeyComboBox != null)
+                    {
+                        int keyIdx = ShortcutManager.AvailableKeys.FindIndex(k => k.VirtualKey == preset.VirtualKey);
+                        if (keyIdx >= 0) EditorKeyComboBox.SelectedIndex = keyIdx;
+                    }
+
+                    UpdateEditorPreview();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in EditorPresetComboBox_SelectionChanged.");
+            }
+        }
+
+        private void EditorInput_Changed(object sender, object e)
+        {
+            try
+            {
+                UpdateEditorPreview();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in EditorInput_Changed.");
+            }
+        }
+
+        private void EditorModifier_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                UpdateEditorPreview();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in EditorModifier_Click.");
+            }
+        }
+
+        private void EditorKeyComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                UpdateEditorPreview();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in EditorKeyComboBox_SelectionChanged.");
+            }
+        }
+
+        private void UpdateEditorPreview()
+        {
+            try
+            {
+                string name = string.IsNullOrWhiteSpace(EditorNameTextBox?.Text) ? "Shortcut Name" : EditorNameTextBox.Text;
+                string iconGlyph = (EditorIconComboBox?.SelectedItem is ShortcutIconOption ic) ? ic.Glyph : "\uE765";
+                bool ctrl = EditorCtrlToggle?.IsChecked == true;
+                bool alt = EditorAltToggle?.IsChecked == true;
+                bool shift = EditorShiftToggle?.IsChecked == true;
+                bool win = EditorWinToggle?.IsChecked == true;
+                int vk = (EditorKeyComboBox?.SelectedItem is ShortcutKeyOption ko) ? ko.VirtualKey : 0;
+
+                var tempItem = new ShortcutItem(name, iconGlyph, ctrl, alt, shift, win, vk);
+
+                if (EditorPreviewName != null) EditorPreviewName.Text = name;
+                if (EditorPreviewIcon != null) EditorPreviewIcon.Glyph = iconGlyph;
+                if (EditorHeaderIcon != null) EditorHeaderIcon.Glyph = iconGlyph;
+                if (EditorPreviewComboText != null) EditorPreviewComboText.Text = tempItem.DisplayKeyCombo;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in UpdateEditorPreview.");
+            }
+        }
+
+        private void EditorRecordKeysButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                isRecordingKeys = !isRecordingKeys;
+                UpdateRecordButtonState(isRecordingKeys);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in EditorRecordKeysButton_Click.");
+            }
+        }
+
+        private void UpdateRecordButtonState(bool recording)
+        {
+            try
+            {
+                if (EditorRecordText != null)
+                {
+                    EditorRecordText.Text = recording ? "Listening... Press keys on keyboard" : "Press Keys to Record";
+                }
+                if (EditorRecordKeysButton != null)
+                {
+                    if (recording)
+                    {
+                        EditorRecordKeysButton.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65));
+                    }
+                    else
+                    {
+                        EditorRecordKeysButton.ClearValue(Button.BackgroundProperty);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in UpdateRecordButtonState.");
+            }
+        }
+
+        private async void EditorTestButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                bool ctrl = EditorCtrlToggle?.IsChecked == true;
+                bool alt = EditorAltToggle?.IsChecked == true;
+                bool shift = EditorShiftToggle?.IsChecked == true;
+                bool win = EditorWinToggle?.IsChecked == true;
+                int vk = (EditorKeyComboBox?.SelectedItem is ShortcutKeyOption ko) ? ko.VirtualKey : 0;
+
+                if (vk > 0 || ctrl || alt || shift || win)
+                {
+                    var tempItem = new ShortcutItem("Test", "", ctrl, alt, shift, win, vk);
+                    await SendShortcutAsync(tempItem);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in EditorTestButton_Click.");
+            }
+        }
+
+        private void EditorCancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                isRecordingKeys = false;
+                UpdateRecordButtonState(false);
+                if (ShortcutEditorOverlay != null)
+                {
+                    ShortcutEditorOverlay.Visibility = Visibility.Collapsed;
+                }
+                AddShortcutButton?.Focus(FocusState.Programmatic);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in EditorCancelButton_Click.");
+            }
+        }
+
+        private void EditorSaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string name = EditorNameTextBox?.Text?.Trim();
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    name = "Shortcut";
+                }
+
+                string iconGlyph = (EditorIconComboBox?.SelectedItem is ShortcutIconOption ic) ? ic.Glyph : "\uE765";
+                bool ctrl = EditorCtrlToggle?.IsChecked == true;
+                bool alt = EditorAltToggle?.IsChecked == true;
+                bool shift = EditorShiftToggle?.IsChecked == true;
+                bool win = EditorWinToggle?.IsChecked == true;
+                int vk = (EditorKeyComboBox?.SelectedItem is ShortcutKeyOption ko) ? ko.VirtualKey : 0;
+
+                if (editingShortcut != null)
+                {
+                    editingShortcut.Name = name;
+                    editingShortcut.IconGlyph = iconGlyph;
+                    editingShortcut.Ctrl = ctrl;
+                    editingShortcut.Alt = alt;
+                    editingShortcut.Shift = shift;
+                    editingShortcut.Win = win;
+                    editingShortcut.VirtualKey = vk;
+                }
+                else
+                {
+                    var newItem = new ShortcutItem(name, iconGlyph, ctrl, alt, shift, win, vk);
+                    shortcuts.Add(newItem);
+                }
+
+                ShortcutManager.SaveShortcuts(shortcuts);
+                RefreshShortcutsGrid();
+
+                if (ShortcutEditorOverlay != null)
+                {
+                    ShortcutEditorOverlay.Visibility = Visibility.Collapsed;
+                }
+                AddShortcutButton?.Focus(FocusState.Programmatic);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in EditorSaveButton_Click.");
+            }
+        }
+
+        private async Task SendShortcutAsync(ShortcutItem shortcut)
+        {
+            if (shortcut == null) return;
+
+            Logger.Info($"SendShortcutAsync: Sending payload '{shortcut.ToPayloadString()}'");
+
+            if (App.Connection != null)
+            {
+                try
+                {
+                    var valueSet = new ValueSet();
+                    valueSet.Add(nameof(Command), (int)Command.Set);
+                    valueSet.Add(nameof(Function), (int)Function.SendShortcut);
+                    valueSet.Add(nameof(Content), shortcut.ToPayloadString());
+                    valueSet.Add(nameof(UpdatedTime), DateTime.UtcNow.Ticks);
+
+                    var response = await App.Connection.SendMessageAsync(valueSet);
+                    Logger.Info($"SendMessageAsync SendShortcut status: {response?.Status}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to send shortcut payload to helper.");
+                }
+            }
+            else
+            {
+                Logger.Warn("App.Connection is null when attempting to execute shortcut.");
+            }
+        }
+
+        #endregion
     }
 }

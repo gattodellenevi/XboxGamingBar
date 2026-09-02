@@ -128,6 +128,7 @@
     <Compile Include="Data\ResolutionProperty.cs" />
     <Compile Include="Data\ResolutionsProperty.cs" />
     <Compile Include="Data\RunningGameProperty.cs" />
+    <Compile Include="Data\ShortcutManager.cs" />
     <Compile Include="Data\TrackedGameProperty.cs" />
     <Compile Include="Data\WidgetAppServiceRequest.cs" />
     <Compile Include="Data\WidgetAppServiceResponse.cs" />

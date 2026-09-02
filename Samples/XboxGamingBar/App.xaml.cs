@@ -36,13 +36,16 @@ namespace XboxGamingBar
         public App()
         {
             this.InitializeComponent();
+            this.UnhandledException += App_UnhandledException;
             this.Suspending += OnSuspending;
             this.EnteredBackground += App_EnteredBackground;
             this.LeavingBackground += App_LeavingBackground;
-            //var installedLocation = Windows.ApplicationModel.Package.Current.InstalledLocation.Path;
-            //var localFolder = ApplicationData.Current.LocalFolder.Path;
-            //var localCache = ApplicationData.Current.LocalCacheFolder.Path;
-            //Logger.Info($"App initializing {installedLocation} {localFolder} {localCache}");
+        }
+
+        private void App_UnhandledException(object sender, Windows.UI.Xaml.UnhandledExceptionEventArgs e)
+        {
+            Logger.Error(e.Exception, $"Unhandled Exception in App: {e.Message}");
+            e.Handled = true;
         }
 
         private async void App_LeavingBackground(object sender, LeavingBackgroundEventArgs e)

@@ -42,9 +42,8 @@ namespace XboxGamingBarHelper.RTSS
 
         private const string OSDNewLine = "\n";
         private const string OSDNewLinePadding = " ";
-        private const string OSDSingleLineShortBackground = "<M=8,4,8,4><P=0,0><L0><C=80000000><B=0,0>\b<C>";
-        private const string OSDSingleLineFullwidthBackground = "<M=8,4,-3000,4><P=0,0><L0><C=80000000><B=0,0>\b<C>";
-        private const string OSDMultipleLinesBackground = "<M=8,4,8,4><P=0,0><L0><C=80000000><B=0,0>\b<C><A0=4><A1=10>";
+        private const string OSDSingleLineBackground = "<M=8,6,8,6><P=0,0><L0><C=80000000><B=0,0>\b<C>";
+        private const string OSDMultipleLinesBackground = "<M=8,6,8,6><P=0,0><L0><C=80000000><B=0,0>\b<C><A0=4><A1=10>";
         private const string OSDAppName = "Gaming Bar OSD";
 
         private OSD rtssOSD;
@@ -244,7 +243,8 @@ namespace XboxGamingBarHelper.RTSS
                 }
             }
 
-            var osdString = (onScreenDisplayLevel == 1 ? OSDSingleLineShortBackground : (onScreenDisplayLevel >= 3 ? OSDMultipleLinesBackground : OSDSingleLineFullwidthBackground)) + $"<S={CurrentFontScale}>";
+            var backgroundPrefix = onScreenDisplayLevel >= 3 ? OSDMultipleLinesBackground : OSDSingleLineBackground;
+            var osdString = $"<S={CurrentFontScale}>" + backgroundPrefix;
             var needSeparator = false;
             var osdPadding = onScreenDisplayLevel >= 3 ? OSDNewLinePadding : string.Empty;
             var osdSeparator = onScreenDisplayLevel >= 3 ? OSDNewLine : GetVerticalLineSeparator();

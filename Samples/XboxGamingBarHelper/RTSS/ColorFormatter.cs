@@ -20,12 +20,12 @@ namespace XboxGamingBarHelper.RTSS
 
     internal class HDRColorFormatter : IColorFormatter
     {
-        public static readonly HDRColorFormatter Instance = new HDRColorFormatter(0.5f, 0.6f);
+        public static readonly HDRColorFormatter Instance = new HDRColorFormatter(0.38f, 0.45f);
 
         private readonly float dimFactor;
         private readonly float saturationFactor;
 
-        public HDRColorFormatter(float dimFactor = 0.5f, float saturationFactor = 0.6f)
+        public HDRColorFormatter(float dimFactor = 0.38f, float saturationFactor = 0.45f)
         {
             this.dimFactor = dimFactor;
             this.saturationFactor = saturationFactor;

@@ -133,6 +133,144 @@
             </Border>
         </Grid>
 
+        <!-- Shortcut Editor Modal Dialog -->
+        <Grid x:Name="ShortcutEditorOverlay" Grid.RowSpan="2" Canvas.ZIndex="99" 
+              Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Visibility="Collapsed">
+            <Border Width="380" MaxHeight="580" CornerRadius="12" Padding="18,16,18,16" 
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                    BorderThickness="1">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
+                    <StackPanel>
+                        <!-- Header -->
+                        <Grid Margin="0,0,0,10">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Border Width="32" Height="32" CornerRadius="6" 
+                                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                        Margin="0,0,10,0" VerticalAlignment="Center">
+                                    <FontIcon x:Name="EditorHeaderIcon" Glyph="&#xE765;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                              Foreground="{StaticResource XboxGreenBrush}"/>
+                                </Border>
+                                <StackPanel VerticalAlignment="Center">
+                                    <TextBlock x:Name="EditorModalTitleText" Text="Add Shortcut" FontSize="15" FontWeight="SemiBold"/>
+                                    <TextBlock Text="Configure hotkey and button action" Style="{StaticResource SubtitleTextStyle}"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <Button x:Name="EditorCloseTopButton" HorizontalAlignment="Right" VerticalAlignment="Top" 
+                                    Width="30" Height="30" Padding="0" Background="Transparent" BorderThickness="0"
+                                    Click="EditorCancelButton_Click">
+                                <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                            </Button>
+                        </Grid>
+
+                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,0,0,10"/>
+
+                        <!-- Preset Selector -->
+                        <TextBlock Text="QUICK PRESET" Style="{StaticResource SectionHeaderTextStyle}" Margin="2,0,2,4"/>
+                        <ComboBox x:Name="EditorPresetComboBox" HorizontalAlignment="Stretch" Margin="0,0,0,10"
+                                  SelectionChanged="EditorPresetComboBox_SelectionChanged"/>
+
+                        <!-- Name & Icon -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="140"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                                <TextBlock Text="NAME" Style="{StaticResource SectionHeaderTextStyle}" Margin="2,0,2,4"/>
+                                <TextBox x:Name="EditorNameTextBox" PlaceholderText="e.g. Screenshot" TextChanged="EditorInput_Changed"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Text="ICON" Style="{StaticResource SectionHeaderTextStyle}" Margin="2,0,2,4"/>
+                                <ComboBox x:Name="EditorIconComboBox" HorizontalAlignment="Stretch"
+                                          SelectionChanged="EditorInput_Changed">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal">
+                                                <FontIcon Glyph="{Binding Glyph}" FontSize="13" Margin="0,0,8,0" Foreground="{StaticResource XboxGreenBrush}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontSize="12"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Key Combination Section -->
+                        <TextBlock Text="KEY COMBINATION" Style="{StaticResource SectionHeaderTextStyle}" Margin="2,2,2,4"/>
+                        
+                        <!-- Modifiers Toggle Row -->
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <ToggleButton x:Name="EditorCtrlToggle" Grid.Column="0" Content="Ctrl" Margin="2,0,2,0" HorizontalAlignment="Stretch" Click="EditorModifier_Click"/>
+                            <ToggleButton x:Name="EditorAltToggle" Grid.Column="1" Content="Alt" Margin="2,0,2,0" HorizontalAlignment="Stretch" Click="EditorModifier_Click"/>
+                            <ToggleButton x:Name="EditorShiftToggle" Grid.Column="2" Content="Shift" Margin="2,0,2,0" HorizontalAlignment="Stretch" Click="EditorModifier_Click"/>
+                            <ToggleButton x:Name="EditorWinToggle" Grid.Column="3" Content="Win" Margin="2,0,2,0" HorizontalAlignment="Stretch" Click="EditorModifier_Click"/>
+                        </Grid>
+
+                        <!-- Primary Key Dropdown -->
+                        <ComboBox x:Name="EditorKeyComboBox" HorizontalAlignment="Stretch" Margin="0,0,0,8"
+                                  SelectionChanged="EditorKeyComboBox_SelectionChanged"/>
+
+                        <!-- Record Keys Button -->
+                        <Button x:Name="EditorRecordKeysButton" HorizontalAlignment="Stretch" Margin="0,0,0,10"
+                                Height="34" CornerRadius="6"
+                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                                Click="EditorRecordKeysButton_Click">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <FontIcon x:Name="EditorRecordIcon" Glyph="&#xEDA7;" FontSize="13" Margin="0,0,6,0" Foreground="{StaticResource XboxGreenBrush}"/>
+                                <TextBlock x:Name="EditorRecordText" Text="Press Keys to Record" FontSize="12" FontWeight="SemiBold"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Preview Card -->
+                        <Border Style="{StaticResource ValueBadgeStyle}" HorizontalAlignment="Stretch" Padding="10,8,10,8" Margin="0,0,0,14"
+                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <FontIcon x:Name="EditorPreviewIcon" Grid.Column="0" Glyph="&#xE765;" FontSize="16" Foreground="{StaticResource XboxGreenBrush}" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="EditorPreviewName" Grid.Column="1" Text="Shortcut Name" FontWeight="SemiBold" FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                <Border Grid.Column="2" Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2" VerticalAlignment="Center">
+                                    <TextBlock x:Name="EditorPreviewComboText" Text="None" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+
+                        <!-- Action Buttons -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Button x:Name="EditorTestButton" Grid.Column="0" Content="Test" 
+                                    CornerRadius="6" Padding="12,6,12,6"
+                                    Click="EditorTestButton_Click"/>
+                            <Button x:Name="EditorCancelButton" Grid.Column="2" Content="Cancel" 
+                                    Margin="0,0,8,0" CornerRadius="6" Padding="14,6,14,6"
+                                    Click="EditorCancelButton_Click"/>
+                            <Button x:Name="EditorSaveButton" Grid.Column="3" Content="Save" 
+                                    Background="{StaticResource XboxGreenBrush}" Foreground="White" FontWeight="Bold"
+                                    CornerRadius="6" Padding="16,6,16,6"
+                                    Click="EditorSaveButton_Click"/>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
         <!-- Running Game Info (Hero Card) -->
         <Border Grid.Row="0" Margin="10,10,10,6" CornerRadius="10" 
                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
@@ -514,6 +652,140 @@
                                         Visibility="{Binding ElementName=LimitCPUClockToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
                                 </StackPanel>
                             </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </PivotItem>
+
+                <!-- SHORTCUTS TAB -->
+                <PivotItem x:Name="ShortcutsPivotItem">
+                    <PivotItem.Header>
+                        <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
+                            <FontIcon Glyph="&#xE765;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                            <TextBlock Text="Shortcuts" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </PivotItem.Header>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
+                        <StackPanel Margin="0,8,0,16">
+
+                            <!-- SECTION: SHORTCUT BUTTONS -->
+                            <TextBlock Text="SHORTCUTS" Style="{StaticResource SectionHeaderTextStyle}"/>
+
+                            <Border Style="{StaticResource SettingsCardStyle}" Padding="10,10,10,10">
+                                <StackPanel>
+                                    <!-- Empty state placeholder -->
+                                    <StackPanel x:Name="NoShortcutsPlaceholder" Visibility="Collapsed" HorizontalAlignment="Center" Margin="0,16,0,16">
+                                        <FontIcon Glyph="&#xE765;" FontSize="28" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                        <TextBlock Text="No shortcuts configured" FontWeight="SemiBold" FontSize="14" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Click 'Add New Shortcut' below to create one" Style="{StaticResource SubtitleTextStyle}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                    </StackPanel>
+
+                                    <!-- Grid of square shortcut buttons (4 per row) -->
+                                    <GridView x:Name="ShortcutsGridView" 
+                                              SelectionMode="None" 
+                                              IsItemClickEnabled="True"
+                                              XYFocusKeyboardNavigation="Enabled"
+                                              HorizontalAlignment="Center">
+                                        <GridView.ItemContainerStyle>
+                                            <Style TargetType="GridViewItem">
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="Padding" Value="0"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                <Setter Property="MinWidth" Value="0"/>
+                                                <Setter Property="MinHeight" Value="0"/>
+                                            </Style>
+                                        </GridView.ItemContainerStyle>
+                                        <GridView.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="-1" ItemWidth="105" ItemHeight="105"/>
+                                            </ItemsPanelTemplate>
+                                        </GridView.ItemsPanel>
+                                        <GridView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Click="ShortcutButton_Click"
+                                                        RightTapped="ShortcutButton_RightTapped"
+                                                        Holding="ShortcutButton_Holding"
+                                                        Tag="{Binding}"
+                                                        Width="98" Height="98"
+                                                        Margin="2,2,2,2"
+                                                        Padding="4,6,4,6"
+                                                        CornerRadius="8"
+                                                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                        BorderThickness="1"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center">
+                                                    <Button.ContextFlyout>
+                                                        <MenuFlyout>
+                                                            <MenuFlyoutItem Text="Execute" Click="MenuExecute_Click" Tag="{Binding}">
+                                                                <MenuFlyoutItem.Icon>
+                                                                    <FontIcon Glyph="&#xE768;"/>
+                                                                </MenuFlyoutItem.Icon>
+                                                            </MenuFlyoutItem>
+                                                            <MenuFlyoutItem Text="Edit" Click="MenuEdit_Click" Tag="{Binding}">
+                                                                <MenuFlyoutItem.Icon>
+                                                                    <FontIcon Glyph="&#xE70F;"/>
+                                                                </MenuFlyoutItem.Icon>
+                                                            </MenuFlyoutItem>
+                                                            <MenuFlyoutItem Text="Delete" Click="MenuDelete_Click" Tag="{Binding}">
+                                                                <MenuFlyoutItem.Icon>
+                                                                    <FontIcon Glyph="&#xE74D;"/>
+                                                                </MenuFlyoutItem.Icon>
+                                                            </MenuFlyoutItem>
+                                                        </MenuFlyout>
+                                                    </Button.ContextFlyout>
+                                                    <Grid HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="*"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <!-- Icon -->
+                                                        <FontIcon Grid.Row="0" Glyph="{Binding IconGlyph}" FontSize="22" Foreground="{StaticResource XboxGreenBrush}" HorizontalAlignment="Center" Margin="0,2,0,2"/>
+                                                        <!-- Name -->
+                                                        <TextBlock Grid.Row="1" Text="{Binding Name}" FontSize="12" FontWeight="SemiBold" TextAlignment="Center" HorizontalAlignment="Center" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" MaxLines="2" TextWrapping="Wrap"/>
+                                                        <!-- Hotkey Badge -->
+                                                        <Border Grid.Row="2" Style="{StaticResource ValueBadgeStyle}" HorizontalAlignment="Center" Padding="5,1,5,1" Margin="0,2,0,0">
+                                                            <TextBlock Text="{Binding DisplayKeyCombo}" FontSize="10" FontWeight="Bold" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                        </Border>
+                                                    </Grid>
+                                                </Button>
+                                            </DataTemplate>
+                                        </GridView.ItemTemplate>
+                                    </GridView>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- SECTION: ADD SHORTCUT BUTTON -->
+                            <Border Style="{StaticResource SettingsCardStyle}" Margin="10,0,10,10" Padding="0">
+                                <Button x:Name="AddShortcutButton" 
+                                        HorizontalAlignment="Stretch" 
+                                        HorizontalContentAlignment="Stretch"
+                                        Background="Transparent" 
+                                        BorderThickness="0"
+                                        Padding="14,12,14,12"
+                                        Click="AddShortcutButton_Click">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="36" Height="36" CornerRadius="8" 
+                                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                                Margin="0,0,12,0" VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE710;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                      Foreground="{StaticResource XboxGreenBrush}"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="Add New Shortcut" FontWeight="SemiBold" FontSize="14"/>
+                                            <TextBlock Text="Create custom key combinations and game hotkeys" Style="{StaticResource SubtitleTextStyle}"/>
+                                        </StackPanel>
+                                        <FontIcon Grid.Column="2" Glyph="&#xE76C;" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Button>
+                            </Border>
+
                         </StackPanel>
                     </ScrollViewer>
                 </PivotItem>
