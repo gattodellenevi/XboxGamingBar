@@ -45,6 +45,9 @@ As of now, there are the following functions:
 
 ![alt text](Screenshots/v4_3.png?v=1)
 
+## Editions (Store vs. GitHub Release)
+CouchGamingBar is available both on the Microsoft Store and as a sideloaded GitHub release. For a detailed comparison of features, hardware sensors, and privilege models, see **[Store vs. GitHub Differences](STORE_VS_GITHUB.md)**.
+
 ## Installation
 
 ### Step 1: Install the Security Certificate (.cer)
