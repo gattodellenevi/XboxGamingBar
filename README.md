@@ -1,10 +1,8 @@
 # CouchGamingBar
 
-## What is it?
+## What is it TLDR?
 
-CouchGamingBar is a helper tool for gamers to control all gaming-related settings using the gamepad/game controller.
-CouchGamingBar is built as an Xbox Game Bar widget as the frontend, and a Win32 helper as the backend tool.
-It's a fork from this project: https://github.com/namquang93/XboxGamingBar, which I'm iterating on.
+Control PC performance, RTSS FPS limits, display refresh rate, and AMD Radeon settings from your gamepad using Xbox Game Bar. Built for sofa PC gamers. 
 
 ## Vision
 The vision is to create a compact, user friendly, and fully featured tool for sofa gamers to control a plethora of settings with a controller.
@@ -13,62 +11,61 @@ It is NOT aimed at Handheld devices, for which alternative projects already exis
 
 PC gaming can be complex, so effort is put into making settings easy to understand, with sensible defaults and easily reversible
 
-## Features
+## What is it, a bit more
 
-As of now, there are the following functions:
+Take full command of your PC gaming performance without leaving the sofa.
 
-### Performance Control
-- Performance Overlay using RivaTuner Statistics Server OSD.
-- Extensive options for RTSS frame limiting
-- Per-game Profile.
-- CPU performance adjustments.
-  - Enable or disable CPU Boost.
-  - Set CPU Energy Performance Preference (EPP).
-  - Set CPU clock speed limit.
-- Frame limiter 
+Couch Gaming Bar is a lightweight, controller-first Xbox Game Bar widget and system companion that lets you adjust frame limits, hardware power profiles, display settings, and GPU features directly with your gamepad—no mouse or keyboard required.
 
-![alt text](Screenshots/v4_1.png?v=1)
+Whether you are playing on a big-screen TV from the couch, a desktop gaming rig, or a gaming laptop, Couch Gaming Bar puts essential performance tweaks at your fingertips with a single press of the Xbox guide button.
 
-### Quick System Settings
-- Quickly change screen refresh rate and resolution.
-- Binding gamepad keys to some system functions.
-  - Lossless Scaling hotkey.
+    ━━━━━━━━━━━━━━━━━━━━━
+    🎮 CONTROLLER-FIRST COUCH GAMING
+    ━━━━━━━━━━━━━━━━━━━━━
+    • Complete Gamepad Control: Navigate menus seamlessly using D-pad, analog sticks, and shoulder bumpers (LT/RT).
+    • Instant Game Bar Overlay: Summon your quick settings overlay anytime via Win + G or the controller Xbox button.
+    • Per-Game Automatic Profiles: Configure custom settings per game that switch automatically upon game launch.
 
-![alt text](Screenshots/v4_2.png?v=1)
+    ━━━━━━━━━━━━━━━━━━━━━
+    ⚡ PERFORMANCE & FRAME PACING
+    ━━━━━━━━━━━━━━━━━━━━━
+    • Advanced RTSS Frame Limiter: Stabilize frametimes and eliminate stutter using RivaTuner Statistics Server integration.
+    • Judder-Free Frame Sync: Snap FPS targets automatically to clean refresh-rate dividers (1/2, 1/3, 1/4 Hz).
+    • Real-Time Metrics Overlay (OSD): Track FPS and hardware metrics with customizable text scaling.
+    • Multiple Limiter Sync Modes: Support for Async, Front Edge, Back Edge, and low-latency frame pacing.
 
-### AMD Settings
-  - Radeon Super Resolution.
-  - AMD Fluid Motion Frame.
-  - Radeon Anti-Lag.
-  - Radeon Boost.
-  - Radeon Chill.
+    ━━━━━━━━━━━━━━━━━━━━━
+    🖥️ DISPLAY & SYSTEM CONTROLS
+    ━━━━━━━━━━━━━━━━━━━━━
+    • Quick Refresh Rate Switcher: Switch between 60Hz, 120Hz, 144Hz, 240Hz, and custom display frequencies.
+    • Resolution Selector: Change active screen resolutions on the fly.
+    • CPU Power Management: Toggle Dynamic CPU Boost, adjust Energy Performance Preference (EPP), and set maximum CPU clock limits (MHz) to reduce fan noise and heat.
 
-![alt text](Screenshots/v4_3.png?v=1)
+    ━━━━━━━━━━━━━━━━━━━━━
+    🔴 AMD RADEON™ SUITE (ADLX)
+    ━━━━━━━━━━━━━━━━━━━━━
+    Control driver-level AMD Radeon features directly from the widget (on supported AMD hardware):
+    • Radeon Super Resolution (RSR) with dynamic sharpness adjustment
+    • AMD Fluid Motion Frames (AFMF) frame generation
+    • Radeon Anti-Lag for ultra-low input latency
+    • Radeon Boost & Radeon Chill dynamic framerate regulation
+
+    ━━━━━━━━━━━━━━━━━━━━━
+    🔒 PRIVACY & OPEN SOURCE
+    ━━━━━━━━━━━━━━━━━━━━━
+    • 100% Offline & Private: No telemetry, no background analytics, no ads, and no external tracking.
+    • Minimal Footprint: Optimized for ultra-low CPU baseline usage (<0.5% idle).
+    • Open Source: Fully transparent codebase licensed under the MIT License.
+
+*Note: Performance overlay and advanced frame limiting features require RivaTuner Statistics Server (RTSS) installed on the system. AMD features require compatible AMD Radeon graphics drivers.*
 
 ## Editions (Store vs. GitHub Release)
 CouchGamingBar is available both on the Microsoft Store and as a sideloaded GitHub release. For a detailed comparison of features, hardware sensors, and privilege models, see **[Store vs. GitHub Differences](STORE_VS_GITHUB.md)**.
 
 ## Installation
 
-### Step 1: Install the Security Certificate (.cer)
-Sideloaded Windows packages are signed with a security certificate. You must add the certificate to your system's trusted store once:
-
-Extract the downloaded release .zip file.
-Locate and double-click the certificate file (.cer).
-Click Install Certificate...
-Select Local Machine (requires Administrator) and click Next.
-Select Place all certificates in the following store.
-Click Browse... and select Trusted People (or Trusted Root Certification Authorities).
-Click OK > Next > Finish.
-A message will appear saying: "The import was successful."
-
-### Step 2: Install the App Package
-Option A: Using the Automated PowerShell Script (Recommended)
-In the extracted folder, right-click Add-AppDevPackage.ps1.
-Select Run with PowerShell.
-If prompted for execution policy, press Y and Enter.
-Follow the on-screen prompts until installation completes.
-
+  - Download the release zip file
+  - Right click on the Install.cmd and select "Run as Administrator"
 
 Xbox Gaming Bar is 100% free and open source. It's built upon C#.
 Libraries used:
