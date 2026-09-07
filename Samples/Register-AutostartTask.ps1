@@ -28,7 +28,10 @@ if (-not $isElevated) {
 # Locate installed AppX/MSIX package in WindowsApps
 if ([string]::IsNullOrWhiteSpace($ExePath)) {
     try {
-        $packages = Get-AppxPackage | Where-Object { $_.Name -like "*CouchGamingBar*" }
+        $packages = Get-AppxPackage | Where-Object { $_.Name -like "*CouchGamingBar*" } |
+            Sort-Object -Property @{ Expression = { if ($_.InstallLocation -like "*WindowsApps*") { 1 } else { 0 } }; Descending = $true },
+                                  @{ Expression = { if (-not $_.IsDevelopmentMode) { 1 } else { 0 } }; Descending = $true },
+                                  @{ Expression = { [Version]$_.Version }; Descending = $true }
         foreach ($pkg in $packages) {
             if ($pkg.InstallLocation) {
                 $candidate1 = Join-Path $pkg.InstallLocation "CouchGamingBarHelper\CouchGamingBarHelper.exe"

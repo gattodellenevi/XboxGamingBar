@@ -42,6 +42,8 @@ namespace XboxGamingBarHelper.Hardware
         private ISensor batteryDischargeRateSensor;
         private ISensor batteryChargeRateSensor;
 
+        public string ProviderName => "LibreHardware";
+
         public LibreHardwareProvider()
         {
             motherboardName = GetMotherboardNameFromWmi();

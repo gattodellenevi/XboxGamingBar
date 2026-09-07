@@ -28,6 +28,8 @@ namespace XboxGamingBarHelper.Hardware
         private float maxCpuMhz = 0f;
         private int coreCount = 0;
 
+        public string ProviderName => "Windows";
+
         public WindowsHardwareProvider()
         {
             try

@@ -19,6 +19,8 @@ namespace XboxGamingBarHelper.Hardware
 
         private readonly IHardwareProvider hardwareProvider;
 
+        public HardwareProviderProperty HardwareProvider { get; }
+
         public CPUUsageSensor CPUUsage { get; }
         public CPUClockSensor CPUClock { get; }
         public CPUWattageSensor CPUWattage { get; }
@@ -51,6 +53,7 @@ namespace XboxGamingBarHelper.Hardware
 #else
             hardwareProvider = new LibreHardwareProvider();
 #endif
+            HardwareProvider = new HardwareProviderProperty(hardwareProvider.ProviderName, this);
 
             var cpuId = hardwareProvider.GetCpuName();
             var mainboardId = hardwareProvider.GetMotherboardName();

@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <TargetFramework>net8.0-windows10.0.22000.0</TargetFramework>
     <RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
     <OutputType>WinExe</OutputType>
@@ -14,7 +15,7 @@
     <UpdateRequired>false</UpdateRequired>
     <MapFileExtensions>true</MapFileExtensions>
     <ApplicationRevision>0</ApplicationRevision>
-    <ApplicationVersion>1.4.0</ApplicationVersion>
+    <ApplicationVersion>1.4.1</ApplicationVersion>
     <IsWebBootstrapper>false</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
@@ -64,6 +65,7 @@
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="8.0.0" />
     <PackageReference Include="HidSharp" Version="2.6.4" Condition="'$(Configuration)' != 'Store'" />
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" Condition="'$(Configuration)' != 'Store'" />
+    <PackageReference Include="System.Threading.AccessControl" Version="10.0.3" GeneratePathProperty="true" />
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" />
     <PackageReference Include="NLog" Version="6.0.4" />
     <PackageReference Include="System.Buffers" Version="4.5.1" />
@@ -76,6 +78,12 @@
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)' != 'Store'">
+    <Content Include="$(PkgSystem_Threading_AccessControl)\runtimes\win\lib\net8.0\System.Threading.AccessControl.dll">
+      <Link>System.Threading.AccessControl.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <None Update="NLog.config">

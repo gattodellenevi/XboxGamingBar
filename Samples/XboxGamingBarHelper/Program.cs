@@ -72,14 +72,7 @@ namespace XboxGamingBarHelper
             bool createdNew = false;
             try
             {
-                var sid = new System.Security.Principal.SecurityIdentifier("S-1-15-2-1");
-                var mutexSecurity = new System.Security.AccessControl.MutexSecurity();
-                mutexSecurity.AddAccessRule(new System.Security.AccessControl.MutexAccessRule(
-                    sid,
-                    System.Security.AccessControl.MutexRights.Synchronize | System.Security.AccessControl.MutexRights.Modify,
-                    System.Security.AccessControl.AccessControlType.Allow));
-
-                _singleInstanceMutex = System.Threading.MutexAcl.Create(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out createdNew, mutexSecurity);
+                _singleInstanceMutex = CreateSingleInstanceMutexWithAcl(out createdNew);
             }
             catch (Exception ex)
             {
@@ -200,6 +193,7 @@ namespace XboxGamingBarHelper
                     rtssManager.OSDTextSize,
                     rtssManager.RTSSElevation,
                     systemManager.HelperElevation,
+                    hardwareManager.HardwareProvider,
                     systemManager.OpenUri,
                     systemManager.RestartElevated,
                     systemManager.SendShortcut);
@@ -544,6 +538,19 @@ namespace XboxGamingBarHelper
 
             Logger.Info("Prepare to re-connect to the widget.");
             RecreateConnection();
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static System.Threading.Mutex CreateSingleInstanceMutexWithAcl(out bool createdNew)
+        {
+            var sid = new System.Security.Principal.SecurityIdentifier("S-1-15-2-1");
+            var mutexSecurity = new System.Security.AccessControl.MutexSecurity();
+            mutexSecurity.AddAccessRule(new System.Security.AccessControl.MutexAccessRule(
+                sid,
+                System.Security.AccessControl.MutexRights.Synchronize | System.Security.AccessControl.MutexRights.Modify,
+                System.Security.AccessControl.AccessControlType.Allow));
+
+            return System.Threading.MutexAcl.Create(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out createdNew, mutexSecurity);
         }
     }
 }

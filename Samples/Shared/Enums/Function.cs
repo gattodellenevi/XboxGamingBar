@@ -46,6 +46,7 @@ namespace Shared.Enums
         OSDTextSize,
         HelperElevation,
         RTSSElevation,
+        HardwareProvider,
         OpenUri,
         RestartElevated,
         SendShortcut,

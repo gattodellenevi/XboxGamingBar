@@ -80,6 +80,10 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="CouchGamingBarPackage_TemporaryKey.pfx" />
+    <Content Include="$(UserProfile)\.nuget\packages\system.threading.accesscontrol\10.0.3\runtimes\win\lib\net8.0\System.Threading.AccessControl.dll" Condition="'$(Configuration)' != 'Store'">
+      <Link>CouchGamingBarHelper\System.Threading.AccessControl.dll</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Images\Icons\icon.png" />
     <Content Include="Images\Icons\icon.light.png" />
     <Content Include="Images\Icons\icon.light.targetsize-16.png" />

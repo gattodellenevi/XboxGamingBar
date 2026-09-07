@@ -4,6 +4,7 @@ namespace XboxGamingBarHelper.Hardware
 {
     internal interface IHardwareProvider
     {
+        string ProviderName { get; }
         void Update();
         float GetCpuClock();
         float GetCpuUsage();
