@@ -104,25 +104,37 @@ if ($cerFile) {
     }
 }
 
-# 3. Collect Dependencies
+# 3. Collect Dependencies (target specific OS architecture, avoiding cross-architecture duplicate packages)
 $depFiles = @()
-$arch = if ([Environment]::Is64BitOperatingSystem) { "x64" } else { "x86" }
+$arch = if ([System.Environment]::Is64BitOperatingSystem) { "x64" } else { "x86" }
+if ([System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture -eq [System.Runtime.InteropServices.Architecture]::Arm64) {
+    $arch = "arm64"
+}
+
+$foundDeps = @{}
 foreach ($sDir in $searchDirs) {
     $depBase = Join-Path $sDir "Dependencies"
     if (Test-Path $depBase) {
-        $depSearchDirs = @(
-            (Join-Path $depBase $arch),
-            $depBase
-        )
-        foreach ($dDir in $depSearchDirs) {
-            if (Test-Path $dDir) {
-                $depFiles += (Get-ChildItem -Path $dDir -Filter "*.appx" -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
-                $depFiles += (Get-ChildItem -Path $dDir -Filter "*.msix" -Recurse -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
+        # Architecture-specific subfolder (e.g. Dependencies\x64)
+        $archDir = Join-Path $depBase $arch
+        if (Test-Path $archDir) {
+            Get-ChildItem -Path $archDir -Filter "*.appx" -ErrorAction SilentlyContinue | ForEach-Object {
+                if (-not $foundDeps.ContainsKey($_.Name)) { $foundDeps[$_.Name] = $_.FullName }
             }
+            Get-ChildItem -Path $archDir -Filter "*.msix" -ErrorAction SilentlyContinue | ForEach-Object {
+                if (-not $foundDeps.ContainsKey($_.Name)) { $foundDeps[$_.Name] = $_.FullName }
+            }
+        }
+        # Root of Dependencies folder (non-recursive, for architecture-neutral packages)
+        Get-ChildItem -Path $depBase -Filter "*.appx" -ErrorAction SilentlyContinue | ForEach-Object {
+            if (-not $foundDeps.ContainsKey($_.Name)) { $foundDeps[$_.Name] = $_.FullName }
+        }
+        Get-ChildItem -Path $depBase -Filter "*.msix" -ErrorAction SilentlyContinue | ForEach-Object {
+            if (-not $foundDeps.ContainsKey($_.Name)) { $foundDeps[$_.Name] = $_.FullName }
         }
     }
 }
-$depFiles = $depFiles | Select-Object -Unique
+$depFiles = @($foundDeps.Values)
 
 # 4. Locate Main Package / Bundle
 $package = $null
@@ -187,11 +199,24 @@ Write-Host "=============================================`n" -ForegroundColor Gr
 Start-Sleep -Seconds 2
 '@
 
-# Find all package output directories
-$packageDirs = Get-ChildItem -Path $PublishDir -Filter "*Add-AppDevPackage.ps1" -Recurse | ForEach-Object { $_.DirectoryName } | Select-Object -Unique
+# Find all package output directories (ensuring Support subfolder is never treated as the package root)
+$allBundles = Get-ChildItem -Path $PublishDir -Filter "*.msixbundle" -Recurse -ErrorAction SilentlyContinue
+$packageDirs = @()
+
+foreach ($b in $allBundles) {
+    $parent = $b.Directory
+    if ($parent.Name -eq "Support") {
+        $packageDirs += $parent.Parent.FullName
+    } else {
+        $packageDirs += $parent.FullName
+    }
+}
 
 if (-not $packageDirs -or $packageDirs.Count -eq 0) {
-    $packageDirs = Get-ChildItem -Path $PublishDir -Filter "*.msixbundle" -Recurse | ForEach-Object { $_.DirectoryName } | Select-Object -Unique
+    $allDevScripts = Get-ChildItem -Path $PublishDir -Filter "*Add-AppDevPackage.ps1" -Recurse -ErrorAction SilentlyContinue
+    foreach ($s in $allDevScripts) {
+        $packageDirs += $s.Directory.FullName
+    }
 }
 
 if (-not $packageDirs -or $packageDirs.Count -eq 0) {
@@ -199,6 +224,8 @@ if (-not $packageDirs -or $packageDirs.Count -eq 0) {
         $packageDirs = @($PublishDir)
     }
 }
+
+$packageDirs = $packageDirs | Select-Object -Unique
 
 Write-Host "Found $($packageDirs.Count) package directories to configure."
 
