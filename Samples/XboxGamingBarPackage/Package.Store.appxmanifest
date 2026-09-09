@@ -11,7 +11,7 @@
   <Identity
     Name="Zanchisoft.CouchGamingBar"
     Publisher="CN=andre"
-    Version="1.4.1.0" />
+    Version="1.4.2.0" />
 
   <Properties>
     <DisplayName>Couch Gaming Bar</DisplayName>
