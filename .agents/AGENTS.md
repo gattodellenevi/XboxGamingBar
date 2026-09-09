@@ -33,12 +33,15 @@
 * CPU power management in CouchGamingBar now relies strictly on native Windows Power Scheme APIs (CPU Boost, Energy Performance Preference / EPP, and CPU Max Clock limits).
 
 ## Package Installation & Streamlined Sideloading
-* **Post-Packaging Target**: `CouchGamingBarPackage.wapproj` invokes `Samples/Append-AutostartToInstaller.ps1` after `_CreateTestLayout` during MSIX packaging.
-* **Streamlined Zero-Prompt Installer**:
-  * `Append-AutostartToInstaller.ps1` replaces legacy interactive Visual Studio `Install.ps1` with an unattended, self-elevating installer.
-  * Generates `Install.cmd` to allow double-click installation on modern Windows 11 (bypassing PowerShell execution policies via `-ExecutionPolicy Bypass` and triggering standard UAC elevation).
+* **Post-Packaging Target**: `CouchGamingBarPackage.wapproj` invokes `Samples/Create-ReleasePackage.ps1` after `_CreateTestLayout` during MSIX packaging.
+* **Streamlined Zero-Prompt Installer & Clean Release Layout**:
+  * `Create-ReleasePackage.ps1` removes legacy/confusing Visual Studio developer scripts (`Add-AppDevPackage.ps1`, `Add-AppDevPackage.resources/`, `*.appxsym`) and organizes the release:
+    * **Root Folder**: Contains only `Install.cmd` and `README.txt`.
+    * **Support/ Subfolder**: Contains `Dependencies/`, `*.msixbundle`, `*.cer`, `Install.ps1`, and `Register-AutostartTask.ps1`.
+  * Generates `Install.cmd` at root to allow double-click installation on modern Windows 11 (bypassing PowerShell execution policies via `-ExecutionPolicy Bypass` and triggering standard UAC elevation).
   * Automatically imports the package `.cer` certificate into `Cert:\LocalMachine\Root` and `Cert:\LocalMachine\TrustedPeople`.
-  * Detects architecture-specific dependencies (`x64`/`x86`), deploys the `.msixbundle`/`.appxbundle` via `Add-AppxPackage`, executes `Register-AutostartTask.ps1`, and starts `CouchGamingBarHelper`.
+  * Detects architecture-specific dependencies (`x64`/`x86`), deploys the `.msixbundle`/`.appxbundle` via `Add-AppxPackage`, stages `CouchGamingBarHelper` into `%LOCALAPPDATA%\CouchGamingBarHelper`, executes `Register-AutostartTask.ps1`, and starts the helper.
+  * Automatically compresses the package folder into a ready-to-upload `CouchGamingBarPackage_<version>.zip` archive in `AppPackages/`.
 
 ## Widget UI & Visual Design Guidelines
 * **Fluent 2 Card-Based Architecture**: `GamingWidget.xaml` uses controller-first Fluent 2 card layout:
