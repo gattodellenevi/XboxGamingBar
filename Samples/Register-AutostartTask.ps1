@@ -2,7 +2,8 @@
 # Run this script in PowerShell as Administrator or standard elevated user context.
 
 param (
-    [string]$ExePath = ""
+    [string]$ExePath = "",
+    [string]$TargetDir = ""
 )
 
 $isElevated = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
@@ -14,7 +15,10 @@ if (-not $isElevated) {
         $scriptPath = $MyInvocation.MyCommand.Definition
         if (-not $scriptPath) { $scriptPath = $PSCommandPath }
         if (-not $scriptPath) { $scriptPath = "$PSScriptRoot\Register-AutostartTask.ps1" }
-        Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`" -ExePath `"$ExePath`"" -Wait -ErrorAction Stop
+        $argList = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
+        if ($ExePath) { $argList += " -ExePath `"$ExePath`"" }
+        if ($TargetDir) { $argList += " -TargetDir `"$TargetDir`"" }
+        Start-Process powershell -Verb RunAs -ArgumentList $argList -Wait -ErrorAction Stop
         Write-Host "Elevated registration process completed." -ForegroundColor Green
         exit 0
     } catch {
@@ -54,6 +58,45 @@ if ([string]::IsNullOrWhiteSpace($ExePath)) {
 if (-not $ExePath -or -not (Test-Path $ExePath)) {
     Write-Error "CouchGamingBarHelper.exe not found! Please specify -ExePath 'C:\path\to\CouchGamingBarHelper.exe'"
     exit 1
+}
+
+# Source directory containing helper executable and its dependencies
+$sourceDir = Split-Path -Parent $ExePath
+
+# Determine target directory in user local folder to avoid WindowsApps ACL execution blocks
+if ([string]::IsNullOrWhiteSpace($TargetDir)) {
+    $localAppData = if ($env:LOCALAPPDATA) { $env:LOCALAPPDATA } else { [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData) }
+    $TargetDir = Join-Path $localAppData "CouchGamingBarHelper"
+}
+
+# Copy helper files from WindowsApps or external source to user local folder if needed
+if ($sourceDir -like "*WindowsApps*" -or ($sourceDir -ne $TargetDir)) {
+    Write-Host "Staging CouchGamingBarHelper to user local folder to bypass WindowsApps ACL isolation:" -ForegroundColor Cyan
+    Write-Host "  Source: $sourceDir" -ForegroundColor Yellow
+    Write-Host "  Target: $TargetDir" -ForegroundColor Yellow
+
+    # Stop any running helper processes to release file locks before copying
+    $runningProcesses = Get-Process -Name "CouchGamingBarHelper" -ErrorAction SilentlyContinue
+    if ($runningProcesses) {
+        Write-Host "Stopping running CouchGamingBarHelper process before updating files..." -ForegroundColor Yellow
+        $runningProcesses | Stop-Process -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Milliseconds 500
+    }
+
+    try {
+        if (-not (Test-Path $TargetDir)) {
+            New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
+        }
+        Copy-Item -Path "$sourceDir\*" -Destination $TargetDir -Recurse -Force -ErrorAction Stop
+        Write-Host "Helper files copied successfully to: $TargetDir" -ForegroundColor Green
+
+        $localExe = Join-Path $TargetDir "CouchGamingBarHelper.exe"
+        if (Test-Path $localExe) {
+            $ExePath = $localExe
+        }
+    } catch {
+        Write-Warning "Could not copy helper to local folder: $($_.Exception.Message). Falling back to source executable."
+    }
 }
 
 $WorkingDir = Split-Path -Parent $ExePath

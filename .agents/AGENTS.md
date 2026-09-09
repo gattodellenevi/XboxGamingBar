@@ -4,7 +4,8 @@
 * When setting up autostart for `CouchGamingBarHelper.exe` via Windows Task Scheduler:
   * Trigger must be set to **"At log on"** (not "At system startup").
   * Option **"Run only when user is logged on"** must be selected so that the system tray icon (`NotifyIcon`) renders in Session 1+.
-  * Option **"Run with highest privileges"** must be enabled for hardware access (RyzenAdj/TDP/Power control).
+  * Option **"Run with highest privileges"** must be enabled for hardware access (power schemes, native performance counters, LibreHardwareMonitor).
+  * **Local Folder Staging**: Never point the scheduled task directly to `C:\Program Files\WindowsApps\...`. WindowsApps is ACL-isolated by `TrustedInstaller`, which blocks external execution and breaks across package version updates. `Register-AutostartTask.ps1` must first stage the helper files into `%LOCALAPPDATA%\CouchGamingBarHelper` and point Task Scheduler there.
   * See full details in `task-scheduler-autostart` skill: [.agents/skills/task-scheduler-autostart/SKILL.md](file:///c:/Users/andre/git/XboxGamingBar/.agents/skills/task-scheduler-autostart/SKILL.md).
 
 ## Helper & UWP AppService Resilience
