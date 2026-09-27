@@ -56,6 +56,7 @@
     <Optimize>true</Optimize>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.12" />
     <Reference Include="RTSSSharedMemoryNET">
       <HintPath>.\RTSSSharedMemoryNET.dll</HintPath>
     </Reference>

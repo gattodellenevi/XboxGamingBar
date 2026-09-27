@@ -91,6 +91,7 @@ namespace XboxGamingBar
         private readonly HelperElevationProperty helperElevation;
         private readonly RTSSElevationProperty rtssElevation;
         private readonly HardwareProviderProperty hardwareProviderProperty;
+        private readonly GameInputStatusProperty gameInputStatus;
         private bool isElevationFlyoutOpen = false;
 
         private readonly WidgetProperties properties;
@@ -114,6 +115,7 @@ namespace XboxGamingBar
             helperElevation = new HelperElevationProperty(HelperElevationBadge, HelperElevationBadgeText, HelperStatusSubtitleText, HeroElevationWarningButton, HeroElevationWarningIcon, HeroElevationWarningText, this);
             rtssElevation = new RTSSElevationProperty(RTSSElevationBadge, RTSSElevationBadgeText, RTSSStatusSubtitleText, this);
             hardwareProviderProperty = new HardwareProviderProperty(HardwareProviderBadge, HardwareProviderBadgeText, HardwareProviderSubtitleText, this);
+            gameInputStatus = new GameInputStatusProperty(GameInputStatusBadge, GameInputStatusBadgeText, GameInputStatusSubtitleText, this);
             trackedGame = new TrackedGameProperty(new TrackedGame());
             onScreenDisplayProviderInstalled = new OnScreenDisplayProviderInstalledProperty(PerformanceOverlaySlider, this);
             isForeground = new IsForegroundProperty();
@@ -201,7 +203,8 @@ namespace XboxGamingBar
                 judderFreeFPS,
                 helperElevation,
                 rtssElevation,
-                hardwareProviderProperty
+                hardwareProviderProperty,
+                gameInputStatus
             );
 
             if (HelperElevationFlyout != null)
@@ -334,6 +337,55 @@ namespace XboxGamingBar
             else
             {
                 Logger.Warn("App.Connection is null when attempting to restart elevated.");
+                await EnsureHelperConnectionOrLaunchAsync();
+            }
+        }
+
+        private async void RestartGameInputServiceButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("RestartGameInputServiceButton clicked.");
+            if (App.Connection != null)
+            {
+                try
+                {
+                    if (RestartGameInputServiceButtonText != null)
+                    {
+                        RestartGameInputServiceButtonText.Text = "Restarting...";
+                    }
+                    if (RestartGameInputServiceButton != null)
+                    {
+                        RestartGameInputServiceButton.IsEnabled = false;
+                    }
+
+                    var valueSet = new ValueSet();
+                    valueSet.Add(nameof(Command), (int)Command.Set);
+                    valueSet.Add(nameof(Function), (int)Function.RestartGameInputService);
+                    valueSet.Add(nameof(Content), true);
+                    valueSet.Add(nameof(UpdatedTime), DateTime.UtcNow.Ticks);
+
+                    var response = await App.Connection.SendMessageAsync(valueSet);
+                    Logger.Info($"SendMessageAsync RestartGameInputService status: {response?.Status}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to send RestartGameInputService message to helper.");
+                }
+                finally
+                {
+                    await Task.Delay(2000);
+                    if (RestartGameInputServiceButtonText != null)
+                    {
+                        RestartGameInputServiceButtonText.Text = "Restart";
+                    }
+                    if (RestartGameInputServiceButton != null)
+                    {
+                        RestartGameInputServiceButton.IsEnabled = true;
+                    }
+                }
+            }
+            else
+            {
+                Logger.Warn("App.Connection is null when attempting to restart GameInput service.");
                 await EnsureHelperConnectionOrLaunchAsync();
             }
         }
@@ -838,6 +890,7 @@ namespace XboxGamingBar
             helperElevation?.SetDisconnectedState();
             rtssElevation?.SetDisconnectedState();
             hardwareProviderProperty?.SetDisconnectedState();
+            gameInputStatus?.SetDisconnectedState();
 
             var eventArgs = e as BackgroundTaskCancellationEventArgs;
             if (eventArgs != null && eventArgs.Reason != BackgroundTaskCancellationReason.Terminating)

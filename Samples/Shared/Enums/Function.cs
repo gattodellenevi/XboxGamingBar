@@ -50,6 +50,8 @@ namespace Shared.Enums
         OpenUri,
         RestartElevated,
         SendShortcut,
+        GameInputStatus,
+        RestartGameInputService,
         AppExit = 100
     }
 }

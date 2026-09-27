@@ -196,7 +196,9 @@ namespace XboxGamingBarHelper
                     hardwareManager.HardwareProvider,
                     systemManager.OpenUri,
                     systemManager.RestartElevated,
-                    systemManager.SendShortcut);
+                    systemManager.SendShortcut,
+                    systemManager.GameInputStatus,
+                    systemManager.RestartGameInputService);
 
                 Logger.Info("Initialize callbacks.");
                 systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;

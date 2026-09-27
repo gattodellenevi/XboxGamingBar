@@ -116,6 +116,18 @@ namespace XboxGamingBarHelper.Systems
             get { return sendShortcut; }
         }
 
+        private readonly GameInputStatusProperty gameInputStatus;
+        public GameInputStatusProperty GameInputStatus
+        {
+            get { return gameInputStatus; }
+        }
+
+        private readonly RestartGameInputServiceProperty restartGameInputService;
+        public RestartGameInputServiceProperty RestartGameInputService
+        {
+            get { return restartGameInputService; }
+        }
+
         private IReadOnlyDictionary<GameId, GameProfile> Profiles { get; }
 
         // Keep track to current opening windows to determine currently running game.
@@ -126,6 +138,7 @@ namespace XboxGamingBarHelper.Systems
         private IntPtr lastForegroundHwnd = IntPtr.Zero;
         private RunningGame lastDetectedGame = new RunningGame();
         private DateTime lastWindowScanTime = DateTime.MinValue;
+        private DateTime lastGameInputCheckTime = DateTime.MinValue;
 
         public event ResumeFromSleepEventHandler ResumeFromSleep;
 
@@ -159,6 +172,10 @@ namespace XboxGamingBarHelper.Systems
             openUri = new OpenUriProperty(this);
             restartElevated = new RestartElevatedProperty(this);
             sendShortcut = new SendShortcutProperty(this);
+            int initialGameInputStatus = GameInputManager.GetServiceStatus();
+            Logger.Info($"Check GameInput service status: {initialGameInputStatus}.");
+            gameInputStatus = new GameInputStatusProperty(initialGameInputStatus, this);
+            restartGameInputService = new RestartGameInputServiceProperty(this);
             bool isElevated = CheckIsElevated();
             Logger.Info($"Check helper elevation status: {isElevated}.");
             helperElevation = new HelperElevationProperty(isElevated, this);
@@ -358,6 +375,18 @@ namespace XboxGamingBarHelper.Systems
                     Logger.Info($"Running game {RunningGame.Value.GameId.Name} stopped.");
                 }
                 RunningGame.SetValue(currentRunningGame);
+            }
+
+            var now = DateTime.UtcNow;
+            if ((now - lastGameInputCheckTime).TotalSeconds >= 5.0)
+            {
+                lastGameInputCheckTime = now;
+                var currentStatus = GameInputManager.GetServiceStatus();
+                if (gameInputStatus.Value != currentStatus)
+                {
+                    Logger.Info($"GameInput service status changed from {gameInputStatus.Value} to {currentStatus}.");
+                    gameInputStatus.SetValue(currentStatus, now.Ticks);
+                }
             }
         }
 
