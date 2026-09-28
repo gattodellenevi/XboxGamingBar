@@ -395,21 +395,26 @@ namespace XboxGamingBarHelper
             }
         }
 
+        private static bool isApplyingProfile = false;
+
         private static void CPUClock_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
-            var cpuClock = powerManager.LimitCPUClock ? powerManager.CPUClockMax : 0;
+            if (isApplyingProfile) return;
+            var cpuClock = powerManager.LimitCPUClock ? powerManager.CPUClockMax.Value : 0;
             Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s CPU Clock from {profileManager.CurrentProfile.CPUClock} to {cpuClock}.");
             profileManager.CurrentProfile.CPUClock = cpuClock;
         }
 
         private static void CPUBoost_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (isApplyingProfile) return;
             Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s CPU Boost from {profileManager.CurrentProfile.CPUBoost} to {powerManager.CPUBoost}.");
             profileManager.CurrentProfile.CPUBoost = powerManager.CPUBoost;
         }
 
         private static void CPUEPP_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (isApplyingProfile) return;
             Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s CPU EPP from {profileManager.CurrentProfile.CPUEPP} to {powerManager.CPUEPP} (Enabled: {powerManager.SetCPUEPP.Value}).");
             profileManager.CurrentProfile.CPUEPP = powerManager.CPUEPP;
             profileManager.CurrentProfile.SetCPUEPP = powerManager.SetCPUEPP.Value;
@@ -424,6 +429,7 @@ namespace XboxGamingBarHelper
             if (profileManager.CurrentProfile.Use || profileManager.CurrentProfile.IsGlobalProfile)
             {
                 Logger.Info($"Profile changed to {profileManager.CurrentProfile.GameId.Name}, apply it.");
+                isApplyingProfile = true;
                 powerManager.CPUBoost.SetValue(profileManager.CurrentProfile.CPUBoost);
                 powerManager.SetCPUEPP.SetValue(profileManager.CurrentProfile.SetCPUEPP);
                 powerManager.CPUEPP.SetValue(profileManager.CurrentProfile.CPUEPP);
@@ -434,6 +440,7 @@ namespace XboxGamingBarHelper
                 rtssManager.FPSLimitMode.SetValue(profileManager.CurrentProfile.FPSLimitMode);
                 rtssManager.JudderFreeFPS.SetValue(profileManager.CurrentProfile.JudderFreeFPS);
                 profileManager.PerGameProfile.SetValue(profileManager.CurrentProfile.Use);
+                isApplyingProfile = false;
             }
             else
             {
@@ -443,6 +450,7 @@ namespace XboxGamingBarHelper
 
         private static void PerGameProfile_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (isApplyingProfile) return;
             GameProfile gameProfile;
             if (profileManager.PerGameProfile)
             {
@@ -466,6 +474,7 @@ namespace XboxGamingBarHelper
 
         private static void UpdateCurrentProfileFPSLimit()
         {
+            if (isApplyingProfile) return;
             var newFPSLimit = rtssManager.LimitFPS ? (rtssManager.FPSLimit > 0 ? rtssManager.FPSLimit.Value : 60) : 0;
             Logger.Info($"Update current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit to {newFPSLimit}.");
             profileManager.CurrentProfile.FPSLimit = newFPSLimit;
@@ -483,12 +492,14 @@ namespace XboxGamingBarHelper
 
         private static void FPSLimitMode_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (isApplyingProfile) return;
             Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit Mode from {profileManager.CurrentProfile.FPSLimitMode} to {rtssManager.FPSLimitMode}.");
             profileManager.CurrentProfile.FPSLimitMode = rtssManager.FPSLimitMode;
         }
 
         private static void JudderFreeFPS_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (isApplyingProfile) return;
             Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s JudderFreeFPS from {profileManager.CurrentProfile.JudderFreeFPS} to {rtssManager.JudderFreeFPS.Value}.");
             profileManager.CurrentProfile.JudderFreeFPS = rtssManager.JudderFreeFPS.Value;
         }
