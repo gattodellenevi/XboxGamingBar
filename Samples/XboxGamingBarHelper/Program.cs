@@ -14,7 +14,7 @@ using XboxGamingBarHelper.Core;
 using XboxGamingBarHelper.Hardware;
 using XboxGamingBarHelper.Nvidia;
 using XboxGamingBarHelper.OnScreenDisplay;
-using XboxGamingBarHelper.Power;
+
 using XboxGamingBarHelper.Profile;
 using XboxGamingBarHelper.RTSS;
 using XboxGamingBarHelper.Settings;
@@ -33,7 +33,6 @@ namespace XboxGamingBarHelper
         private static RTSSManager rtssManager;
         private static ProfileManager profileManager;
         private static SystemManager systemManager;
-        private static PowerManager powerManager;
         private static AMDManager amdManager;
         private static NvidiaManager nvidiaManager;
         private static SettingsManager settingsManager;
@@ -125,8 +124,7 @@ namespace XboxGamingBarHelper
                 profileManager = new ProfileManager(connection);
                 Logger.Info("Initialize System Manager.");
                 systemManager = new SystemManager(connection, profileManager.GameProfiles);
-                Logger.Info("Initialize Power Manager.");
-                powerManager = new PowerManager(connection);
+
                 Logger.Info("Initialize AMD Manager.");
                 amdManager = new AMDManager(connection);
                 Logger.Info("Initialize NVIDIA Manager.");
@@ -138,7 +136,6 @@ namespace XboxGamingBarHelper
                     rtssManager,
                     profileManager,
                     systemManager,
-                    powerManager,
                     amdManager,
                     nvidiaManager,
                     settingsManager
@@ -156,11 +153,7 @@ namespace XboxGamingBarHelper
                     systemManager.RunningGame,
                     onScreenDisplay,
                     profileManager.PerGameProfile,
-                    powerManager.CPUBoost,
-                    powerManager.CPUEPP,
-                    powerManager.SetCPUEPP,
-                    powerManager.LimitCPUClock,
-                    powerManager.CPUClockMax,
+
                     systemManager.RefreshRates,
                     systemManager.RefreshRate,
                     systemManager.Resolutions,
@@ -204,11 +197,7 @@ namespace XboxGamingBarHelper
                 systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;
                 systemManager.ResumeFromSleep += SystemManager_ResumeFromSleep;
                 profileManager.PerGameProfile.PropertyChanged += PerGameProfile_PropertyChanged;
-                powerManager.CPUBoost.PropertyChanged += CPUBoost_PropertyChanged;
-                powerManager.CPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
-                powerManager.SetCPUEPP.PropertyChanged += CPUEPP_PropertyChanged;
-                powerManager.LimitCPUClock.PropertyChanged += CPUClock_PropertyChanged;
-                powerManager.CPUClockMax.PropertyChanged += CPUClock_PropertyChanged;
+
                 rtssManager.LimitFPS.PropertyChanged += LimitFPS_PropertyChanged;
                 rtssManager.FPSLimit.PropertyChanged += FPSLimit_PropertyChanged;
                 rtssManager.FPSLimitMode.PropertyChanged += FPSLimitMode_PropertyChanged;
@@ -397,32 +386,6 @@ namespace XboxGamingBarHelper
 
         private static bool isApplyingProfile = false;
 
-        private static void CPUClock_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (isApplyingProfile) return;
-            var cpuClock = powerManager.LimitCPUClock ? powerManager.CPUClockMax.Value : 0;
-            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s CPU Clock from {profileManager.CurrentProfile.CPUClock} to {cpuClock}.");
-            profileManager.CurrentProfile.CPUClock = cpuClock;
-        }
-
-        private static void CPUBoost_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (isApplyingProfile) return;
-            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s CPU Boost from {profileManager.CurrentProfile.CPUBoost} to {powerManager.CPUBoost}.");
-            profileManager.CurrentProfile.CPUBoost = powerManager.CPUBoost;
-        }
-
-        private static void CPUEPP_PropertyChanged(object sender, PropertyChangedEventArgs e)
-        {
-            if (isApplyingProfile) return;
-            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s CPU EPP from {profileManager.CurrentProfile.CPUEPP} to {powerManager.CPUEPP} (Enabled: {powerManager.SetCPUEPP.Value}).");
-            profileManager.CurrentProfile.CPUEPP = powerManager.CPUEPP;
-            profileManager.CurrentProfile.SetCPUEPP = powerManager.SetCPUEPP.Value;
-            if (!profileManager.CurrentProfile.IsGlobalProfile)
-            {
-                profileManager.GlobalProfile.SetCPUEPP = powerManager.SetCPUEPP.Value;
-            }
-        }
 
         private static void CurrentProfile_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
@@ -430,11 +393,7 @@ namespace XboxGamingBarHelper
             {
                 Logger.Info($"Profile changed to {profileManager.CurrentProfile.GameId.Name}, apply it.");
                 isApplyingProfile = true;
-                powerManager.CPUBoost.SetValue(profileManager.CurrentProfile.CPUBoost);
-                powerManager.SetCPUEPP.SetValue(profileManager.CurrentProfile.SetCPUEPP);
-                powerManager.CPUEPP.SetValue(profileManager.CurrentProfile.CPUEPP);
-                powerManager.LimitCPUClock.SetValue(profileManager.CurrentProfile.CPUClock > 0);
-                powerManager.CPUClockMax.SetValue(profileManager.CurrentProfile.CPUClock > 0 ? profileManager.CurrentProfile.CPUClock : CPUConstants.DEFAULT_CPU_CLOCK);
+
                 rtssManager.LimitFPS.SetValue(profileManager.CurrentProfile.FPSLimit > 0);
                 rtssManager.FPSLimit.SetValue(profileManager.CurrentProfile.FPSLimit > 0 ? profileManager.CurrentProfile.FPSLimit : 60);
                 rtssManager.FPSLimitMode.SetValue(profileManager.CurrentProfile.FPSLimitMode);

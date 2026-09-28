@@ -45,65 +45,6 @@ namespace Shared.Data
             }
         }
 
-        [XmlElement("CPUBoost")]
-        private bool cpuBoost;
-        public bool CPUBoost
-        {
-            get { return cpuBoost; }
-            set
-            {
-                if (cpuBoost != value)
-                {
-                    cpuBoost = value;
-                    Save();
-                }
-            }
-        }
-
-        [XmlElement("CPUEPP")]
-        private int cpuEPP;
-        public int CPUEPP
-        {
-            get { return cpuEPP; }
-            set
-            {
-                if (cpuEPP != value)
-                {
-                    cpuEPP = value;
-                    Save();
-                }
-            }
-        }
-
-        [XmlElement("SetCPUEPP")]
-        private bool setCPUEPP;
-        public bool SetCPUEPP
-        {
-            get { return setCPUEPP; }
-            set
-            {
-                if (setCPUEPP != value)
-                {
-                    setCPUEPP = value;
-                    Save();
-                }
-            }
-        }
-
-        [XmlElement("CPUClock")]
-        private int cpuClock;
-        public int CPUClock
-        {
-            get { return cpuClock; }
-            set
-            {
-                if (cpuClock != value)
-                {
-                    cpuClock = value;
-                    Save();
-                }
-            }
-        }
 
         [XmlElement("FPSLimit")]
         private int fpsLimit;
@@ -168,10 +109,7 @@ namespace Shared.Data
         {
             GameId = new GameId(options.GameName, options.GamePath);
             use = options.InUse;
-            cpuBoost = options.CPUBoost;
-            cpuEPP = options.CPUEPP;
-            setCPUEPP = options.SetCPUEPP;
-            cpuClock = options.CPUClock;
+
             fpsLimit = options.FPSLimit;
             fpsLimitMode = options.FPSLimitMode;
             judderFreeFPS = options.JudderFreeFPS;

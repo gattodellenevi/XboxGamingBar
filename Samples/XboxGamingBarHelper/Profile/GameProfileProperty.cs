@@ -10,53 +10,6 @@ namespace XboxGamingBarHelper.Profile
         {
         }
 
-        public bool CPUBoost
-        {
-            get { return value.CPUBoost; }
-            set
-            {
-                if (this.value.CPUBoost != value)
-                {
-                    this.value.CPUBoost = value;
-                }
-            }
-        }
-
-        public int CPUEPP
-        {
-            get { return value.CPUEPP; }
-            set
-            {
-                if (this.value.CPUEPP != value)
-                {
-                    this.value.CPUEPP = value;
-                }
-            }
-        }
-
-        public bool SetCPUEPP
-        {
-            get { return value.SetCPUEPP; }
-            set
-            {
-                if (this.value.SetCPUEPP != value)
-                {
-                    this.value.SetCPUEPP = value;
-                }
-            }
-        }
-
-        public int CPUClock
-        {
-            get { return value.CPUClock; }
-            set
-            {
-                if (this.Value.CPUClock != value)
-                {
-                    this.value.CPUClock = value;
-                }
-            }
-        }
 
         public int FPSLimit
         {

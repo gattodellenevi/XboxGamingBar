@@ -52,11 +52,6 @@ namespace XboxGamingBar
         private readonly OSDProperty osd;
         private readonly RunningGameProperty runningGame;
         private readonly PerGameProfileProperty perGameProfile;
-        private readonly CPUBoostProperty cpuBoost;
-        private readonly CPUEPPProperty cpuEPP;
-        private readonly SetCPUEPPProperty setCPUEPP;
-        private readonly LimitCPUClockProperty limitCPUClock;
-        private readonly CPUClockMaxProperty cpuClockMax;
         private readonly LimitFPSProperty limitFPS;
         private readonly RefreshRatesProperty refreshRates;
         private readonly RefreshRateProperty refreshRate;
@@ -103,11 +98,6 @@ namespace XboxGamingBar
             osdTextSize = new OSDTextSizeProperty(100, OverlayTextSizeSlider, this);
             runningGame = new RunningGameProperty(RunningGameText, PerGameProfileToggle, this);
             perGameProfile = new PerGameProfileProperty(PerGameProfileToggle, this);
-            cpuBoost = new CPUBoostProperty(CPUBoostToggle, this);
-            cpuEPP = new CPUEPPProperty(80, CPUEPPSlider, this);
-            setCPUEPP = new SetCPUEPPProperty(SetCPUEPPToggle, this);
-            limitCPUClock = new LimitCPUClockProperty(LimitCPUClockToggle, this);
-            cpuClockMax = new CPUClockMaxProperty(CPUClockMaxSlider, this);
             refreshRates = new RefreshRatesProperty(RefreshRatesComboBox, this);
             refreshRate = new RefreshRateProperty(RefreshRatesComboBox, this, FPSLimitSlider);
             resolutions = new ResolutionsProperty(ResolutionsComboBox, this);
@@ -169,11 +159,6 @@ namespace XboxGamingBar
                 osdTextSize,
                 runningGame,
                 perGameProfile,
-                cpuBoost,
-                cpuEPP,
-                setCPUEPP,
-                limitCPUClock,
-                cpuClockMax,
                 refreshRates,
                 refreshRate,
                 resolutions,

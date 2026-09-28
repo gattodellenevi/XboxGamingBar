@@ -2,7 +2,7 @@ using NLog;
 using System;
 using System.Windows.Forms;
 using XboxGamingBarHelper.Core;
-using XboxGamingBarHelper.Power;
+using System.Runtime.InteropServices;
 using XboxGamingBarHelper.Windows;
 
 namespace XboxGamingBarHelper.Hardware
@@ -99,6 +99,35 @@ namespace XboxGamingBarHelper.Hardware
         private float memoryUsage = -1.0f;
         private float memoryUsed = -1.0f;
 
+        internal static bool TryGetBatteryState(out SYSTEM_BATTERY_STATE state)
+        {
+            const int BUFFER_SIZE = 128;
+
+            IntPtr buffer = Marshal.AllocHGlobal(BUFFER_SIZE);
+            try
+            {
+                uint status = PowrProf.CallNtPowerInformation(
+                    5,              // SystemBatteryState
+                    IntPtr.Zero,
+                    0,
+                    buffer,
+                    BUFFER_SIZE);
+
+                if (status != 0)
+                {
+                    state = default;
+                    return false;
+                }
+
+                state = Marshal.PtrToStructure<SYSTEM_BATTERY_STATE>(buffer);
+                return state.BatteryPresent;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(buffer);
+            }
+        }
+
         public void Update()
         {
             var powerStatus = System.Windows.Forms.SystemInformation.PowerStatus;
@@ -106,7 +135,7 @@ namespace XboxGamingBarHelper.Hardware
             batteryLevel = powerStatus.BatteryLifePercent * 100;
             batteryRemainingTime = powerStatus.BatteryLifeRemaining;
 
-            if (PowerManager.TryGetBatteryState(out var battery))
+            if (TryGetBatteryState(out var battery))
             {
                 if (battery.Charging)
                 {

@@ -51,9 +51,7 @@ namespace XboxGamingBarHelper.Profile
                     GameName = GameProfile.GLOBAL_PROFILE_NAME,
                     GamePath = GameProfile.GLOBAL_PROFILE_NAME,
                     InUse = true,
-                    CPUBoost = true,
-                    CPUEPP = 80,
-                    CPUClock = 0,
+
                     FPSLimit = 0,
                     FPSLimitMode = 0,
                     ProfilePath = globalProfilePath,
@@ -128,10 +126,7 @@ namespace XboxGamingBarHelper.Profile
                 GameName = gameId.Name,
                 GamePath = gameId.Path,
                 InUse = true,
-                CPUBoost = CurrentProfile.CPUBoost,
-                CPUEPP = CurrentProfile.CPUEPP,
-                SetCPUEPP = CurrentProfile.SetCPUEPP,
-                CPUClock = CurrentProfile.CPUClock,
+
                 FPSLimit = CurrentProfile.FPSLimit,
                 FPSLimitMode = CurrentProfile.FPSLimitMode,
                 ProfilePath = newGameProfilePath,
