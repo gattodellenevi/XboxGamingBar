@@ -244,7 +244,7 @@ namespace XboxGamingBar
         {
             Logger.Info("App gaming widget settings closed");
             gamingSettingsXboxGameBarWidget = null;
-            gamingWidget = null;
+            gamingWidgetSettings = null;
             Window.Current.Closed -= GamingSettingsWidgetWindow_Closed;
         }
 

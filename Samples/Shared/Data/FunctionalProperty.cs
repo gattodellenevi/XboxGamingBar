@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using Shared.Enums;
 using System.Threading.Tasks;
 
@@ -59,35 +59,42 @@ namespace Shared.Data
             request = AddValueSetContent(request);
 
             Logger.Info($"Property {function} changed to {GetValue()}.");
-            var sentMessage = SendMessageAsync(request);
-            if (sentMessage == null)
+            try
             {
-                Logger.Error($"Can't send {function} value changed message.");
-                return;
-            }
-
-            var response = await sentMessage;
-            if (response != null && response.Message != null)
-            {
-                if (response.Message.TryGetValue(nameof(Content), out object responseValue))
+                var sentMessage = SendMessageAsync(request);
+                if (sentMessage == null)
                 {
-                    Logger.Info($"Notified property {function} changed {responseValue}.");
+                    Logger.Warn($"Can't send {function} value changed message (SendMessageAsync returned null).");
+                    return;
                 }
-                else
+
+                var response = await sentMessage;
+                if (response != null && response.Message != null)
                 {
-                    if (function != Function.None)
+                    if (response.Message.TryGetValue(nameof(Content), out object responseValue))
                     {
-                        Logger.Warn($"Got empty response when notifying property {function}.");
+                        Logger.Info($"Notified property {function} changed {responseValue}.");
                     }
                     else
                     {
-                        Logger.Info("Notified property NONE changed.");
+                        if (function != Function.None)
+                        {
+                            Logger.Warn($"Got empty response when notifying property {function}.");
+                        }
+                        else
+                        {
+                            Logger.Info("Notified property NONE changed.");
+                        }
                     }
                 }
+                else
+                {
+                    Logger.Warn($"Got no response when notifying property {function}.");
+                }
             }
-            else
+            catch (System.Exception ex)
             {
-                Logger.Warn($"Got no response when notifying property {function}.");
+                Logger.Error(ex, $"Exception when notifying property {function} value changed.");
             }
         }
 
@@ -110,45 +117,52 @@ namespace Shared.Data
                 { nameof(Function),(int)function },
             };
 
-            var sentMessage = SendMessageAsync(request);
-            if (sentMessage == null)
+            try
             {
-                Logger.Error($"Can't sync {function} value.");
-                return;
-            }
-
-            Logger.Info($"Waiting for sending message Get {function}.");
-            var response = await sentMessage;
-            Logger.Info($"Finished wait for sending message Get {function}.");
-            if (response != null)
-            {
-                if (response.Message.TryGetValue(nameof(Content), out object responseValue))
+                var sentMessage = SendMessageAsync(request);
+                if (sentMessage == null)
                 {
-                    if (response.Message.TryGetValue(nameof(UpdatedTime), out object updatedTimeValue))
+                    Logger.Warn($"Can't sync {function} value (SendMessageAsync returned null).");
+                    return;
+                }
+
+                Logger.Info($"Waiting for sending message Get {function}.");
+                var response = await sentMessage;
+                Logger.Info($"Finished wait for sending message Get {function}.");
+                if (response != null)
+                {
+                    if (response.Message.TryGetValue(nameof(Content), out object responseValue))
                     {
-                        var updatedTime = (long)updatedTimeValue;
-                        if (SetValue(responseValue, updatedTime))
+                        if (response.Message.TryGetValue(nameof(UpdatedTime), out object updatedTimeValue))
                         {
-                            Logger.Info($"Sync {function} value {responseValue} successfully.");
+                            var updatedTime = (long)updatedTimeValue;
+                            if (SetValue(responseValue, updatedTime))
+                            {
+                                Logger.Info($"Sync {function} value {responseValue} successfully.");
+                            }
+                            else
+                            {
+                                Logger.Warn($"Got {function} value {responseValue} but can't sync.");
+                            }
                         }
                         else
                         {
-                            Logger.Warn($"Got {function} value {responseValue} but can't sync.");
+                            Logger.Warn($"Can't get updated time when trying to sync property {function}.");
                         }
                     }
                     else
                     {
-                        Logger.Warn($"Can't get updated time when trying to sync property {function}.");
+                        Logger.Warn($"Got empty response when trying to sync property {function}.");
                     }
                 }
                 else
                 {
-                    Logger.Warn($"Got empty response when trying to sync property {function}.");
+                    Logger.Warn($"Got no response when trying to sync property {function}.");
                 }
             }
-            else
+            catch (System.Exception ex)
             {
-                Logger.Warn($"Got no response when trying to sync property {function}.");
+                Logger.Error(ex, $"Exception when syncing property {function}.");
             }
         }
 

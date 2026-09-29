@@ -47,6 +47,10 @@ namespace XboxGamingBarHelper
         private static HelperProperties properties;
 
         private static System.Threading.Mutex _singleInstanceMutex;
+        private static System.Threading.EventWaitHandle _widgetActiveEvent;
+        private static System.Threading.RegisteredWaitHandle _registeredWaitHandle;
+        private static readonly object _connectionLock = new object();
+        private static bool _isConnecting = false;
 
         static void Main(string[] args)
         {
@@ -76,13 +80,23 @@ namespace XboxGamingBarHelper
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to create single-instance mutex with ACL, falling back to standard Mutex constructor.");
-                _singleInstanceMutex = new System.Threading.Mutex(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out createdNew);
+                _singleInstanceMutex = new System.Threading.Mutex(true, StringConstants.HELPER_MUTEX_NAME, out createdNew);
             }
 
             if (!createdNew)
             {
                 Logger.Info("CouchGamingBarHelper is already running. Exiting duplicate instance.");
                 return;
+            }
+
+            try
+            {
+                _widgetActiveEvent = CreateWidgetActiveEventWithAcl(out _);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to create widget active event with ACL, falling back to standard EventWaitHandle constructor.");
+                _widgetActiveEvent = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.AutoReset, StringConstants.WIDGET_ACTIVE_EVENT_NAME);
             }
 
             Run(args);
@@ -204,20 +218,45 @@ namespace XboxGamingBarHelper
                 rtssManager.JudderFreeFPS.PropertyChanged += JudderFreeFPS_PropertyChanged;
                 profileManager.CurrentProfile.PropertyChanged += CurrentProfile_PropertyChanged;
 
-                await ConnectToWidget(false);
+                // Register wait handle for reactive widget connection signals
+                try
+                {
+                    if (_widgetActiveEvent != null)
+                    {
+                        _registeredWaitHandle = System.Threading.ThreadPool.RegisterWaitForSingleObject(
+                            _widgetActiveEvent,
+                            OnWidgetActiveSignaled,
+                            null,
+                            -1,
+                            false);
+                        Logger.Info("Registered thread pool wait handle for widget active signal.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to register wait handle for widget active signal.");
+                }
 
-                Logger.Info($"Widget connection status: {appServiceConnectionStatus}");
-                DateTime lastReconnectAttempt = DateTime.MinValue;
+                // Initial connection attempt (up to 3 tries if helper was launched on-demand by widget)
+                for (int attempt = 1; attempt <= 3; attempt++)
+                {
+                    await ConnectToWidget(false);
+                    if (appServiceConnectionStatus == AppServiceConnectionStatus.Success)
+                    {
+                        Logger.Info($"Initial connection to widget succeeded on attempt {attempt}.");
+                        break;
+                    }
+
+                    if (attempt < 3)
+                    {
+                        await Task.Delay(500);
+                    }
+                }
+
+                Logger.Info($"Initial widget connection status: {appServiceConnectionStatus}");
 
                 while (true)
                 {
-                    if (appServiceConnectionStatus != AppServiceConnectionStatus.Success && connection != null && !string.IsNullOrEmpty(connection?.PackageFamilyName) && (DateTime.UtcNow - lastReconnectAttempt).TotalMilliseconds >= 2000)
-                    {
-                        lastReconnectAttempt = DateTime.UtcNow;
-                        Logger.Info("Try to reconnect to the widget.");
-                        await ConnectToWidget(false);
-                    }
-
                     await Task.Delay(1000);
 
                     foreach (var manager in Managers)
@@ -522,7 +561,75 @@ namespace XboxGamingBarHelper
                 System.Security.AccessControl.MutexRights.Synchronize | System.Security.AccessControl.MutexRights.Modify,
                 System.Security.AccessControl.AccessControlType.Allow));
 
-            return System.Threading.MutexAcl.Create(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out createdNew, mutexSecurity);
+            return System.Threading.MutexAcl.Create(true, StringConstants.HELPER_MUTEX_NAME, out createdNew, mutexSecurity);
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static System.Threading.EventWaitHandle CreateWidgetActiveEventWithAcl(out bool createdNew)
+        {
+            var sid = new System.Security.Principal.SecurityIdentifier("S-1-15-2-1");
+            var eventSecurity = new System.Security.AccessControl.EventWaitHandleSecurity();
+            eventSecurity.AddAccessRule(new System.Security.AccessControl.EventWaitHandleAccessRule(
+                sid,
+                System.Security.AccessControl.EventWaitHandleRights.Synchronize | System.Security.AccessControl.EventWaitHandleRights.Modify,
+                System.Security.AccessControl.AccessControlType.Allow));
+
+            return System.Threading.EventWaitHandleAcl.Create(false, System.Threading.EventResetMode.AutoReset, StringConstants.WIDGET_ACTIVE_EVENT_NAME, out createdNew, eventSecurity);
+        }
+
+        private static async void OnWidgetActiveSignaled(object state, bool timedOut)
+        {
+            if (timedOut) return;
+
+            Logger.Info("Widget active event signaled by widget.");
+
+            lock (_connectionLock)
+            {
+                if (_isConnecting)
+                {
+                    Logger.Info("Already in the process of connecting to widget. Skipping duplicate signal.");
+                    return;
+                }
+
+                if (appServiceConnectionStatus == AppServiceConnectionStatus.Success && connection != null)
+                {
+                    Logger.Info("Already connected to widget AppService. Skipping connect attempt.");
+                    return;
+                }
+
+                _isConnecting = true;
+            }
+
+            try
+            {
+                for (int attempt = 1; attempt <= 3; attempt++)
+                {
+                    Logger.Info($"Connecting to widget after active signal (attempt {attempt}/3)...");
+                    await ConnectToWidget(false);
+
+                    if (appServiceConnectionStatus == AppServiceConnectionStatus.Success)
+                    {
+                        Logger.Info($"Successfully connected to widget on attempt {attempt}.");
+                        break;
+                    }
+
+                    if (attempt < 3)
+                    {
+                        await Task.Delay(500);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Exception in OnWidgetActiveSignaled while connecting to widget.");
+            }
+            finally
+            {
+                lock (_connectionLock)
+                {
+                    _isConnecting = false;
+                }
+            }
         }
     }
 }

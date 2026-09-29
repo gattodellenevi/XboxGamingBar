@@ -1,5 +1,6 @@
 using Microsoft.Gaming.XboxGameBar;
 using NLog;
+using Shared.Constants;
 using Shared.Data;
 using Shared.Enums;
 using Shared.Utilities;
@@ -88,6 +89,7 @@ namespace XboxGamingBar
         private readonly HardwareProviderProperty hardwareProviderProperty;
         private readonly GameInputStatusProperty gameInputStatus;
         private bool isElevationFlyoutOpen = false;
+        private bool isRestartingElevated = false;
 
         private readonly WidgetProperties properties;
 
@@ -283,6 +285,10 @@ namespace XboxGamingBar
             {
                 try
                 {
+                    isRestartingElevated = true;
+                    HelperElevationFlyout?.Hide();
+                    ShowLoadingModal("Restarting as Administrator...", "Waiting for elevated helper to launch (approve UAC if prompted)...");
+
                     if (RestartElevatedButtonText != null)
                     {
                         RestartElevatedButtonText.Text = "Restarting...";
@@ -300,10 +306,28 @@ namespace XboxGamingBar
 
                     var response = await App.Connection.SendMessageAsync(valueSet);
                     Logger.Info($"SendMessageAsync RestartElevated status: {response?.Status}");
+
+                    // Safety timeout: if UAC is cancelled or dismissed, reset state after 15 seconds
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(15000);
+                        await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, async () =>
+                        {
+                            if (isRestartingElevated && App.Connection == null)
+                            {
+                                Logger.Warn("RestartElevated timed out (UAC was likely cancelled or dismissed). Resetting state.");
+                                isRestartingElevated = false;
+                                HideLoadingModal();
+                                await EnsureHelperConnectionOrLaunchAsync();
+                            }
+                        });
+                    });
                 }
                 catch (Exception ex)
                 {
                     Logger.Error(ex, "Failed to send RestartElevated message to helper.");
+                    isRestartingElevated = false;
+                    HideLoadingModal();
                 }
                 finally
                 {
@@ -316,7 +340,6 @@ namespace XboxGamingBar
                     {
                         RestartElevatedButton.IsEnabled = true;
                     }
-                    HelperElevationFlyout?.Hide();
                 }
             }
             else
@@ -699,8 +722,9 @@ namespace XboxGamingBar
 
                 if (IsHelperProcessRunning())
                 {
-                    Logger.Info("Helper process is already running. Skipping launch and waiting for AppService connection.");
+                    Logger.Info("Helper process is already running. Signaling widget active event and awaiting connection.");
                     ShowLoadingModal("Connecting to Helper...", "Establishing communication channel...");
+                    WidgetSignalHelper.SignalWidgetActive();
                 }
                 else
                 {
@@ -711,6 +735,7 @@ namespace XboxGamingBar
                         Logger.Info("Helper process is not running. Launching full trust process (helper).");
                         await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
                         Logger.Info("FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync() completed.");
+                        WidgetSignalHelper.SignalWidgetActive();
                     }
                     catch (Exception ex)
                     {
@@ -730,7 +755,7 @@ namespace XboxGamingBar
         {
             try
             {
-                if (System.Threading.Mutex.TryOpenExisting(@"Global\CouchGamingBarHelper_SingleInstance_Mutex", out var mutex))
+                if (System.Threading.Mutex.TryOpenExisting(StringConstants.HELPER_MUTEX_NAME, out var mutex))
                 {
                     mutex?.Dispose();
                     return true;
@@ -774,6 +799,7 @@ namespace XboxGamingBar
             else
             {
                 Logger.Info("GamingWidget LeavingBackground but not connected to full trust process. Checking helper status...");
+                WidgetSignalHelper.SignalWidgetActive();
                 await EnsureHelperConnectionOrLaunchAsync();
             }
 
@@ -822,6 +848,7 @@ namespace XboxGamingBar
         private async void GamingWidget_AppServiceConnected(object sender, AppServiceTriggerDetails _)
         {
             Logger.Info("GamingWidget AppService connected.");
+            isRestartingElevated = false;
             HideLoadingModal();
 
             if (widget != null)
@@ -878,12 +905,20 @@ namespace XboxGamingBar
             gameInputStatus?.SetDisconnectedState();
 
             var eventArgs = e as BackgroundTaskCancellationEventArgs;
+            if (isRestartingElevated)
+            {
+                Logger.Info("AppService disconnected due to RestartElevated. Awaiting elevated helper connection without relaunching standard process.");
+                ShowLoadingModal("Restarting as Administrator...", "Waiting for elevated helper to launch (approve UAC if prompted)...");
+                return;
+            }
+
             if (eventArgs != null && eventArgs.Reason != BackgroundTaskCancellationReason.Terminating)
             {
                 ShowLoadingModal("Reconnecting to Helper...", "Waiting for background service...");
                 if (IsHelperProcessRunning())
                 {
-                    Logger.Info($"AppService disconnected due to {eventArgs.Reason}, but helper process is already running. Skipping relaunch.");
+                    Logger.Info($"AppService disconnected due to {eventArgs.Reason}, but helper process is already running. Signaling helper and awaiting connection.");
+                    WidgetSignalHelper.SignalWidgetActive();
                 }
                 else
                 {
