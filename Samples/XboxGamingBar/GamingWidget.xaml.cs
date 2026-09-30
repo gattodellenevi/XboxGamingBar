@@ -42,6 +42,7 @@ namespace XboxGamingBar
         // Xbox Game Bar logic
         private XboxGameBarWidget widget = null;
         private XboxGameBarWidgetActivity widgetActivity = null;
+        private readonly object widgetActivityLock = new object();
         public XboxGameBarWidgetActivity WidgetActivity { get { return widgetActivity; } }
         private XboxGameBarAppTargetTracker appTargetTracker = null;
 
@@ -688,16 +689,24 @@ namespace XboxGamingBar
 
         private void EnsureWidgetActivity()
         {
-            if (widget != null && widgetActivity == null)
+            if (widget == null)
             {
-                try
+                return;
+            }
+
+            lock (widgetActivityLock)
+            {
+                if (widgetActivity == null)
                 {
-                    widgetActivity = new XboxGameBarWidgetActivity(widget, "XboxGamingBarActivity");
-                    Logger.Info("Created widget activity to keep Game Bar active.");
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warn($"Could not create widget activity: {ex.Message}");
+                    try
+                    {
+                        widgetActivity = new XboxGameBarWidgetActivity(widget, $"XboxGamingBarActivity_{Guid.NewGuid():N}");
+                        Logger.Info("Created widget activity to keep Game Bar active.");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn($"Could not create widget activity: {ex.Message}");
+                    }
                 }
             }
         }
@@ -927,11 +936,21 @@ namespace XboxGamingBar
             {
                 Logger.Info($"AppService disconnected due to {eventArgs.Reason}, not relaunching.");
                 HideLoadingModal();
-                if (widgetActivity != null)
+                lock (widgetActivityLock)
                 {
-                    widgetActivity.Complete();
-                    widgetActivity = null;
-                    Logger.Info("Stopped widget activity on terminating disconnect.");
+                    if (widgetActivity != null)
+                    {
+                        try
+                        {
+                            widgetActivity.Complete();
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Warn($"Could not complete widget activity: {ex.Message}");
+                        }
+                        widgetActivity = null;
+                        Logger.Info("Stopped widget activity on terminating disconnect.");
+                    }
                 }
             }
         }
@@ -1193,6 +1212,54 @@ namespace XboxGamingBar
             {
                 NoShortcutsPlaceholder.Visibility = (shortcuts == null || shortcuts.Count == 0) ? Visibility.Visible : Visibility.Collapsed;
             }
+        }
+
+        private async void ShortcutsGridView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is ShortcutItem shortcut)
+            {
+                Logger.Info($"Shortcut clicked via ItemClick (gamepad/grid): '{shortcut.Name}' ({shortcut.DisplayKeyCombo})");
+                await SendShortcutAsync(shortcut);
+            }
+        }
+
+        private void ShortcutsGridView_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.GamepadMenu || e.Key == VirtualKey.GamepadX || e.Key == VirtualKey.Application)
+            {
+                var focused = FocusManager.GetFocusedElement() as DependencyObject;
+                DependencyObject current = focused;
+                while (current != null && !(current is GridViewItem) && current != ShortcutsGridView)
+                {
+                    current = VisualTreeHelper.GetParent(current);
+                }
+
+                if (current is GridViewItem gvi)
+                {
+                    var btn = FindVisualChild<Button>(gvi);
+                    if (btn?.ContextFlyout is MenuFlyout flyout)
+                    {
+                        flyout.ShowAt(btn);
+                        e.Handled = true;
+                    }
+                }
+            }
+        }
+
+        private static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            if (parent == null) return null;
+            int childCount = VisualTreeHelper.GetChildrenCount(parent);
+            for (int i = 0; i < childCount; i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T typedChild)
+                    return typedChild;
+                var result = FindVisualChild<T>(child);
+                if (result != null)
+                    return result;
+            }
+            return null;
         }
 
         private async void ShortcutButton_Click(object sender, RoutedEventArgs e)
@@ -1545,9 +1612,20 @@ namespace XboxGamingBar
             }
         }
 
+        private string lastExecutedShortcutId = null;
+        private DateTime lastExecutedShortcutTime = DateTime.MinValue;
+
         private async Task SendShortcutAsync(ShortcutItem shortcut)
         {
             if (shortcut == null) return;
+
+            if (shortcut.Id == lastExecutedShortcutId && (DateTime.UtcNow - lastExecutedShortcutTime).TotalMilliseconds < 300)
+            {
+                Logger.Debug($"Ignoring rapid duplicate shortcut execution for '{shortcut.Name}'.");
+                return;
+            }
+            lastExecutedShortcutId = shortcut.Id;
+            lastExecutedShortcutTime = DateTime.UtcNow;
 
             Logger.Info($"SendShortcutAsync: Sending payload '{shortcut.ToPayloadString()}'");
 

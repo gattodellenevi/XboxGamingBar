@@ -712,6 +712,8 @@
                                     <GridView x:Name="ShortcutsGridView" 
                                               SelectionMode="None" 
                                               IsItemClickEnabled="True"
+                                              ItemClick="ShortcutsGridView_ItemClick"
+                                              PreviewKeyDown="ShortcutsGridView_PreviewKeyDown"
                                               XYFocusKeyboardNavigation="Enabled"
                                               HorizontalAlignment="Center">
                                         <GridView.ItemContainerStyle>
@@ -722,6 +724,7 @@
                                                 <Setter Property="VerticalContentAlignment" Value="Center"/>
                                                 <Setter Property="MinWidth" Value="0"/>
                                                 <Setter Property="MinHeight" Value="0"/>
+                                                <Setter Property="CornerRadius" Value="8"/>
                                             </Style>
                                         </GridView.ItemContainerStyle>
                                         <GridView.ItemsPanel>
@@ -734,6 +737,7 @@
                                                 <Button Click="ShortcutButton_Click"
                                                         RightTapped="ShortcutButton_RightTapped"
                                                         Holding="ShortcutButton_Holding"
+                                                        IsTabStop="False"
                                                         Tag="{Binding}"
                                                         Width="98" Height="98"
                                                         Margin="2,2,2,2"

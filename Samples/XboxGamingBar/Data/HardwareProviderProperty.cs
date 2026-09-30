@@ -12,10 +12,10 @@ namespace XboxGamingBar.Data
     {
         private readonly TextBlock subtitleText;
 
-        private static readonly SolidColorBrush LibreHardwareBrush = new SolidColorBrush(Color.FromArgb(255, 16, 124, 65)); // Xbox Green #107C41
-        private static readonly SolidColorBrush WindowsApiBrush = new SolidColorBrush(Color.FromArgb(255, 2, 132, 199));   // Sky/Steel Blue #0284C7
-        private static readonly SolidColorBrush OfflineBrush = new SolidColorBrush(Color.FromArgb(255, 90, 90, 90));       // Muted Gray #5A5A5A
-        private static readonly SolidColorBrush WhiteBrush = new SolidColorBrush(Colors.White);
+        private static readonly Color LibreHardwareColor = Color.FromArgb(255, 16, 124, 65); // Xbox Green #107C41
+        private static readonly Color WindowsApiColor = Color.FromArgb(255, 2, 132, 199);   // Sky/Steel Blue #0284C7
+        private static readonly Color OfflineColor = Color.FromArgb(255, 90, 90, 90);       // Muted Gray #5A5A5A
+        private static readonly Color WhiteColor = Colors.White;
 
         public HardwareProviderProperty(Border inBadgeBorder, TextBlock inBadgeText, TextBlock inSubtitleText, Page inOwner)
             : base(string.Empty, Function.HardwareProvider, inBadgeBorder, inBadgeText, inOwner)
@@ -86,10 +86,10 @@ namespace XboxGamingBar.Data
         {
             if (!isConnected || string.IsNullOrEmpty(provider))
             {
-                UI.Background = OfflineBrush;
-                UI.BorderBrush = OfflineBrush;
+                UI.Background = new SolidColorBrush(OfflineColor);
+                UI.BorderBrush = new SolidColorBrush(OfflineColor);
                 AdditionalUI.Text = "OFFLINE";
-                AdditionalUI.Foreground = WhiteBrush;
+                AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                 if (subtitleText != null)
                 {
                     subtitleText.Text = "Helper process is not running or disconnected";
@@ -97,10 +97,10 @@ namespace XboxGamingBar.Data
             }
             else if (provider.IndexOf("Libre", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                UI.Background = LibreHardwareBrush;
-                UI.BorderBrush = LibreHardwareBrush;
+                UI.Background = new SolidColorBrush(LibreHardwareColor);
+                UI.BorderBrush = new SolidColorBrush(LibreHardwareColor);
                 AdditionalUI.Text = "LIBREHARDWARE 0.9.6";
-                AdditionalUI.Foreground = WhiteBrush;
+                AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                 if (subtitleText != null)
                 {
                     subtitleText.Text = "LibreHardwareMonitorLib (Hardware sensors: CPU/GPU temps, wattage, clocks)";
@@ -108,10 +108,10 @@ namespace XboxGamingBar.Data
             }
             else if (provider.IndexOf("Windows", StringComparison.OrdinalIgnoreCase) >= 0)
             {
-                UI.Background = WindowsApiBrush;
-                UI.BorderBrush = WindowsApiBrush;
+                UI.Background = new SolidColorBrush(WindowsApiColor);
+                UI.BorderBrush = new SolidColorBrush(WindowsApiColor);
                 AdditionalUI.Text = "WINDOWS API";
-                AdditionalUI.Foreground = WhiteBrush;
+                AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                 if (subtitleText != null)
                 {
                     subtitleText.Text = "Windows Performance Counters (Store sandbox mode)";
@@ -119,10 +119,10 @@ namespace XboxGamingBar.Data
             }
             else
             {
-                UI.Background = LibreHardwareBrush;
-                UI.BorderBrush = LibreHardwareBrush;
+                UI.Background = new SolidColorBrush(LibreHardwareColor);
+                UI.BorderBrush = new SolidColorBrush(LibreHardwareColor);
                 AdditionalUI.Text = provider.ToUpperInvariant();
-                AdditionalUI.Foreground = WhiteBrush;
+                AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                 if (subtitleText != null)
                 {
                     subtitleText.Text = $"Active provider: {provider}";

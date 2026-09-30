@@ -15,16 +15,16 @@ namespace XboxGamingBar.Data
         private readonly FontIcon heroWarningIcon;
         private readonly TextBlock heroWarningText;
 
-        private static readonly SolidColorBrush ElevatedBrush = new SolidColorBrush(Color.FromArgb(255, 16, 124, 65)); // Xbox Green #107C41
-        private static readonly SolidColorBrush StandardBrush = new SolidColorBrush(Color.FromArgb(255, 202, 138, 4)); // Amber #CA8A04
-        private static readonly SolidColorBrush OfflineBrush = new SolidColorBrush(Color.FromArgb(255, 90, 90, 90));   // Muted Gray #5A5A5A
-        private static readonly SolidColorBrush WhiteBrush = new SolidColorBrush(Colors.White);
+        private static readonly Color ElevatedColor = Color.FromArgb(255, 16, 124, 65); // Xbox Green #107C41
+        private static readonly Color StandardColor = Color.FromArgb(255, 202, 138, 4); // Amber #CA8A04
+        private static readonly Color OfflineColor = Color.FromArgb(255, 90, 90, 90);   // Muted Gray #5A5A5A
+        private static readonly Color WhiteColor = Colors.White;
 
         // Warning Button Styling
-        private static readonly SolidColorBrush StandardWarningBgBrush = new SolidColorBrush(Color.FromArgb(255, 45, 35, 5)); // Dark Amber #2D2305
-        private static readonly SolidColorBrush StandardWarningFgBrush = new SolidColorBrush(Color.FromArgb(255, 245, 158, 11)); // Amber Gold #F59E0B
-        private static readonly SolidColorBrush OfflineWarningBgBrush = new SolidColorBrush(Color.FromArgb(255, 37, 37, 37)); // Dark Gray #252525
-        private static readonly SolidColorBrush OfflineWarningFgBrush = new SolidColorBrush(Color.FromArgb(255, 160, 160, 160)); // Muted Gray #A0A0A0
+        private static readonly Color StandardWarningBgColor = Color.FromArgb(255, 45, 35, 5); // Dark Amber #2D2305
+        private static readonly Color StandardWarningFgColor = Color.FromArgb(255, 245, 158, 11); // Amber Gold #F59E0B
+        private static readonly Color OfflineWarningBgColor = Color.FromArgb(255, 37, 37, 37); // Dark Gray #252525
+        private static readonly Color OfflineWarningFgColor = Color.FromArgb(255, 160, 160, 160); // Muted Gray #A0A0A0
 
         public HelperElevationProperty(Border inBadgeBorder, TextBlock inBadgeText, TextBlock inSubtitleText,
             Button inHeroWarningButton, FontIcon inHeroWarningIcon, TextBlock inHeroWarningText, Page inOwner)
@@ -108,10 +108,10 @@ namespace XboxGamingBar.Data
         {
             if (!isConnected)
             {
-                UI.Background = OfflineBrush;
-                UI.BorderBrush = OfflineBrush;
+                UI.Background = new SolidColorBrush(OfflineColor);
+                UI.BorderBrush = new SolidColorBrush(OfflineColor);
                 AdditionalUI.Text = "OFFLINE";
-                AdditionalUI.Foreground = WhiteBrush;
+                AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                 if (subtitleText != null)
                 {
                     subtitleText.Text = "Helper process is not running or disconnected";
@@ -120,27 +120,27 @@ namespace XboxGamingBar.Data
                 if (heroWarningButton != null)
                 {
                     heroWarningButton.Visibility = Windows.UI.Xaml.Visibility.Visible;
-                    heroWarningButton.Background = OfflineWarningBgBrush;
-                    heroWarningButton.BorderBrush = OfflineBrush;
+                    heroWarningButton.Background = new SolidColorBrush(OfflineWarningBgColor);
+                    heroWarningButton.BorderBrush = new SolidColorBrush(OfflineColor);
                     if (heroWarningIcon != null)
                     {
                         heroWarningIcon.Glyph = "\uE7BA";
-                        heroWarningIcon.Foreground = OfflineWarningFgBrush;
+                        heroWarningIcon.Foreground = new SolidColorBrush(OfflineWarningFgColor);
                     }
                     if (heroWarningText != null)
                     {
                         heroWarningText.Text = "Offline";
-                        heroWarningText.Foreground = OfflineWarningFgBrush;
+                        heroWarningText.Foreground = new SolidColorBrush(OfflineWarningFgColor);
                     }
                     ToolTipService.SetToolTip(heroWarningButton, "Helper process is not running or disconnected.");
                 }
             }
             else if (isElevated)
             {
-                UI.Background = ElevatedBrush;
-                UI.BorderBrush = ElevatedBrush;
+                UI.Background = new SolidColorBrush(ElevatedColor);
+                UI.BorderBrush = new SolidColorBrush(ElevatedColor);
                 AdditionalUI.Text = "ELEVATED";
-                AdditionalUI.Foreground = WhiteBrush;
+                AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                 if (subtitleText != null)
                 {
                     subtitleText.Text = "Running with Administrator privileges";
@@ -153,10 +153,10 @@ namespace XboxGamingBar.Data
             }
             else
             {
-                UI.Background = StandardBrush;
-                UI.BorderBrush = StandardBrush;
+                UI.Background = new SolidColorBrush(StandardColor);
+                UI.BorderBrush = new SolidColorBrush(StandardColor);
                 AdditionalUI.Text = "STANDARD";
-                AdditionalUI.Foreground = WhiteBrush;
+                AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                 if (subtitleText != null)
                 {
                     subtitleText.Text = "Running without elevation (limited hardware control)";
@@ -165,17 +165,17 @@ namespace XboxGamingBar.Data
                 if (heroWarningButton != null)
                 {
                     heroWarningButton.Visibility = Windows.UI.Xaml.Visibility.Visible;
-                    heroWarningButton.Background = StandardWarningBgBrush;
-                    heroWarningButton.BorderBrush = StandardBrush;
+                    heroWarningButton.Background = new SolidColorBrush(StandardWarningBgColor);
+                    heroWarningButton.BorderBrush = new SolidColorBrush(StandardColor);
                     if (heroWarningIcon != null)
                     {
                         heroWarningIcon.Glyph = "\uE7BA";
-                        heroWarningIcon.Foreground = StandardWarningFgBrush;
+                        heroWarningIcon.Foreground = new SolidColorBrush(StandardWarningFgColor);
                     }
                     if (heroWarningText != null)
                     {
                         heroWarningText.Text = "Admin Needed";
-                        heroWarningText.Foreground = StandardWarningFgBrush;
+                        heroWarningText.Foreground = new SolidColorBrush(StandardWarningFgColor);
                     }
                     ToolTipService.SetToolTip(heroWarningButton, "Helper running without Administrator privileges. Hardware power controls are limited.");
                 }

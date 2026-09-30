@@ -11,10 +11,10 @@ namespace XboxGamingBar.Data
     internal class RTSSElevationProperty : WidgetPropertyWithAdditionalUI<int, Border, TextBlock>
     {
         private readonly TextBlock subtitleText;
-        private static readonly SolidColorBrush ElevatedBrush = new SolidColorBrush(Color.FromArgb(255, 16, 124, 65)); // Xbox Green #107C41
-        private static readonly SolidColorBrush StandardBrush = new SolidColorBrush(Color.FromArgb(255, 202, 138, 4)); // Amber #CA8A04
-        private static readonly SolidColorBrush OfflineBrush = new SolidColorBrush(Color.FromArgb(255, 90, 90, 90));   // Muted Gray #5A5A5A
-        private static readonly SolidColorBrush WhiteBrush = new SolidColorBrush(Colors.White);
+        private static readonly Color ElevatedColor = Color.FromArgb(255, 16, 124, 65); // Xbox Green #107C41
+        private static readonly Color StandardColor = Color.FromArgb(255, 202, 138, 4); // Amber #CA8A04
+        private static readonly Color OfflineColor = Color.FromArgb(255, 90, 90, 90);   // Muted Gray #5A5A5A
+        private static readonly Color WhiteColor = Colors.White;
 
         public RTSSElevationProperty(Border inBadgeBorder, TextBlock inBadgeText, TextBlock inSubtitleText, Page inOwner)
             : base(0, Function.RTSSElevation, inBadgeBorder, inBadgeText, inOwner)
@@ -89,10 +89,10 @@ namespace XboxGamingBar.Data
         {
             if (!isConnected)
             {
-                UI.Background = OfflineBrush;
-                UI.BorderBrush = OfflineBrush;
+                UI.Background = new SolidColorBrush(OfflineColor);
+                UI.BorderBrush = new SolidColorBrush(OfflineColor);
                 AdditionalUI.Text = "OFFLINE";
-                AdditionalUI.Foreground = WhiteBrush;
+                AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                 if (subtitleText != null)
                 {
                     subtitleText.Text = "Helper process is not running or disconnected";
@@ -103,30 +103,30 @@ namespace XboxGamingBar.Data
                 switch (status)
                 {
                     case 2: // Elevated
-                        UI.Background = ElevatedBrush;
-                        UI.BorderBrush = ElevatedBrush;
+                        UI.Background = new SolidColorBrush(ElevatedColor);
+                        UI.BorderBrush = new SolidColorBrush(ElevatedColor);
                         AdditionalUI.Text = "ELEVATED";
-                        AdditionalUI.Foreground = WhiteBrush;
+                        AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                         if (subtitleText != null)
                         {
                             subtitleText.Text = "Running with Administrator privileges";
                         }
                         break;
                     case 1: // Standard
-                        UI.Background = StandardBrush;
-                        UI.BorderBrush = StandardBrush;
+                        UI.Background = new SolidColorBrush(StandardColor);
+                        UI.BorderBrush = new SolidColorBrush(StandardColor);
                         AdditionalUI.Text = "STANDARD";
-                        AdditionalUI.Foreground = WhiteBrush;
+                        AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                         if (subtitleText != null)
                         {
                             subtitleText.Text = "Running without elevation (limited hook access)";
                         }
                         break;
                     case -1: // Not installed
-                        UI.Background = OfflineBrush;
-                        UI.BorderBrush = OfflineBrush;
+                        UI.Background = new SolidColorBrush(OfflineColor);
+                        UI.BorderBrush = new SolidColorBrush(OfflineColor);
                         AdditionalUI.Text = "NOT INSTALLED";
-                        AdditionalUI.Foreground = WhiteBrush;
+                        AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                         if (subtitleText != null)
                         {
                             subtitleText.Text = "RivaTuner Statistics Server is not installed";
@@ -134,10 +134,10 @@ namespace XboxGamingBar.Data
                         break;
                     case 0: // Offline
                     default:
-                        UI.Background = OfflineBrush;
-                        UI.BorderBrush = OfflineBrush;
+                        UI.Background = new SolidColorBrush(OfflineColor);
+                        UI.BorderBrush = new SolidColorBrush(OfflineColor);
                         AdditionalUI.Text = "OFFLINE";
-                        AdditionalUI.Foreground = WhiteBrush;
+                        AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                         if (subtitleText != null)
                         {
                             subtitleText.Text = "RivaTuner Statistics Server is not running";

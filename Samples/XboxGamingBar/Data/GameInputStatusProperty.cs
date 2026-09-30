@@ -11,10 +11,10 @@ namespace XboxGamingBar.Data
     internal class GameInputStatusProperty : WidgetPropertyWithAdditionalUI<int, Border, TextBlock>
     {
         private readonly TextBlock subtitleText;
-        private static readonly SolidColorBrush RunningBrush = new SolidColorBrush(Color.FromArgb(255, 16, 124, 65)); // Xbox Green #107C41
-        private static readonly SolidColorBrush DesyncBrush = new SolidColorBrush(Color.FromArgb(255, 202, 138, 4));  // Amber #CA8A04
-        private static readonly SolidColorBrush OfflineBrush = new SolidColorBrush(Color.FromArgb(255, 90, 90, 90));   // Muted Gray #5A5A5A
-        private static readonly SolidColorBrush WhiteBrush = new SolidColorBrush(Colors.White);
+        private static readonly Color RunningColor = Color.FromArgb(255, 16, 124, 65); // Xbox Green #107C41
+        private static readonly Color DesyncColor = Color.FromArgb(255, 202, 138, 4);  // Amber #CA8A04
+        private static readonly Color OfflineColor = Color.FromArgb(255, 90, 90, 90);   // Muted Gray #5A5A5A
+        private static readonly Color WhiteColor = Colors.White;
 
         public GameInputStatusProperty(Border inBadgeBorder, TextBlock inBadgeText, TextBlock inSubtitleText, Page inOwner)
             : base(0, Function.GameInputStatus, inBadgeBorder, inBadgeText, inOwner)
@@ -89,10 +89,10 @@ namespace XboxGamingBar.Data
         {
             if (!isConnected)
             {
-                UI.Background = OfflineBrush;
-                UI.BorderBrush = OfflineBrush;
+                UI.Background = new SolidColorBrush(OfflineColor);
+                UI.BorderBrush = new SolidColorBrush(OfflineColor);
                 AdditionalUI.Text = "OFFLINE";
-                AdditionalUI.Foreground = WhiteBrush;
+                AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                 if (subtitleText != null)
                 {
                     subtitleText.Text = "Helper process is not running or disconnected";
@@ -103,30 +103,30 @@ namespace XboxGamingBar.Data
                 switch (status)
                 {
                     case 1: // Running & Healthy
-                        UI.Background = RunningBrush;
-                        UI.BorderBrush = RunningBrush;
+                        UI.Background = new SolidColorBrush(RunningColor);
+                        UI.BorderBrush = new SolidColorBrush(RunningColor);
                         AdditionalUI.Text = "RUNNING";
-                        AdditionalUI.Foreground = WhiteBrush;
+                        AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                         if (subtitleText != null)
                         {
                             subtitleText.Text = "Powers Game Bar gamepad cursor and controller navigation";
                         }
                         break;
                     case 2: // Desync / Degraded
-                        UI.Background = DesyncBrush;
-                        UI.BorderBrush = DesyncBrush;
+                        UI.Background = new SolidColorBrush(DesyncColor);
+                        UI.BorderBrush = new SolidColorBrush(DesyncColor);
                         AdditionalUI.Text = "DESYNC";
-                        AdditionalUI.Foreground = WhiteBrush;
+                        AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                         if (subtitleText != null)
                         {
                             subtitleText.Text = "Service running but session worker is unresponsive (cursor will freeze)";
                         }
                         break;
                     case -1: // Not installed
-                        UI.Background = OfflineBrush;
-                        UI.BorderBrush = OfflineBrush;
+                        UI.Background = new SolidColorBrush(OfflineColor);
+                        UI.BorderBrush = new SolidColorBrush(OfflineColor);
                         AdditionalUI.Text = "NOT INSTALLED";
-                        AdditionalUI.Foreground = WhiteBrush;
+                        AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                         if (subtitleText != null)
                         {
                             subtitleText.Text = "Microsoft GameInput service is not installed";
@@ -134,10 +134,10 @@ namespace XboxGamingBar.Data
                         break;
                     case 0: // Stopped
                     default:
-                        UI.Background = OfflineBrush;
-                        UI.BorderBrush = OfflineBrush;
+                        UI.Background = new SolidColorBrush(OfflineColor);
+                        UI.BorderBrush = new SolidColorBrush(OfflineColor);
                         AdditionalUI.Text = "STOPPED";
-                        AdditionalUI.Foreground = WhiteBrush;
+                        AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                         if (subtitleText != null)
                         {
                             subtitleText.Text = "GameInput service is stopped";
