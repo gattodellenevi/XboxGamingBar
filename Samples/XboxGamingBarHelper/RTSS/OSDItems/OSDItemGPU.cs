@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Drawing;
 using XboxGamingBarHelper.Hardware;
 
@@ -23,16 +23,16 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
         {
             var osdItems = base.GetValues(osdLevel);
 
-            // for level 3, only show GPU usage and temperature.
+            // In DETAIL mode (level 2), show GPU load (percentage).
             if (osdLevel >= 2)
             {
                 osdItems.Add(new OSDItemValue(gpuUsageSensor.Value, "%"));
-                osdItems.Add(new OSDItemValue(gpuWattageSensor.Value, "W"));
             }
 
-            // for level 4, show GPU usage, clock speed, wattage and temperature.
+            // In FULL / ALL mode (level 3+), show wattage, temperature, and clock speed.
             if (osdLevel >= 3)
             {
+                osdItems.Add(new OSDItemValue(gpuWattageSensor.Value, "W"));
                 osdItems.Add(new OSDItemValue(gpuTemperatureSensor.Value, "°C"));
                 osdItems.Add(new OSDItemValue(gpuClockSensor.Value, "MHz"));
             }

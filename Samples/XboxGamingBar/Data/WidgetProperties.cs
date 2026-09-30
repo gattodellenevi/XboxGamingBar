@@ -1,4 +1,4 @@
-﻿using Shared.Data;
+using Shared.Data;
 using System;
 using System.Threading.Tasks;
 
@@ -10,7 +10,10 @@ namespace XboxGamingBar.Data
 
         protected override Task<SharedAppServiceResponseStatus> SendResponse(WidgetAppServiceRequest request, WidgetValueSet response)
         {
-            Logger.Info($"Sending response request {request.Message.ToDebugString()}: {response.ToDebugString()}.");
+            if (request.Message == null || !request.Message.TryGetValue(nameof(Shared.Enums.Function), out var funcObj) || !(funcObj is int funcInt) || (Shared.Enums.Function)funcInt != Shared.Enums.Function.HardwareTelemetry)
+            {
+                Logger.Info($"Sending response request {request.Message?.ToDebugString()}: {response.ToDebugString()}.");
+            }
             return request.SendResponseAsync(response).AsTask().ContinueWith(antecedentTask =>
             {
                 return (SharedAppServiceResponseStatus)(int)antecedentTask.Result;

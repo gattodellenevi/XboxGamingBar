@@ -193,7 +193,14 @@ namespace Shared.Data
                 }
             }
 
-            Logger.Info($"Value of {Function} is changing from {value} to {newValue}");
+            if (Function != Function.HardwareTelemetry)
+            {
+                Logger.Info($"Value of {Function} is changing from {value} to {newValue}");
+            }
+            else
+            {
+                Logger.Debug($"Value of {Function} is changing from {value} to {newValue}");
+            }
             lastUpdatedTime = updatedTime;
             value = newValue;
             NotifyPropertyChanged(nameof(Value));

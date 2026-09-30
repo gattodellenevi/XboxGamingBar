@@ -86,7 +86,10 @@ namespace XboxGamingBar
         private readonly HelperElevationProperty helperElevation;
         private readonly RTSSElevationProperty rtssElevation;
         private readonly HardwareProviderProperty hardwareProviderProperty;
+        private readonly HardwareTelemetryProperty hardwareTelemetry;
         private readonly GameInputStatusProperty gameInputStatus;
+        private readonly GpuTargetProperty gpuTarget;
+        private readonly DualGpuSupportProperty dualGpuSupport;
         private bool isElevationFlyoutOpen = false;
 
         private readonly WidgetProperties properties;
@@ -105,6 +108,7 @@ namespace XboxGamingBar
             helperElevation = new HelperElevationProperty(HelperElevationBadge, HelperElevationBadgeText, HelperStatusSubtitleText, HeroElevationWarningButton, HeroElevationWarningIcon, HeroElevationWarningText, this);
             rtssElevation = new RTSSElevationProperty(RTSSElevationBadge, RTSSElevationBadgeText, RTSSStatusSubtitleText, this);
             hardwareProviderProperty = new HardwareProviderProperty(HardwareProviderBadge, HardwareProviderBadgeText, HardwareProviderSubtitleText, this);
+            hardwareTelemetry = new HardwareTelemetryProperty(LiveCPUUsageText, LiveCPUWattageText, LiveGPUUsageText, LiveGPUWattageText, LiveVRAMUsageText, LiveVRAMUsedText, LiveRAMUsageText, LiveRAMUsedText, this);
             gameInputStatus = new GameInputStatusProperty(GameInputStatusBadge, GameInputStatusBadgeText, GameInputStatusSubtitleText, this);
             trackedGame = new TrackedGameProperty(new TrackedGame());
             onScreenDisplayProviderInstalled = new OnScreenDisplayProviderInstalledProperty(PerformanceOverlaySlider, this);
@@ -131,6 +135,8 @@ namespace XboxGamingBar
             fpsLimit = new FPSLimitProperty(60, FPSLimitSlider, this);
             fpsLimitMode = new FPSLimitModeProperty(FPSLimitModeComboBox, this);
             judderFreeFPS = new JudderFreeFPSProperty(JudderFreeFPSToggle, this);
+            gpuTarget = new GpuTargetProperty(DiscreteGpuButton, IntegratedGpuButton, this);
+            dualGpuSupport = new DualGpuSupportProperty(GpuSelectionCard, GpuSelectionSubtitleText, DiscreteGpuButton, IntegratedGpuButton, this);
 
             JudderFreeFPSToggle.Toggled += JudderFreeFPSToggle_Toggled;
             LimitFPSToggle.Toggled += (s, e) => UpdateFPSLimitSliderJudderFree();
@@ -189,7 +195,10 @@ namespace XboxGamingBar
                 helperElevation,
                 rtssElevation,
                 hardwareProviderProperty,
-                gameInputStatus
+                hardwareTelemetry,
+                gameInputStatus,
+                gpuTarget,
+                dualGpuSupport
             );
 
             if (HelperElevationFlyout != null)
@@ -385,6 +394,18 @@ namespace XboxGamingBar
         {
             lastElevationFlyoutInvoker = HeroElevationWarningButton;
             HelperElevationFlyout?.ShowAt(HeroElevationWarningButton);
+        }
+
+        private void DiscreteGpuButton_Click(object sender, RoutedEventArgs e)
+        {
+            gpuTarget?.SetValue(0);
+            gpuTarget?.UpdateUI(0);
+        }
+
+        private void IntegratedGpuButton_Click(object sender, RoutedEventArgs e)
+        {
+            gpuTarget?.SetValue(1);
+            gpuTarget?.UpdateUI(1);
         }
 
         private void InitializeAppVersion()
@@ -875,7 +896,9 @@ namespace XboxGamingBar
             helperElevation?.SetDisconnectedState();
             rtssElevation?.SetDisconnectedState();
             hardwareProviderProperty?.SetDisconnectedState();
+            hardwareTelemetry?.SetDisconnectedState();
             gameInputStatus?.SetDisconnectedState();
+            dualGpuSupport?.SetDisconnectedState();
 
             var eventArgs = e as BackgroundTaskCancellationEventArgs;
             if (eventArgs != null && eventArgs.Reason != BackgroundTaskCancellationReason.Terminating)

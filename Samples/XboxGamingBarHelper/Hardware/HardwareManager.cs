@@ -20,6 +20,9 @@ namespace XboxGamingBarHelper.Hardware
         private readonly IHardwareProvider hardwareProvider;
 
         public HardwareProviderProperty HardwareProvider { get; }
+        public HardwareTelemetryProperty HardwareTelemetry { get; }
+        public GpuTargetProperty GpuTarget { get; }
+        public DualGpuSupportProperty DualGpuSupport { get; }
 
         public CPUUsageSensor CPUUsage { get; }
         public CPUClockSensor CPUClock { get; }
@@ -54,6 +57,27 @@ namespace XboxGamingBarHelper.Hardware
             hardwareProvider = new LibreHardwareProvider();
 #endif
             HardwareProvider = new HardwareProviderProperty(hardwareProvider.ProviderName, this);
+            HardwareTelemetry = new HardwareTelemetryProperty(string.Empty, this);
+
+            GpuTarget = new GpuTargetProperty(0, this);
+            GpuTarget.PropertyChanged += (s, e) =>
+            {
+                if (hardwareProvider is WindowsHardwareProvider whp)
+                {
+                    whp.SetGpuTarget(GpuTarget.Value);
+                    HardwareProvider.SetValue(whp.ProviderName);
+                }
+            };
+
+            if (XboxGamingBarHelper.Hardware.Providers.GpuMetricsProviderFactory.HasDualGpus(out string dName, out string iName))
+            {
+                DualGpuSupport = new DualGpuSupportProperty($"{dName};{iName}", this);
+                Logger.Info($"Dual GPUs detected: Discrete='{dName}', Integrated='{iName}'");
+            }
+            else
+            {
+                DualGpuSupport = new DualGpuSupportProperty(string.Empty, this);
+            }
 
             var cpuId = hardwareProvider.GetCpuName();
             var mainboardId = hardwareProvider.GetMotherboardName();
@@ -148,6 +172,39 @@ namespace XboxGamingBarHelper.Hardware
             BatteryRemainingTime.Value = hardwareProvider.GetBatteryRemainingTime();
             BatteryDischargeRate.Value = hardwareProvider.GetBatteryDischargeRate();
             BatteryChargeRate.Value = hardwareProvider.GetBatteryChargeRate();
+
+            var now = DateTime.UtcNow;
+            if ((now - lastTelemetryTime).TotalMilliseconds >= 1000)
+            {
+                lastTelemetryTime = now;
+                if (Connection != null)
+                {
+                    float vramPercent = -1.0f;
+                    float vramUsedGb = -1.0f;
+                    if (GPUMemoryTotal.Value > 0 && GPUMemoryUsed.Value >= 0)
+                    {
+                        vramPercent = (GPUMemoryUsed.Value / GPUMemoryTotal.Value) * 100.0f;
+                        vramUsedGb = GPUMemoryUsed.Value / 1024.0f;
+                    }
+
+                    string telemetry = string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                        "{0:F0};{1:F0};{2:F0};{3:F0};{4:F0};{5:F0};{6:F0};{7:F1};{8:F0};{9:F1}",
+                        CPUUsage.Value,
+                        CPUWattage.Value,
+                        CPUClock.Value,
+                        GPUUsage.Value,
+                        GPUWattage.Value,
+                        GPUClock.Value,
+                        vramPercent,
+                        vramUsedGb,
+                        MemoryUsage.Value,
+                        MemoryUsed.Value);
+
+                    HardwareTelemetry.SetValue(telemetry, now.Ticks);
+                }
+            }
         }
+
+        private DateTime lastTelemetryTime = DateTime.MinValue;
     }
 }

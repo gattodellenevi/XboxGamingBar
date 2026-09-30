@@ -14,11 +14,15 @@ namespace XboxGamingBarHelper.Settings
         [XmlElement("OnScreenDisplayTextSize")]
         public int OnScreenDisplayTextSize;
 
-        public Setting(int onScreenDisplayProvider, int onScreenDisplay, int onScreenDisplayTextSize = 100)
+        [XmlElement("GpuTarget")]
+        public int GpuTarget;
+
+        public Setting(int onScreenDisplayProvider, int onScreenDisplay, int onScreenDisplayTextSize = 100, int gpuTarget = 0)
         {
             OnScreenDisplayProvider = onScreenDisplayProvider;
             OnScreenDisplay = onScreenDisplay;
             OnScreenDisplayTextSize = onScreenDisplayTextSize > 0 ? onScreenDisplayTextSize : 100;
+            GpuTarget = gpuTarget;
         }
     }
 }

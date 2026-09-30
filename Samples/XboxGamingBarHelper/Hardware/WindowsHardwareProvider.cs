@@ -1,334 +1,167 @@
-using NLog;
 using System;
-using System.Windows.Forms;
-using XboxGamingBarHelper.Core;
-using System.Runtime.InteropServices;
-using XboxGamingBarHelper.Windows;
+using NLog;
+using XboxGamingBarHelper.Hardware.Abstractions;
+using XboxGamingBarHelper.Hardware.Providers;
 
 namespace XboxGamingBarHelper.Hardware
 {
-    internal class WindowsHardwareProvider : IHardwareProvider
+    internal class WindowsHardwareProvider : IHardwareProvider, IDisposable
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        private float batteryLevel = -1.0f;
-        private float batteryRemainingTime = -1.0f;
-        private float batteryDischargeRate = -1.0f;
-        private float batteryChargeRate = -1.0f;
+        private readonly object _syncLock = new object();
+        private readonly ISystemMetricsProvider systemMetrics;
 
-        private System.Diagnostics.PerformanceCounter cpuCounter;
-        private System.Diagnostics.PerformanceCounter cpuFreqCounter;
-        private System.Diagnostics.PerformanceCounter[] cpuCoreCounters;
-        private System.Diagnostics.PerformanceCounter[] cpuCoreFreqCounters;
+        private IGpuMetricsProvider _discreteProvider;
+        private IGpuMetricsProvider _integratedProvider;
+        private IGpuMetricsProvider _activeGpuMetrics;
+        private int currentGpuTarget = 0;
 
-        private float cpuUsage = -1.0f;
-        private float cpuClock = -1.0f;
-        private float[] cpuCoreUsages;
-        private float[] cpuCoreClocks;
-        private float maxCpuMhz = 0f;
-        private int coreCount = 0;
-
-        public string ProviderName => "Windows";
-
-        public WindowsHardwareProvider()
+        public string ProviderName
         {
-            try
+            get
             {
-                cpuCounter = new System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", "_Total");
-                cpuCounter.NextValue(); // First call usually returns 0
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Error(ex, "Failed to initialize CPU usage counter");
-            }
-
-            try
-            {
-                cpuFreqCounter = new System.Diagnostics.PerformanceCounter("Processor Information", "% of Maximum Frequency", "_Total");
-                cpuFreqCounter.NextValue();
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Error(ex, "Failed to initialize CPU frequency counter");
-            }
-
-            // Initialize per-core counters
-            coreCount = Math.Min(System.Environment.ProcessorCount, 8);
-            cpuCoreCounters = new System.Diagnostics.PerformanceCounter[coreCount];
-            cpuCoreFreqCounters = new System.Diagnostics.PerformanceCounter[coreCount];
-            cpuCoreUsages = new float[coreCount];
-            cpuCoreClocks = new float[coreCount];
-
-            for (int i = 0; i < coreCount; i++)
-            {
-                cpuCoreUsages[i] = -1.0f;
-                cpuCoreClocks[i] = -1.0f;
-
-                try
+                lock (_syncLock)
                 {
-                    cpuCoreCounters[i] = new System.Diagnostics.PerformanceCounter("Processor", "% Processor Time", i.ToString());
-                    cpuCoreCounters[i].NextValue();
-                }
-                catch (System.Exception ex)
-                {
-                    Logger.Error(ex, $"Failed to initialize CPU usage counter for core {i}");
-                }
-
-                try
-                {
-                    // Instance name for Processor Information is "0,0", "0,1" etc.
-                    cpuCoreFreqCounters[i] = new System.Diagnostics.PerformanceCounter("Processor Information", "% of Maximum Frequency", $"0,{i}");
-                    cpuCoreFreqCounters[i].NextValue();
-                }
-                catch
-                {
-                    // Fallback to "0" if "0,0" fails
-                    try
-                    {
-                        cpuCoreFreqCounters[i] = new System.Diagnostics.PerformanceCounter("Processor Information", "% of Maximum Frequency", i.ToString());
-                        cpuCoreFreqCounters[i].NextValue();
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Logger.Error(ex, $"Failed to initialize CPU frequency counter for core {i}");
-                    }
+                    return $"Windows ({_activeGpuMetrics?.Name ?? "GPU"})";
                 }
             }
         }
 
-        private float memoryUsage = -1.0f;
-        private float memoryUsed = -1.0f;
-
-        internal static bool TryGetBatteryState(out SYSTEM_BATTERY_STATE state)
+        public WindowsHardwareProvider(int initialGpuTarget = 0)
         {
-            const int BUFFER_SIZE = 128;
+            currentGpuTarget = initialGpuTarget;
+            systemMetrics = new CommonSystemMetricsProvider();
 
-            IntPtr buffer = Marshal.AllocHGlobal(BUFFER_SIZE);
-            try
+            lock (_syncLock)
             {
-                uint status = PowrProf.CallNtPowerInformation(
-                    5,              // SystemBatteryState
-                    IntPtr.Zero,
-                    0,
-                    buffer,
-                    BUFFER_SIZE);
-
-                if (status != 0)
+                if (currentGpuTarget == 1)
                 {
-                    state = default;
-                    return false;
+                    _integratedProvider = GpuMetricsProviderFactory.Create(1);
+                    _activeGpuMetrics = _integratedProvider;
                 }
-
-                state = Marshal.PtrToStructure<SYSTEM_BATTERY_STATE>(buffer);
-                return state.BatteryPresent;
+                else
+                {
+                    _discreteProvider = GpuMetricsProviderFactory.Create(0);
+                    _activeGpuMetrics = _discreteProvider;
+                }
             }
-            finally
+
+            Logger.Info($"WindowsHardwareProvider initialized with GPU Provider: {_activeGpuMetrics?.Name} ({_activeGpuMetrics?.Vendor})");
+        }
+
+        public void SetGpuTarget(int target)
+        {
+            lock (_syncLock)
             {
-                Marshal.FreeHGlobal(buffer);
+                if (currentGpuTarget == target && _activeGpuMetrics != null) return;
+
+                currentGpuTarget = target;
+                try
+                {
+                    if (target == 1)
+                    {
+                        if (_integratedProvider == null)
+                        {
+                            Logger.Info("WindowsHardwareProvider: Initializing integrated GPU provider...");
+                            _integratedProvider = GpuMetricsProviderFactory.Create(1);
+                        }
+                        _activeGpuMetrics = _integratedProvider;
+                    }
+                    else
+                    {
+                        if (_discreteProvider == null)
+                        {
+                            Logger.Info("WindowsHardwareProvider: Initializing discrete GPU provider...");
+                            _discreteProvider = GpuMetricsProviderFactory.Create(0);
+                        }
+                        _activeGpuMetrics = _discreteProvider;
+                    }
+
+                    Logger.Info($"WindowsHardwareProvider switched to GPU target {target}: {_activeGpuMetrics?.Name} ({_activeGpuMetrics?.Vendor})");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, $"Failed to switch GPU target to {target}");
+                }
             }
         }
 
         public void Update()
         {
-            var powerStatus = System.Windows.Forms.SystemInformation.PowerStatus;
-
-            batteryLevel = powerStatus.BatteryLifePercent * 100;
-            batteryRemainingTime = powerStatus.BatteryLifeRemaining;
-
-            if (TryGetBatteryState(out var battery))
+            systemMetrics.Update();
+            lock (_syncLock)
             {
-                if (battery.Charging)
-                {
-                    batteryDischargeRate = -1.0f;
-                    batteryChargeRate = battery.Rate / 1000.0f;
-                }
-                else
-                {
-                    batteryDischargeRate = battery.Rate / 1000.0f;
-                    batteryChargeRate = -1.0f;
-                }
-            }
-            else
-            {
-                // Logger.Warn("Can't get battery charge/discharge rate.");
-            }
-
-            // Update CPU Usage
-            if (cpuCounter != null)
-            {
-                try
-                {
-                    cpuUsage = cpuCounter.NextValue();
-                }
-                catch { }
-            }
-
-            // Update CPU Clock
-            if (maxCpuMhz <= 0)
-            {
-                maxCpuMhz = GetMaxCpuFrequency();
-            }
-
-            if (maxCpuMhz > 0 && cpuFreqCounter != null)
-            {
-                try
-                {
-                    float percent = cpuFreqCounter.NextValue();
-                    cpuClock = maxCpuMhz * (percent / 100.0f);
-                }
-                catch
-                {
-                    cpuClock = -1.0f;
-                }
-            }
-            else
-            {
-                // Fallback or just keep 0 if failed
-                cpuClock = maxCpuMhz;
-            }
-
-            // Update Per-Core CPU
-            for (int i = 0; i < coreCount; i++)
-            {
-                if (cpuCoreCounters[i] != null)
-                {
-                    try { cpuCoreUsages[i] = cpuCoreCounters[i].NextValue(); } catch { }
-                }
-
-                if (maxCpuMhz > 0 && cpuCoreFreqCounters[i] != null)
-                {
-                    try
-                    {
-                        float percent = cpuCoreFreqCounters[i].NextValue();
-                        cpuCoreClocks[i] = maxCpuMhz * (percent / 100.0f);
-                    }
-                    catch { cpuCoreClocks[i] = maxCpuMhz; }
-                }
-                else
-                {
-                    cpuCoreClocks[i] = maxCpuMhz;
-                }
-            }
-
-            // Update Memory
-            try
-            {
-                var memStatus = new Kernel32.MEMORYSTATUSEX();
-                if (Kernel32.GlobalMemoryStatusEx(memStatus))
-                {
-                    memoryUsage = memStatus.dwMemoryLoad;
-                    // convert bytes to GB with double precision to ensure float result
-                    double usedBytes = (double)(memStatus.ullTotalPhys - memStatus.ullAvailPhys);
-                    memoryUsed = (float)(usedBytes / (1024.0 * 1024.0 * 1024.0));
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Error(ex, "Failed to get memory status");
+                _activeGpuMetrics?.Update();
             }
         }
 
-        private float GetMaxCpuFrequency()
-        {
-            try
-            {
-                int coreCount = System.Environment.ProcessorCount;
-                int size = System.Runtime.InteropServices.Marshal.SizeOf(typeof(XboxGamingBarHelper.Windows.PROCESSOR_POWER_INFORMATION)) * coreCount;
-                System.IntPtr buffer = System.Runtime.InteropServices.Marshal.AllocHGlobal(size);
+        // CPU & System
+        public float GetCpuClock() => systemMetrics.GetCpuClock();
+        public float GetCpuUsage() => systemMetrics.GetCpuUsage();
+        public float GetCpuWattage() => systemMetrics.GetCpuWattage();
+        public float GetCpuTemperature() => systemMetrics.GetCpuTemperature();
+        public int GetCpuCoreCount() => systemMetrics.GetCpuCoreCount();
+        public float GetCpuCoreUsage(int coreIndex) => systemMetrics.GetCpuCoreUsage(coreIndex);
+        public float GetCpuCoreClock(int coreIndex) => systemMetrics.GetCpuCoreClock(coreIndex);
+        public string GetCpuName() => systemMetrics.GetCpuName();
+        public string GetMotherboardName() => systemMetrics.GetMotherboardName();
 
-                try
-                {
-                    uint ret = XboxGamingBarHelper.Windows.PowrProf.CallNtPowerInformation(
-                        (int)XboxGamingBarHelper.Windows.POWER_INFORMATION_LEVEL.ProcessorInformation,
-                        System.IntPtr.Zero,
-                        0,
-                        buffer,
-                        size);
+        // Memory
+        public float GetMemoryUsage() => systemMetrics.GetMemoryUsage();
+        public float GetMemoryUsed() => systemMetrics.GetMemoryUsed();
 
-                    if (ret == 0) // STATUS_SUCCESS
-                    {
-                        float maxMhz = 0;
-                        long stride = System.Runtime.InteropServices.Marshal.SizeOf(typeof(XboxGamingBarHelper.Windows.PROCESSOR_POWER_INFORMATION));
-                        for (int i = 0; i < coreCount; i++)
-                        {
-                            System.IntPtr ptr = (System.IntPtr)((long)buffer + (i * stride));
-                            var info = (XboxGamingBarHelper.Windows.PROCESSOR_POWER_INFORMATION)System.Runtime.InteropServices.Marshal.PtrToStructure(ptr, typeof(XboxGamingBarHelper.Windows.PROCESSOR_POWER_INFORMATION));
-                            if (info.MaxMhz > maxMhz) maxMhz = info.MaxMhz;
-                        }
-                        return maxMhz;
-                    }
-                }
-                finally
-                {
-                    System.Runtime.InteropServices.Marshal.FreeHGlobal(buffer);
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Logger.Error(ex, "Failed to get CPU frequency");
-            }
+        // Battery
+        public float GetBatteryLevel() => systemMetrics.GetBatteryLevel();
+        public float GetBatteryRemainingTime() => systemMetrics.GetBatteryRemainingTime();
+        public float GetBatteryDischargeRate() => systemMetrics.GetBatteryDischargeRate();
+        public float GetBatteryChargeRate() => systemMetrics.GetBatteryChargeRate();
 
-            return -1.0f;
-        }
-
-        public float GetCpuClock() => cpuClock;
-        public float GetCpuUsage() => cpuUsage;
-        public float GetCpuWattage() => -1.0f; // Not possible without Kernel Driver (Store unsafe)
-
-        public float GetCpuTemperature()
-        {
-            return -1.0f;
-
-        }
-
+        // GPU
         public float GetGpuClock()
         {
-            return (float)(XboxGamingBarHelper.AMD.AMDManager.Instance?.GetGPUClock() ?? -1.0);
+            lock (_syncLock) return _activeGpuMetrics?.GetGpuClock() ?? -1.0f;
         }
 
         public float GetGpuUsage()
         {
-            return (float)(XboxGamingBarHelper.AMD.AMDManager.Instance?.GetGPUUsage() ?? -1.0);
+            lock (_syncLock) return _activeGpuMetrics?.GetGpuUsage() ?? -1.0f;
         }
 
         public float GetGpuMemoryUsed()
         {
-            return (float)(XboxGamingBarHelper.AMD.AMDManager.Instance?.GetGPUMemoryUsed() ?? -1.0);
+            lock (_syncLock) return _activeGpuMetrics?.GetGpuMemoryUsed() ?? -1.0f;
         }
 
         public float GetGpuMemoryTotal()
         {
-            return (float)(XboxGamingBarHelper.AMD.AMDManager.Instance?.GetGPUMemoryTotal() ?? -1.0);
+            lock (_syncLock) return _activeGpuMetrics?.GetGpuMemoryTotal() ?? -1.0f;
         }
 
         public float GetGpuMemoryClock()
         {
-            return (float)(XboxGamingBarHelper.AMD.AMDManager.Instance?.GetGPUMemoryClock() ?? -1.0);
+            lock (_syncLock) return _activeGpuMetrics?.GetGpuMemoryClock() ?? -1.0f;
         }
 
         public float GetGpuWattage()
         {
-            return (float)(XboxGamingBarHelper.AMD.AMDManager.Instance?.GetGPUWattage() ?? -1.0);
+            lock (_syncLock) return _activeGpuMetrics?.GetGpuWattage() ?? -1.0f;
         }
 
         public float GetGpuTemperature()
         {
-            return (float)(XboxGamingBarHelper.AMD.AMDManager.Instance?.GetGPUTemperature() ?? -1.0);
+            lock (_syncLock) return _activeGpuMetrics?.GetGpuTemperature() ?? -1.0f;
         }
 
-        public float GetMemoryUsage() => memoryUsage;
-        public float GetMemoryUsed() => memoryUsed;
-
-        public float GetBatteryLevel() => batteryLevel;
-        public float GetBatteryRemainingTime() => batteryRemainingTime;
-        public float GetBatteryDischargeRate() => batteryDischargeRate;
-        public float GetBatteryChargeRate() => -1.0f;
-
-        public int GetCpuCoreCount() => coreCount;
-        public float GetCpuCoreUsage(int coreIndex) => (coreIndex >= 0 && coreIndex < coreCount) ? cpuCoreUsages[coreIndex] : -1.0f;
-        public float GetCpuCoreClock(int coreIndex) => (coreIndex >= 0 && coreIndex < coreCount) ? cpuCoreClocks[coreIndex] : -1.0f;
-
-        public string GetCpuName() => "Unknown CPU";
-        public string GetMotherboardName() => string.Empty;
+        public void Dispose()
+        {
+            lock (_syncLock)
+            {
+                systemMetrics?.Dispose();
+                _discreteProvider?.Dispose();
+                _integratedProvider?.Dispose();
+                _activeGpuMetrics = null;
+            }
+        }
     }
 }

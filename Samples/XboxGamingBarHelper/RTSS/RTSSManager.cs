@@ -64,18 +64,18 @@ namespace XboxGamingBarHelper.RTSS
 
             var osdItemsList = new List<OSDItem>()
             {
-                new OSDItemGPU(hardwareManager.GPUUsage, hardwareManager.GPUClock, hardwareManager.GPUWattage, hardwareManager.GPUTemperature),
                 new OSDItemCPU(hardwareManager.CPUUsage, hardwareManager.CPUClock, hardwareManager.CPUWattage, hardwareManager.CPUTemperature),
+                new OSDItemMemory(hardwareManager.MemoryUsage, hardwareManager.MemoryUsed),
+                new OSDItemGPU(hardwareManager.GPUUsage, hardwareManager.GPUClock, hardwareManager.GPUWattage, hardwareManager.GPUTemperature),
+                new OSDItemVideoMemory(hardwareManager.GPUMemoryUsed, hardwareManager.GPUMemoryTotal),
+                new OSDItemGPUWattage(hardwareManager.GPUWattage),
+                new OSDItemFPS(),
             };
 
             for (int i = 0; i < hardwareManager.CPUCoreUsages.Length; i++)
             {
                 osdItemsList.Add(new OSDItemCPUPerCore(i, hardwareManager.CPUCoreUsages[i], hardwareManager.CPUCoreClocks[i]));
             }
-
-            osdItemsList.Add(new OSDItemVideoMemory(hardwareManager.GPUMemoryUsed, hardwareManager.GPUMemoryTotal));
-            osdItemsList.Add(new OSDItemMemory(hardwareManager.MemoryUsage, hardwareManager.MemoryUsed));
-            osdItemsList.Add(new OSDItemFPS());
 
             frametimeStatsItem = new OSDItemFrametimeStats();
             osdItemsList.Add(frametimeStatsItem);

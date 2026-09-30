@@ -47,6 +47,9 @@ namespace Shared.Enums
         SendShortcut,
         GameInputStatus,
         RestartGameInputService,
+        HardwareTelemetry,
+        Settings_GpuTarget,
+        Support_DualGpu,
         AppExit = 100
     }
 }

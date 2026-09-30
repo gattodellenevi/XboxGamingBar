@@ -93,6 +93,26 @@ namespace XboxGamingBarHelper.Settings
             osdTextSizeProperty.PropertyChanged += PerformanceOverlayTextSizeChanged;
         }
 
+        private XboxGamingBarHelper.Hardware.GpuTargetProperty gpuTargetPropertySettings;
+        public void SyncGpuTargetSettings(XboxGamingBarHelper.Hardware.GpuTargetProperty gpuTargetProperty)
+        {
+            if (gpuTargetPropertySettings != null)
+                gpuTargetPropertySettings.PropertyChanged -= GpuTargetChanged;
+            gpuTargetPropertySettings = gpuTargetProperty;
+            gpuTargetProperty.SetValue(setting.GpuTarget);
+            gpuTargetProperty.PropertyChanged += GpuTargetChanged;
+        }
+
+        private void GpuTargetChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (gpuTargetPropertySettings != null)
+            {
+                Logger.Info($"Save setting GPU Target {gpuTargetPropertySettings.Value}.");
+                setting.GpuTarget = gpuTargetPropertySettings.Value;
+                XmlHelper.ToXMLFile(setting, settingsPath);
+            }
+        }
+
         private void OnScreenDisplayProviderChanged(object sender, PropertyChangedEventArgs e)
         {
             Logger.Info($"Save setting On-Screen Display Provider {onScreenDisplayProvider.Value}.");

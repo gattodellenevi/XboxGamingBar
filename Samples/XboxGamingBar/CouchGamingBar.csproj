@@ -118,6 +118,9 @@
     <Compile Include="Data\HelperElevationProperty.cs" />
     <Compile Include="Data\RTSSElevationProperty.cs" />
     <Compile Include="Data\HardwareProviderProperty.cs" />
+    <Compile Include="Data\HardwareTelemetryProperty.cs" />
+    <Compile Include="Data\GpuTargetProperty.cs" />
+    <Compile Include="Data\DualGpuSupportProperty.cs" />
     <Compile Include="Data\GameInputStatusProperty.cs" />
     <Compile Include="Data\RefreshRateProperty.cs" />
     <Compile Include="Data\RefreshRatesProperty.cs" />

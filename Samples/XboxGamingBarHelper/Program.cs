@@ -73,10 +73,23 @@ namespace XboxGamingBarHelper
             {
                 _singleInstanceMutex = CreateSingleInstanceMutexWithAcl(out createdNew);
             }
+            catch (UnauthorizedAccessException)
+            {
+                Logger.Info("CouchGamingBarHelper is already running in an elevated context. Exiting duplicate instance.");
+                return;
+            }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to create single-instance mutex with ACL, falling back to standard Mutex constructor.");
-                _singleInstanceMutex = new System.Threading.Mutex(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out createdNew);
+                try
+                {
+                    _singleInstanceMutex = new System.Threading.Mutex(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out createdNew);
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    Logger.Info("CouchGamingBarHelper is already running in an elevated context. Exiting duplicate instance.");
+                    return;
+                }
             }
 
             if (!createdNew)
@@ -146,6 +159,7 @@ namespace XboxGamingBarHelper
                 onScreenDisplay = new OnScreenDisplayProperty(settingsManager.Setting.OnScreenDisplay, null, onScreenDisplayProviders[settingsManager.OnScreenDisplayProvider]);
                 settingsManager.SyncOnScreenDisplaySettings(onScreenDisplay);
                 settingsManager.SyncOnScreenDisplayTextSizeSettings(rtssManager.OSDTextSize);
+                settingsManager.SyncGpuTargetSettings(hardwareManager.GpuTarget);
                 //onScreenDisplay = new OnScreenDisplayProperty(0, null, amdManager);
 
                 // Initialize properties.
@@ -187,6 +201,9 @@ namespace XboxGamingBarHelper
                     rtssManager.RTSSElevation,
                     systemManager.HelperElevation,
                     hardwareManager.HardwareProvider,
+                    hardwareManager.HardwareTelemetry,
+                    hardwareManager.GpuTarget,
+                    hardwareManager.DualGpuSupport,
                     systemManager.OpenUri,
                     systemManager.RestartElevated,
                     systemManager.SendShortcut,

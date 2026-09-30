@@ -85,9 +85,15 @@ namespace Shared.Data
                         Logger.Error($"Can't process command {command}");
                         break;
                 }
-                Logger.Info($"Start sending response {function} {response.ToDebugString()}");
+                if (function != Function.HardwareTelemetry)
+                {
+                    Logger.Info($"Start sending response {function} {response.ToDebugString()}");
+                }
                 var sendResponseResult = await SendResponse(request, response);
-                Logger.Info($"Sent response {function} {sendResponseResult}.");
+                if (function != Function.HardwareTelemetry)
+                {
+                    Logger.Info($"Sent response {function} {sendResponseResult}.");
+                }
             }
             catch (System.Exception ex)
             {
