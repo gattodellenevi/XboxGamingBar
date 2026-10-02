@@ -8,7 +8,7 @@ namespace XboxGamingBarHelper.RTSS.OSDItems
     {
         private readonly HardwareSensor gpuWattageSensor;
 
-        public OSDItemGPUWattage(HardwareSensor gpuWattageSensor) : base("GPU", Color.LawnGreen)
+        public OSDItemGPUWattage(HardwareSensor gpuWattageSensor) : base("GPUW", Color.LawnGreen)
         {
             this.gpuWattageSensor = gpuWattageSensor;
         }

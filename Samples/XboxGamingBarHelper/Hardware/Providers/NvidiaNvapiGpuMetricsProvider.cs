@@ -117,6 +117,38 @@ namespace XboxGamingBarHelper.Hardware.Providers
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate int NvAPI_GPU_ClientPowerTopologyGetStatusDelegate(IntPtr handle, ref NVAPI_GPU_POWER_TOPO topo);
 
+        // Power Policies (TDP Info)
+        [StructLayout(LayoutKind.Sequential)]
+        private struct NV_POWER_INFO_ENTRY
+        {
+            public uint Pstate;
+            public uint Unknown1_0;
+            public uint Unknown1_1;
+            public uint MinPower; // milliwatts
+            public uint Unknown2_0;
+            public uint Unknown2_1;
+            public uint DefPower; // milliwatts (Default TDP)
+            public uint Unknown3_0;
+            public uint Unknown3_1;
+            public uint MaxPower; // milliwatts
+            public uint Unknown4;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct NVAPI_GPU_POWER_INFO
+        {
+            public uint Version;
+            public byte Valid;
+            public byte Count;
+            private byte Reserved1;
+            private byte Reserved2;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+            public NV_POWER_INFO_ENTRY[] Entries;
+        }
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate int NvAPI_GPU_ClientPowerPoliciesGetInfoDelegate(IntPtr handle, ref NVAPI_GPU_POWER_INFO info);
+
         // Memory Info Ex (Total & Available VRAM)
         [StructLayout(LayoutKind.Sequential)]
         private struct NV_GPU_MEMORY_INFO_EX
@@ -147,7 +179,11 @@ namespace XboxGamingBarHelper.Hardware.Providers
         private NvAPI_GPU_GetThermalSettingsDelegate fnGetThermalSettings;
         private NvAPI_GPU_GetAllClockFrequenciesDelegate fnGetAllClockFrequencies;
         private NvAPI_GPU_ClientPowerTopologyGetStatusDelegate fnGetPowerTopology;
+        private NvAPI_GPU_ClientPowerPoliciesGetInfoDelegate fnGetPowerPoliciesInfo;
         private NvAPI_GPU_GetMemoryInfoExDelegate fnGetMemoryInfoEx;
+
+        // Baseline TDP (Watts)
+        private float baseTdpWatts = 0.0f;
 
         // Cached Metrics
         private float gpuUsage = -1.0f;
@@ -264,6 +300,40 @@ namespace XboxGamingBarHelper.Hardware.Providers
                     Logger.Info("NVAPI: Bound NvAPI_GPU_ClientPowerTopologyGetStatus");
                 }
 
+                // Query Power Policies (0x34206D86) for baseline TDP
+                IntPtr pPowerInfo = query(0x34206D86);
+                if (pPowerInfo != IntPtr.Zero)
+                {
+                    fnGetPowerPoliciesInfo = Marshal.GetDelegateForFunctionPointer<NvAPI_GPU_ClientPowerPoliciesGetInfoDelegate>(pPowerInfo);
+                    Logger.Info("NVAPI: Bound NvAPI_GPU_ClientPowerPoliciesGetInfo");
+
+                    try
+                    {
+                        var pInfo = new NVAPI_GPU_POWER_INFO();
+                        pInfo.Version = (uint)Marshal.SizeOf(typeof(NVAPI_GPU_POWER_INFO)) | 0x10000;
+                        pInfo.Entries = new NV_POWER_INFO_ENTRY[4];
+                        int pInfoRes = fnGetPowerPoliciesInfo(primaryGpuHandle, ref pInfo);
+                        if (pInfoRes == 0 && pInfo.Count > 0)
+                        {
+                            uint defPowerMw = pInfo.Entries[0].DefPower;
+                            if (defPowerMw == 0) defPowerMw = pInfo.Entries[0].MaxPower;
+                            if (defPowerMw > 0)
+                            {
+                                baseTdpWatts = defPowerMw / 1000.0f;
+                                Logger.Info($"NVAPI: Detected baseline TDP: {baseTdpWatts:F0} W (DefPower={defPowerMw} mW, Min={pInfo.Entries[0].MinPower} mW, Max={pInfo.Entries[0].MaxPower} mW)");
+                            }
+                        }
+                        else
+                        {
+                            Logger.Warn($"NVAPI: NvAPI_GPU_ClientPowerPoliciesGetInfo returned {pInfoRes}, count={pInfo.Count}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn(ex, "NVAPI: Failed to query power policies info for baseline TDP");
+                    }
+                }
+
                 // NvAPI_GPU_GetMemoryInfoEx (0xC0599498)
                 IntPtr pMemEx = query(0xC0599498);
                 if (pMemEx != IntPtr.Zero)
@@ -349,9 +419,50 @@ namespace XboxGamingBarHelper.Hardware.Providers
                     var topo = new NVAPI_GPU_POWER_TOPO();
                     topo.Version = (uint)Marshal.SizeOf(typeof(NVAPI_GPU_POWER_TOPO)) | 0x10000;
                     topo.Entries = new NV_POWER_TOPO_ENTRY[4];
-                    if (fnGetPowerTopology(primaryGpuHandle, ref topo) == 0 && topo.Count > 0)
+                    int resPower = fnGetPowerTopology(primaryGpuHandle, ref topo);
+                    if (resPower == 0 && topo.Count > 0)
                     {
-                        gpuWattage = topo.Entries[0].Power / 1000.0f;
+                        // Domain 1 = NvPowerTopologyDomain.Board (Total Board Power / TGP)
+                        uint rawPower = 0;
+                        bool foundBoard = false;
+                        for (int i = 0; i < (int)topo.Count && i < topo.Entries.Length; i++)
+                        {
+                            if (topo.Entries[i].Domain == 1 && topo.Entries[i].Power > 0)
+                            {
+                                rawPower = topo.Entries[i].Power;
+                                foundBoard = true;
+                                break;
+                            }
+                        }
+
+                        // Fall back to max power entry or Domain 0 (Core)
+                        if (!foundBoard)
+                        {
+                            for (int i = 0; i < (int)topo.Count && i < topo.Entries.Length; i++)
+                            {
+                                if (topo.Entries[i].Power > rawPower)
+                                {
+                                    rawPower = topo.Entries[i].Power;
+                                }
+                            }
+                        }
+
+                        // NVAPI topology power reports millipercent of TDP (% * 1000)
+                        float powerPercent = rawPower / 1000.0f;
+
+                        if (baseTdpWatts > 0.0f)
+                        {
+                            gpuWattage = (powerPercent / 100.0f) * baseTdpWatts;
+                        }
+                        else
+                        {
+                            // If base TDP could not be determined, fallback to raw powerPercent
+                            gpuWattage = powerPercent;
+                        }
+                    }
+                    else if (resPower == -220) // NVAPI_GPU_NOT_POWERED (GPU sleeping in Optimus)
+                    {
+                        gpuWattage = 0.0f;
                     }
                     else
                     {
