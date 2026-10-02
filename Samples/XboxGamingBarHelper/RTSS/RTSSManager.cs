@@ -51,6 +51,7 @@ namespace XboxGamingBarHelper.RTSS
 
         private IColorFormatter activeColorFormatter = SDRColorFormatter.Instance;
         private bool isHDRActive = false;
+        private bool _lastRTSSRunning = false;
 
         public RTSSManager(HardwareManager hardwareManager, AppServiceConnection connection) : base(connection)
         {
@@ -179,6 +180,21 @@ namespace XboxGamingBarHelper.RTSS
                 Logger.Debug("Rivatuner Statistics Server is installed but the exe file is not found.");
                 applicationState = ApplicationState.NotInstalled;
                 return;
+            }
+
+            if (isRunning && !_lastRTSSRunning)
+            {
+                _lastRTSSRunning = true;
+                if (limitFPS.Value)
+                {
+                    Logger.Info($"RTSS process detected as running. Re-applying active FPS limit ({fpsLimit.Value}) and mode ({fpsLimitMode.Value}).");
+                    RTSSFPSLimiter.SetFPSLimit(fpsLimit.Value);
+                    RTSSFPSLimiter.SetFPSLimitMode(fpsLimitMode.Value);
+                }
+            }
+            else if (!isRunning)
+            {
+                _lastRTSSRunning = false;
             }
 
             if (onScreenDisplayLevel == 0)

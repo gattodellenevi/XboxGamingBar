@@ -23,6 +23,24 @@ namespace XboxGamingBar.Data
             return false;
         }
 
+        public override void EnableControl(bool isEnabled = true)
+        {
+            SetControlEnabled(Value);
+        }
+
+        public override bool SetValue(object newValue, long updatedTime = 0)
+        {
+            var result = base.SetValue(newValue, updatedTime);
+            if (UI != null && Owner != null)
+            {
+                var _ = Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    SetControlEnabled(Value);
+                });
+            }
+            return result;
+        }
+
         protected override async void NotifyPropertyChanged(string propertyName = "")
         {
             base.NotifyPropertyChanged(propertyName);

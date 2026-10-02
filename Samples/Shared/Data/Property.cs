@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
@@ -8,6 +8,8 @@ namespace Shared.Data
     public abstract class Property : IProperty
     {
         protected static readonly Logger Logger = LogManager.GetCurrentClassLogger();
+
+        public static bool SuppressNotification { get; set; } = false;
 
         private readonly IProperty parentProperty;
         public IProperty ParentProperty

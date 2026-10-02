@@ -10,13 +10,31 @@ namespace XboxGamingBar.Data
 {
     internal class WidgetSliderProperty : WidgetControlProperty<int, Slider>
     {
+        private bool isUpdatingFromBackend = false;
+
         public WidgetSliderProperty(int inValue, Function inFunction, Slider inControl, Page inOwner) : base(inValue, inFunction, inControl, inOwner)
         {
             if (UI != null)
             {
+                UI.Value = inValue;
                 UI.ValueChanged += Slider_ValueChanged;
                 AttachEngagementHandler(UI);
-                UI.Value = inValue;
+            }
+        }
+
+        public void SetUIValueSilently(double val)
+        {
+            if (UI != null)
+            {
+                isUpdatingFromBackend = true;
+                try
+                {
+                    UI.Value = val;
+                }
+                finally
+                {
+                    isUpdatingFromBackend = false;
+                }
             }
         }
 
@@ -70,6 +88,8 @@ namespace XboxGamingBar.Data
 
         private void Slider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
         {
+            if (isUpdatingFromBackend) return;
+
             var newValue = (int)e.NewValue;
             if (newValue != Value)
             {
@@ -85,7 +105,18 @@ namespace XboxGamingBar.Data
             if (UI != null && Owner != null)
             {
                 Logger.Info($"Update {Function} slider value {Value}.");
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { UI.Value = Value; });
+                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    isUpdatingFromBackend = true;
+                    try
+                    {
+                        UI.Value = Value;
+                    }
+                    finally
+                    {
+                        isUpdatingFromBackend = false;
+                    }
+                });
             }
         }
     }

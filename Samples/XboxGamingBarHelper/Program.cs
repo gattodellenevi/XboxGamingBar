@@ -5,6 +5,7 @@ using Shared.Utilities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.AppService;
@@ -66,6 +67,28 @@ namespace XboxGamingBarHelper
             catch (Exception ex)
             {
                 Logger.Warn(ex, "Failed to set HighDpiMode.");
+            }
+
+            // If running elevated, terminate any existing non-elevated duplicate helper instances
+            if (ElevationManager.IsElevated())
+            {
+                int currentPid = Process.GetCurrentProcess().Id;
+                foreach (var p in Process.GetProcessesByName("CouchGamingBarHelper"))
+                {
+                    if (p.Id != currentPid)
+                    {
+                        try
+                        {
+                            Logger.Info($"Elevated instance detected existing helper process PID {p.Id}. Terminating to take over.");
+                            p.Kill();
+                            p.WaitForExit(1000);
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Warn(ex, $"Could not terminate existing helper process PID {p.Id}.");
+                        }
+                    }
+                }
             }
 
             bool createdNew = false;
@@ -220,6 +243,8 @@ namespace XboxGamingBarHelper
                 rtssManager.FPSLimitMode.PropertyChanged += FPSLimitMode_PropertyChanged;
                 rtssManager.JudderFreeFPS.PropertyChanged += JudderFreeFPS_PropertyChanged;
                 profileManager.CurrentProfile.PropertyChanged += CurrentProfile_PropertyChanged;
+
+                ApplyCurrentProfile();
 
                 await ConnectToWidget(false);
 
@@ -406,21 +431,27 @@ namespace XboxGamingBarHelper
 
         private static void CurrentProfile_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            ApplyCurrentProfile();
+        }
+
+        private static void ApplyCurrentProfile()
+        {
             if (profileManager.CurrentProfile.Use || profileManager.CurrentProfile.IsGlobalProfile)
             {
-                Logger.Info($"Profile changed to {profileManager.CurrentProfile.GameId.Name}, apply it.");
+                Logger.Info($"Applying profile {profileManager.CurrentProfile.GameId.Name}: FPSLimit={profileManager.CurrentProfile.FPSLimit}, FPSLimitMode={profileManager.CurrentProfile.FPSLimitMode}, JudderFreeFPS={profileManager.CurrentProfile.JudderFreeFPS}");
                 isApplyingProfile = true;
 
-                rtssManager.LimitFPS.SetValue(profileManager.CurrentProfile.FPSLimit > 0);
-                rtssManager.FPSLimit.SetValue(profileManager.CurrentProfile.FPSLimit > 0 ? profileManager.CurrentProfile.FPSLimit : 60);
                 rtssManager.FPSLimitMode.SetValue(profileManager.CurrentProfile.FPSLimitMode);
                 rtssManager.JudderFreeFPS.SetValue(profileManager.CurrentProfile.JudderFreeFPS);
+                int fallbackLimit = systemManager.RefreshRate.Value > 0 ? systemManager.RefreshRate.Value : 60;
+                rtssManager.FPSLimit.SetValue(profileManager.CurrentProfile.FPSLimit > 0 ? profileManager.CurrentProfile.FPSLimit : fallbackLimit);
+                rtssManager.LimitFPS.SetValue(profileManager.CurrentProfile.FPSLimit > 0);
                 profileManager.PerGameProfile.SetValue(profileManager.CurrentProfile.Use);
                 isApplyingProfile = false;
             }
             else
             {
-                Logger.Info($"Profile changed to {profileManager.CurrentProfile.GameId.Name} is not used.");
+                Logger.Info($"Profile {profileManager.CurrentProfile.GameId.Name} is not used.");
             }
         }
 
@@ -451,7 +482,8 @@ namespace XboxGamingBarHelper
         private static void UpdateCurrentProfileFPSLimit()
         {
             if (isApplyingProfile) return;
-            var newFPSLimit = rtssManager.LimitFPS ? (rtssManager.FPSLimit > 0 ? rtssManager.FPSLimit.Value : 60) : 0;
+            int fallbackLimit = systemManager.RefreshRate.Value > 0 ? systemManager.RefreshRate.Value : 60;
+            var newFPSLimit = rtssManager.LimitFPS ? (rtssManager.FPSLimit > 0 ? rtssManager.FPSLimit.Value : fallbackLimit) : 0;
             Logger.Info($"Update current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit to {newFPSLimit}.");
             profileManager.CurrentProfile.FPSLimit = newFPSLimit;
         }
@@ -529,14 +561,56 @@ namespace XboxGamingBarHelper
             RecreateConnection();
         }
 
+        public static void ReleaseSingleInstanceMutex()
+        {
+            try
+            {
+                if (_singleInstanceMutex != null)
+                {
+                    _singleInstanceMutex.ReleaseMutex();
+                    _singleInstanceMutex.Dispose();
+                    _singleInstanceMutex = null;
+                    Logger.Info("Released single-instance mutex.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to release single-instance mutex.");
+            }
+        }
+
+        public static void CreateSingleInstanceMutex(out bool createdNew)
+        {
+            try
+            {
+                _singleInstanceMutex = CreateSingleInstanceMutexWithAcl(out createdNew);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to create single-instance mutex with ACL, falling back to standard constructor.");
+                _singleInstanceMutex = new System.Threading.Mutex(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out createdNew);
+            }
+        }
+
         [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
         private static System.Threading.Mutex CreateSingleInstanceMutexWithAcl(out bool createdNew)
         {
-            var sid = new System.Security.Principal.SecurityIdentifier("S-1-15-2-1");
+            var appPackageSid = new System.Security.Principal.SecurityIdentifier("S-1-15-2-1"); // ALL APPLICATION PACKAGES
+            var authUsersSid = new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.AuthenticatedUserSid, null);
+            var adminSid = new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.BuiltinAdministratorsSid, null);
+
             var mutexSecurity = new System.Security.AccessControl.MutexSecurity();
             mutexSecurity.AddAccessRule(new System.Security.AccessControl.MutexAccessRule(
-                sid,
+                appPackageSid,
                 System.Security.AccessControl.MutexRights.Synchronize | System.Security.AccessControl.MutexRights.Modify,
+                System.Security.AccessControl.AccessControlType.Allow));
+            mutexSecurity.AddAccessRule(new System.Security.AccessControl.MutexAccessRule(
+                authUsersSid,
+                System.Security.AccessControl.MutexRights.Synchronize | System.Security.AccessControl.MutexRights.Modify,
+                System.Security.AccessControl.AccessControlType.Allow));
+            mutexSecurity.AddAccessRule(new System.Security.AccessControl.MutexAccessRule(
+                adminSid,
+                System.Security.AccessControl.MutexRights.FullControl,
                 System.Security.AccessControl.AccessControlType.Allow));
 
             return System.Threading.MutexAcl.Create(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out createdNew, mutexSecurity);

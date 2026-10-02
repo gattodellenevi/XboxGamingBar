@@ -88,6 +88,7 @@ namespace XboxGamingBar
         private readonly RTSSElevationProperty rtssElevation;
         private readonly HardwareProviderProperty hardwareProviderProperty;
         private readonly HardwareTelemetryProperty hardwareTelemetry;
+        private bool isRestartingElevated = false;
         private readonly GameInputStatusProperty gameInputStatus;
         private readonly GpuTargetProperty gpuTarget;
         private readonly DualGpuSupportProperty dualGpuSupport;
@@ -160,8 +161,16 @@ namespace XboxGamingBar
                     UpdateFPSLimitSliderJudderFree();
                 }
             };
+            fpsLimit.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(fpsLimit.Value))
+                {
+                    UpdateFPSLimitSliderJudderFree();
+                }
+            };
 
             properties = new WidgetProperties(
+                this.Dispatcher,
                 osd,
                 osdTextSize,
                 runningGame,
@@ -293,6 +302,21 @@ namespace XboxGamingBar
             {
                 try
                 {
+                    isRestartingElevated = true;
+                    // Reset flag after 15 seconds if user cancels UAC or elevation fails
+                    var _ = Task.Delay(15000).ContinueWith(t =>
+                    {
+                        var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                        {
+                            if (isRestartingElevated)
+                            {
+                                Logger.Warn("Elevated restart timed out without reconnection. Resetting isRestartingElevated flag.");
+                                isRestartingElevated = false;
+                                HideLoadingModal();
+                            }
+                        });
+                    });
+
                     if (RestartElevatedButtonText != null)
                     {
                         RestartElevatedButtonText.Text = "Restarting...";
@@ -314,6 +338,7 @@ namespace XboxGamingBar
                 catch (Exception ex)
                 {
                     Logger.Error(ex, "Failed to send RestartElevated message to helper.");
+                    isRestartingElevated = false;
                 }
                 finally
                 {
@@ -852,6 +877,7 @@ namespace XboxGamingBar
         private async void GamingWidget_AppServiceConnected(object sender, AppServiceTriggerDetails _)
         {
             Logger.Info("GamingWidget AppService connected.");
+            isRestartingElevated = false;
             HideLoadingModal();
 
             if (widget != null)
@@ -908,6 +934,13 @@ namespace XboxGamingBar
             hardwareTelemetry?.SetDisconnectedState();
             gameInputStatus?.SetDisconnectedState();
             dualGpuSupport?.SetDisconnectedState();
+
+            if (isRestartingElevated)
+            {
+                Logger.Info("AppService disconnected during elevated restart. Awaiting elevated helper connection without relaunching standard process.");
+                ShowLoadingModal("Restarting Helper as Administrator...", "Awaiting elevated background service connection...");
+                return;
+            }
 
             var eventArgs = e as BackgroundTaskCancellationEventArgs;
             if (eventArgs != null && eventArgs.Reason != BackgroundTaskCancellationReason.Terminating)
@@ -1053,13 +1086,13 @@ namespace XboxGamingBar
                     FPSLimitJudderFreeSlider.SnapsTo = SliderSnapsTo.StepValues;
                     FPSLimitJudderFreeSlider.TickPlacement = TickPlacement.None;
 
-                    double currentVal = FPSLimitSlider.Value;
+                    double currentVal = fpsLimit.Value > 0 ? fpsLimit.Value : (FPSLimitSlider.Value > 0 && FPSLimitSlider.Value != 60 ? FPSLimitSlider.Value : maxRefresh);
                     int closestVal = judderFreeValues.OrderBy(v => Math.Abs(v - currentVal)).First();
                     int idx = judderFreeValues.IndexOf(closestVal);
                     if (idx < 0) idx = 0;
 
                     FPSLimitJudderFreeSlider.Value = idx;
-                    FPSLimitSlider.Value = judderFreeValues[idx];
+                    fpsLimit.SetUIValueSilently(judderFreeValues[idx]);
                     isUpdatingJudderFreeSlider = false;
                 }
                 else

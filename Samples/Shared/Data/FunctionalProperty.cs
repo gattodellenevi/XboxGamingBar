@@ -1,4 +1,4 @@
-﻿using NLog;
+using NLog;
 using Shared.Enums;
 using System.Threading.Tasks;
 
@@ -38,6 +38,10 @@ namespace Shared.Data
         // Or Foreground property, only widget knows when it turns into foreground.
         protected virtual bool ShouldSendNotifyMessage()
         {
+            if (SuppressNotification)
+            {
+                return false;
+            }
             return true;
         }
 
@@ -155,5 +159,10 @@ namespace Shared.Data
         protected abstract Task<TSharedAppServiceResponse> SendMessageAsync(TSharedValueSet request);
 
         public abstract TSharedValueSet AddValueSetContent(in TSharedValueSet inValueSet);
+
+        public virtual (object Content, long UpdatedTime) GetSnapshotData()
+        {
+            return (GetValue(), 0L);
+        }
     }
 }

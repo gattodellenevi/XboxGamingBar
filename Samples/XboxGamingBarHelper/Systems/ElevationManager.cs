@@ -54,6 +54,41 @@ namespace XboxGamingBarHelper.Systems
                 exePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "CouchGamingBarHelper.exe");
             }
 
+            // If running inside WindowsApps, stage to LocalAppData to bypass TrustedInstaller ACL execution isolation
+            if (exePath.IndexOf("WindowsApps", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                try
+                {
+                    string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                    string targetDir = Path.Combine(localAppData, "CouchGamingBarHelper");
+                    if (!Directory.Exists(targetDir))
+                    {
+                        Directory.CreateDirectory(targetDir);
+                    }
+                    string sourceDir = Path.GetDirectoryName(exePath);
+                    foreach (var file in Directory.GetFiles(sourceDir, "*.*", SearchOption.AllDirectories))
+                    {
+                        string rel = Path.GetRelativePath(sourceDir, file);
+                        string dest = Path.Combine(targetDir, rel);
+                        Directory.CreateDirectory(Path.GetDirectoryName(dest));
+                        File.Copy(file, dest, true);
+                    }
+                    string stagedExe = Path.Combine(targetDir, Path.GetFileName(exePath));
+                    if (File.Exists(stagedExe))
+                    {
+                        exePath = stagedExe;
+                        Logger.Info($"Staged helper from WindowsApps to local folder: {exePath}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "Failed to stage helper to local folder, attempting to launch from source path.");
+                }
+            }
+
+            // Release single-instance mutex so newly spawned elevated process can immediately acquire it without conflict
+            Program.ReleaseSingleInstanceMutex();
+
             var startInfo = new ProcessStartInfo
             {
                 FileName = exePath,
@@ -67,7 +102,7 @@ namespace XboxGamingBarHelper.Systems
                 Process.Start(startInfo);
                 Logger.Info("Elevated instance launched successfully. Exiting current standard-privilege helper instance...");
 
-                // Terminate current process so the newly spawned elevated instance acquires the single-instance mutex cleanly
+                // Terminate current process so the newly spawned elevated instance takes over cleanly
                 Application.Exit();
                 Environment.Exit(0);
             }
@@ -75,10 +110,15 @@ namespace XboxGamingBarHelper.Systems
             {
                 // NativeErrorCode 1223 = ERROR_CANCELLED (user clicked 'No' or Cancel on UAC)
                 Logger.Warn(ex, "User cancelled or denied the UAC elevation prompt (error code 1223). Remaining in standard-privilege mode.");
+                // Re-acquire single-instance mutex to maintain standard helper operation
+                bool createdNew;
+                Program.CreateSingleInstanceMutex(out createdNew);
             }
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to start elevated helper process.");
+                bool createdNew;
+                Program.CreateSingleInstanceMutex(out createdNew);
             }
         }
     }

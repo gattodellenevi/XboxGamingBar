@@ -37,10 +37,61 @@ namespace Shared.Data
             }
         }
 
+        public virtual StateSnapshotDTO CreateStateSnapshot()
+        {
+            var snapshot = new StateSnapshotDTO();
+            foreach (var kvp in properties)
+            {
+                var function = kvp.Key;
+                var property = kvp.Value;
+                if (property == null || !property.ShouldSync())
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var (content, updatedTime) = property.GetSnapshotData();
+                    snapshot.AddProperty(function, content, updatedTime);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, $"Failed to get snapshot data for property {function}.");
+                }
+            }
+            return snapshot;
+        }
+
         public async Task OnRequestReceived(TSharedAppServiceRequest request)
         {
             try
             {
+                if (request.Message == null)
+                {
+                    Logger.Error("Request message is null.");
+                    return;
+                }
+
+                Command command = Command.Get;
+                if (request.Message.TryGetValue(nameof(Command), out var cmdObj))
+                {
+                    if (cmdObj is int cInt) command = (Command)cInt;
+                    else if (cmdObj is Command cmd) command = cmd;
+                    else if (cmdObj is string s && Enum.TryParse<Command>(s, out var parsedCmd)) command = parsedCmd;
+                }
+
+                if (command == Command.GetInitialState)
+                {
+                    Logger.Info("Handling GetInitialState request: building StateSnapshotDTO...");
+                    var snapshot = CreateStateSnapshot();
+                    var snapshotJson = snapshot.ToJson();
+                    var snapshotResponse = new TSharedValueSet();
+                    snapshotResponse.Add(nameof(Content), snapshotJson);
+                    var sendSnapshotResult = await SendResponse(request, snapshotResponse);
+                    Logger.Info($"Sent GetInitialState response with {snapshot.Properties.Count} properties: {sendSnapshotResult}.");
+                    return;
+                }
+
                 var function = (Function)request.Message[nameof(Function)];
                 if (function == Function.None)
                 {
@@ -54,7 +105,6 @@ namespace Shared.Data
                     return;
                 }
 
-                var command = (Command)request.Message[nameof(Command)];
                 var response = new TSharedValueSet();
                 switch (command)
                 {

@@ -1,4 +1,4 @@
-﻿using Microsoft.Gaming.XboxGameBar;
+using Microsoft.Gaming.XboxGameBar;
 using NLog;
 using System;
 using System.Threading.Tasks;
@@ -36,7 +36,7 @@ namespace XboxGamingBar
             this.InitializeComponent();
 
             onScreenDisplayProvider = new OnScreenDisplayProviderProperty(OnScreenDisplayProviderRadioButtons, this);
-            properties = new WidgetProperties(onScreenDisplayProvider);
+            properties = new WidgetProperties(this.Dispatcher, onScreenDisplayProvider);
         }
 
         protected async override void OnNavigatedTo(NavigationEventArgs e)

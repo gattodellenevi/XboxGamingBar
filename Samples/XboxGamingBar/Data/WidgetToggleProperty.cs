@@ -8,6 +8,8 @@ namespace XboxGamingBar.Data
 {
     internal class WidgetToggleProperty : WidgetControlProperty<bool, ToggleSwitch>
     {
+        private bool isUpdatingFromBackend = false;
+
         public WidgetToggleProperty(bool inValue, Function inFunction, ToggleSwitch inUI, Page inOwner) : base(inValue, inFunction, inUI, inOwner)
         {
             if (UI != null)
@@ -19,6 +21,8 @@ namespace XboxGamingBar.Data
 
         protected virtual void ToggleSwitch_ValueChanged(object sender, RoutedEventArgs e)
         {
+            if (isUpdatingFromBackend) return;
+
             SetValue(UI.IsOn, DateTime.UtcNow.Ticks);
         }
 
@@ -31,7 +35,15 @@ namespace XboxGamingBar.Data
                 Logger.Info($"Update {Function} value {Value}.");
                 await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    UI.IsOn = Value;
+                    isUpdatingFromBackend = true;
+                    try
+                    {
+                        UI.IsOn = Value;
+                    }
+                    finally
+                    {
+                        isUpdatingFromBackend = false;
+                    }
                 });
             }
         }

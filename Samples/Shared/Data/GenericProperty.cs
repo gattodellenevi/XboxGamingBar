@@ -147,6 +147,28 @@ namespace Shared.Data
             return inValueSet;
         }
 
+        public long LastUpdatedTime => lastUpdatedTime;
+
+        public override (object Content, long UpdatedTime) GetSnapshotData()
+        {
+            object content;
+            if (TypeHelper.IsStruct<ValueType>())
+            {
+                content = XmlHelper.ToXMLString(Value, true);
+            }
+            else if (typeof(ValueType) == typeof(List<int>))
+            {
+                var list = (List<int>)(object)Value;
+                content = string.Join(StringConstants.COMMA, list);
+            }
+            else
+            {
+                content = Value;
+            }
+            long time = lastUpdatedTime > 0 ? lastUpdatedTime : DateTime.UtcNow.Ticks;
+            return (content, time);
+        }
+
         protected bool SetValue(ValueType newValue, long updatedTime)
         {
             if (updatedTime < lastUpdatedTime)
@@ -240,8 +262,16 @@ namespace Shared.Data
             }
             else
             {
-                Logger.Error($"Can't set value {newValue} of type {newValue.GetType().Name} to property type {typeof(ValueType).Name}");
-                return false;
+                try
+                {
+                    myTypeValue = (ValueType)Convert.ChangeType(newValue, typeof(ValueType));
+                    Logger.Debug($"SetValue converted value {myTypeValue}.");
+                }
+                catch
+                {
+                    Logger.Error($"Can't set value {newValue} of type {newValue?.GetType().Name ?? "null"} to property type {typeof(ValueType).Name}");
+                    return false;
+                }
             }
 
             return SetValue(myTypeValue, updatedTime);

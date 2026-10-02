@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls;
 using Shared.Enums;
 using System;
 using Windows.UI.Core;
@@ -30,10 +30,27 @@ namespace XboxGamingBar.Data
         {
             base.NotifyPropertyChanged(propertyName);
 
-            if (UI != null && UI.SelectedIndex != Value)
+            if (UI != null && Owner != null)
             {
-                Logger.Info($"Update On-Screen Display provider UI to index {Value}");
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => { UI.SelectedIndex = Value; });
+                if (Owner.Dispatcher.HasThreadAccess)
+                {
+                    if (UI.SelectedIndex != Value)
+                    {
+                        Logger.Info($"Update On-Screen Display provider UI to index {Value}");
+                        UI.SelectedIndex = Value;
+                    }
+                }
+                else
+                {
+                    await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
+                        if (UI.SelectedIndex != Value)
+                        {
+                            Logger.Info($"Update On-Screen Display provider UI to index {Value}");
+                            UI.SelectedIndex = Value;
+                        }
+                    });
+                }
             }
         }
     }

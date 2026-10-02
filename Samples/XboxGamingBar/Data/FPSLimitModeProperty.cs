@@ -33,25 +33,56 @@ namespace XboxGamingBar.Data
             }
         }
 
+        private void UpdateUI()
+        {
+            if (UI != null && UI.SelectedIndex != Value)
+            {
+                isUpdatingFromBackend = true;
+                try
+                {
+                    Logger.Info($"Update {Function} combo box selected index to {Value}.");
+                    UI.SelectedIndex = Value;
+                }
+                finally
+                {
+                    isUpdatingFromBackend = false;
+                }
+            }
+        }
+
+        public override async System.Threading.Tasks.Task Sync()
+        {
+            await base.Sync();
+
+            if (UI != null && Owner != null)
+            {
+                if (Owner.Dispatcher.HasThreadAccess)
+                {
+                    UpdateUI();
+                }
+                else
+                {
+                    await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, UpdateUI);
+                }
+            }
+        }
+
         protected override async void NotifyPropertyChanged(string propertyName = "")
         {
             base.NotifyPropertyChanged(propertyName);
 
-            if (UI != null && UI.SelectedIndex != Value && Owner != null)
+            if (UI != null && Owner != null)
             {
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                if (Owner.Dispatcher.HasThreadAccess)
                 {
-                    isUpdatingFromBackend = true;
-                    try
-                    {
-                        UI.SelectedIndex = Value;
-                    }
-                    finally
-                    {
-                        isUpdatingFromBackend = false;
-                    }
-                });
+                    UpdateUI();
+                }
+                else
+                {
+                    await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, UpdateUI);
+                }
             }
         }
     }
 }
+
