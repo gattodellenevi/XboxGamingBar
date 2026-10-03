@@ -117,37 +117,18 @@ namespace XboxGamingBarHelper.Hardware.Providers
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate int NvAPI_GPU_ClientPowerTopologyGetStatusDelegate(IntPtr handle, ref NVAPI_GPU_POWER_TOPO topo);
 
-        // Power Policies (TDP Info)
-        [StructLayout(LayoutKind.Sequential)]
-        private struct NV_POWER_INFO_ENTRY
-        {
-            public uint Pstate;
-            public uint Unknown1_0;
-            public uint Unknown1_1;
-            public uint MinPower; // milliwatts
-            public uint Unknown2_0;
-            public uint Unknown2_1;
-            public uint DefPower; // milliwatts (Default TDP)
-            public uint Unknown3_0;
-            public uint Unknown3_1;
-            public uint MaxPower; // milliwatts
-            public uint Unknown4;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct NVAPI_GPU_POWER_INFO
-        {
-            public uint Version;
-            public byte Valid;
-            public byte Count;
-            private byte Reserved1;
-            private byte Reserved2;
-            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
-            public NV_POWER_INFO_ENTRY[] Entries;
-        }
+        // NVML Delegates for one-time baseline TDP query
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate int NvmlInitDelegate();
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate int NvAPI_GPU_ClientPowerPoliciesGetInfoDelegate(IntPtr handle, ref NVAPI_GPU_POWER_INFO info);
+        private delegate int NvmlShutdownDelegate();
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate int NvmlDeviceGetHandleByIndexDelegate(uint index, out IntPtr device);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        private delegate int NvmlDeviceGetPowerManagementLimitDelegate(IntPtr device, out uint limitMw);
 
         // Memory Info Ex (Total & Available VRAM)
         [StructLayout(LayoutKind.Sequential)]
@@ -179,7 +160,6 @@ namespace XboxGamingBarHelper.Hardware.Providers
         private NvAPI_GPU_GetThermalSettingsDelegate fnGetThermalSettings;
         private NvAPI_GPU_GetAllClockFrequenciesDelegate fnGetAllClockFrequencies;
         private NvAPI_GPU_ClientPowerTopologyGetStatusDelegate fnGetPowerTopology;
-        private NvAPI_GPU_ClientPowerPoliciesGetInfoDelegate fnGetPowerPoliciesInfo;
         private NvAPI_GPU_GetMemoryInfoExDelegate fnGetMemoryInfoEx;
 
         // Baseline TDP (Watts)
@@ -300,37 +280,14 @@ namespace XboxGamingBarHelper.Hardware.Providers
                     Logger.Info("NVAPI: Bound NvAPI_GPU_ClientPowerTopologyGetStatus");
                 }
 
-                // Query Power Policies (0x34206D86) for baseline TDP
-                IntPtr pPowerInfo = query(0x34206D86);
-                if (pPowerInfo != IntPtr.Zero)
+                // Query baseline TDP for accurate wattage calculation (% TDP -> Watts)
+                baseTdpWatts = QueryBaselineTdpFromNvml();
+                if (baseTdpWatts <= 0.0f)
                 {
-                    fnGetPowerPoliciesInfo = Marshal.GetDelegateForFunctionPointer<NvAPI_GPU_ClientPowerPoliciesGetInfoDelegate>(pPowerInfo);
-                    Logger.Info("NVAPI: Bound NvAPI_GPU_ClientPowerPoliciesGetInfo");
-
-                    try
+                    baseTdpWatts = EstimateBaselineTdpFromName(gpuFullName);
+                    if (baseTdpWatts > 0.0f)
                     {
-                        var pInfo = new NVAPI_GPU_POWER_INFO();
-                        pInfo.Version = (uint)Marshal.SizeOf(typeof(NVAPI_GPU_POWER_INFO)) | 0x10000;
-                        pInfo.Entries = new NV_POWER_INFO_ENTRY[4];
-                        int pInfoRes = fnGetPowerPoliciesInfo(primaryGpuHandle, ref pInfo);
-                        if (pInfoRes == 0 && pInfo.Count > 0)
-                        {
-                            uint defPowerMw = pInfo.Entries[0].DefPower;
-                            if (defPowerMw == 0) defPowerMw = pInfo.Entries[0].MaxPower;
-                            if (defPowerMw > 0)
-                            {
-                                baseTdpWatts = defPowerMw / 1000.0f;
-                                Logger.Info($"NVAPI: Detected baseline TDP: {baseTdpWatts:F0} W (DefPower={defPowerMw} mW, Min={pInfo.Entries[0].MinPower} mW, Max={pInfo.Entries[0].MaxPower} mW)");
-                            }
-                        }
-                        else
-                        {
-                            Logger.Warn($"NVAPI: NvAPI_GPU_ClientPowerPoliciesGetInfo returned {pInfoRes}, count={pInfo.Count}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warn(ex, "NVAPI: Failed to query power policies info for baseline TDP");
+                        Logger.Info($"NVAPI: Estimated baseline TDP from GPU model name ('{gpuFullName}'): {baseTdpWatts:F0} W");
                     }
                 }
 
@@ -495,6 +452,131 @@ namespace XboxGamingBarHelper.Hardware.Providers
             {
                 Logger.Debug(ex, "Failed to update NVIDIA GPU telemetry");
             }
+        }
+
+        private float QueryBaselineTdpFromNvml()
+        {
+            IntPtr hNvml = IntPtr.Zero;
+            try
+            {
+                hNvml = LoadLibrary("nvml.dll");
+                if (hNvml == IntPtr.Zero)
+                {
+                    Logger.Info("NVML: nvml.dll not found in standard system paths.");
+                    return 0.0f;
+                }
+
+                IntPtr pInit = GetProcAddress(hNvml, "nvmlInit_v2");
+                if (pInit == IntPtr.Zero) pInit = GetProcAddress(hNvml, "nvmlInit");
+                if (pInit == IntPtr.Zero)
+                {
+                    Logger.Warn("NVML: nvmlInit export not found.");
+                    return 0.0f;
+                }
+
+                var fnInit = Marshal.GetDelegateForFunctionPointer<NvmlInitDelegate>(pInit);
+                int initRes = fnInit();
+                if (initRes != 0)
+                {
+                    Logger.Warn($"NVML: nvmlInit failed with code {initRes}");
+                    return 0.0f;
+                }
+
+                try
+                {
+                    IntPtr pGetHandle = GetProcAddress(hNvml, "nvmlDeviceGetHandleByIndex_v2");
+                    if (pGetHandle == IntPtr.Zero) pGetHandle = GetProcAddress(hNvml, "nvmlDeviceGetHandleByIndex");
+                    IntPtr pGetLimit = GetProcAddress(hNvml, "nvmlDeviceGetPowerManagementLimit");
+                    if (pGetLimit == IntPtr.Zero) pGetLimit = GetProcAddress(hNvml, "nvmlDeviceGetEnforcedPowerLimit");
+
+                    if (pGetHandle != IntPtr.Zero && pGetLimit != IntPtr.Zero)
+                    {
+                        var fnGetHandle = Marshal.GetDelegateForFunctionPointer<NvmlDeviceGetHandleByIndexDelegate>(pGetHandle);
+                        var fnGetLimit = Marshal.GetDelegateForFunctionPointer<NvmlDeviceGetPowerManagementLimitDelegate>(pGetLimit);
+
+                        int handleRes = fnGetHandle(0, out IntPtr device);
+                        if (handleRes == 0 && device != IntPtr.Zero)
+                        {
+                            int limitRes = fnGetLimit(device, out uint limitMw);
+                            if (limitRes == 0 && limitMw > 0)
+                            {
+                                float tdpWatts = limitMw / 1000.0f;
+                                Logger.Info($"NVML: Successfully queried baseline TDP: {tdpWatts:F0} W ({limitMw} mW)");
+                                return tdpWatts;
+                            }
+                            else
+                            {
+                                Logger.Warn($"NVML: nvmlDeviceGetPowerManagementLimit returned code {limitRes}, limitMw={limitMw}");
+                            }
+                        }
+                        else
+                        {
+                            Logger.Warn($"NVML: nvmlDeviceGetHandleByIndex returned {handleRes}");
+                        }
+                    }
+                }
+                finally
+                {
+                    IntPtr pShutdown = GetProcAddress(hNvml, "nvmlShutdown");
+                    if (pShutdown != IntPtr.Zero)
+                    {
+                        var fnShutdown = Marshal.GetDelegateForFunctionPointer<NvmlShutdownDelegate>(pShutdown);
+                        fnShutdown();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "NVML: Exception occurred while querying baseline TDP");
+            }
+            finally
+            {
+                if (hNvml != IntPtr.Zero)
+                {
+                    FreeLibrary(hNvml);
+                }
+            }
+
+            return 0.0f;
+        }
+
+        private static float EstimateBaselineTdpFromName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return 0.0f;
+            string upper = name.ToUpperInvariant();
+
+            bool isLaptop = upper.Contains("LAPTOP") || upper.Contains("MOBILE") || upper.Contains("MAX-Q");
+
+            // RTX 40-series
+            if (upper.Contains("4090")) return isLaptop ? 175.0f : 450.0f;
+            if (upper.Contains("4080")) return isLaptop ? 175.0f : 320.0f;
+            if (upper.Contains("4070 TI")) return 285.0f;
+            if (upper.Contains("4070 SUPER")) return 220.0f;
+            if (upper.Contains("4070")) return isLaptop ? 140.0f : 200.0f;
+            if (upper.Contains("4060 TI")) return 160.0f;
+            if (upper.Contains("4060")) return isLaptop ? 140.0f : 115.0f;
+            if (upper.Contains("4050")) return 115.0f;
+
+            // RTX 30-series
+            if (upper.Contains("3090 TI")) return 450.0f;
+            if (upper.Contains("3090")) return 350.0f;
+            if (upper.Contains("3080 TI")) return isLaptop ? 175.0f : 350.0f;
+            if (upper.Contains("3080")) return isLaptop ? 150.0f : 320.0f;
+            if (upper.Contains("3070 TI")) return isLaptop ? 150.0f : 290.0f;
+            if (upper.Contains("3070")) return isLaptop ? 140.0f : 220.0f;
+            if (upper.Contains("3060 TI")) return 200.0f;
+            if (upper.Contains("3060")) return isLaptop ? 130.0f : 170.0f;
+            if (upper.Contains("3050")) return isLaptop ? 95.0f : 130.0f;
+
+            // RTX 20-series / GTX 16-series
+            if (upper.Contains("2080 TI")) return 250.0f;
+            if (upper.Contains("2080")) return 215.0f;
+            if (upper.Contains("2070")) return 175.0f;
+            if (upper.Contains("2060")) return 160.0f;
+            if (upper.Contains("1660")) return 120.0f;
+            if (upper.Contains("1650")) return 75.0f;
+
+            return 0.0f;
         }
 
         public float GetGpuUsage() => gpuUsage;
