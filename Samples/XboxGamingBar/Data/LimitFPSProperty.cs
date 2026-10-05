@@ -8,5 +8,15 @@ namespace XboxGamingBar.Data
         public LimitFPSProperty(ToggleSwitch inUI, Page inOwner) : base(false, Function.LimitFPS, inUI, inOwner)
         {
         }
+
+        protected override void SetControlEnabled(bool isEnabled)
+        {
+            if (Owner is GamingWidget widget && widget.IsElevationMismatch)
+            {
+                base.SetControlEnabled(false);
+                return;
+            }
+            base.SetControlEnabled(isEnabled);
+        }
     }
 }

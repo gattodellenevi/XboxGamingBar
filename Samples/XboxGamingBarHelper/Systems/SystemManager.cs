@@ -128,6 +128,30 @@ namespace XboxGamingBarHelper.Systems
             get { return restartGameInputService; }
         }
 
+        private readonly ControllerBatteryProperty controllerBattery;
+        public ControllerBatteryProperty ControllerBattery
+        {
+            get { return controllerBattery; }
+        }
+
+        private readonly MouseSpeedProperty mouseSpeed;
+        public MouseSpeedProperty MouseSpeed
+        {
+            get { return mouseSpeed; }
+        }
+
+        private readonly MouseEnhancePointerPrecisionProperty mouseEnhancePointerPrecision;
+        public MouseEnhancePointerPrecisionProperty MouseEnhancePointerPrecision
+        {
+            get { return mouseEnhancePointerPrecision; }
+        }
+
+        private readonly MouseScrollSpeedProperty mouseScrollSpeed;
+        public MouseScrollSpeedProperty MouseScrollSpeed
+        {
+            get { return mouseScrollSpeed; }
+        }
+
         private IReadOnlyDictionary<GameId, GameProfile> Profiles { get; }
 
         // Keep track to current opening windows to determine currently running game.
@@ -139,6 +163,7 @@ namespace XboxGamingBarHelper.Systems
         private RunningGame lastDetectedGame = new RunningGame();
         private DateTime lastWindowScanTime = DateTime.MinValue;
         private DateTime lastGameInputCheckTime = DateTime.MinValue;
+        private DateTime lastControllerBatteryCheckTime = DateTime.MinValue;
 
         public event ResumeFromSleepEventHandler ResumeFromSleep;
 
@@ -176,6 +201,18 @@ namespace XboxGamingBarHelper.Systems
             Logger.Info($"Check GameInput service status: {initialGameInputStatus}.");
             gameInputStatus = new GameInputStatusProperty(initialGameInputStatus, this);
             restartGameInputService = new RestartGameInputServiceProperty(this);
+            var initialBattery = ControllerBatteryManager.GetCurrentBatteryStatus();
+            Logger.Info($"Check controller battery status: Connected={initialBattery.IsConnected}, Level={initialBattery.BatteryLevel}%, Category={initialBattery.LevelCategory}.");
+            controllerBattery = new ControllerBatteryProperty(initialBattery, this);
+            int initialMouseSpeed = User32.GetMouseSpeed();
+            Logger.Info($"Check initial mouse speed: {initialMouseSpeed}.");
+            mouseSpeed = new MouseSpeedProperty(initialMouseSpeed, this);
+            bool initialEnhancePrecision = User32.GetEnhancePointerPrecision();
+            Logger.Info($"Check initial enhance pointer precision: {initialEnhancePrecision}.");
+            mouseEnhancePointerPrecision = new MouseEnhancePointerPrecisionProperty(initialEnhancePrecision, this);
+            int initialScrollSpeed = User32.GetMouseScrollSpeed();
+            Logger.Info($"Check initial mouse scroll speed: {initialScrollSpeed}.");
+            mouseScrollSpeed = new MouseScrollSpeedProperty(initialScrollSpeed, this);
             bool isElevated = CheckIsElevated();
             Logger.Info($"Check helper elevation status: {isElevated}.");
             helperElevation = new HelperElevationProperty(isElevated, this);
@@ -386,6 +423,17 @@ namespace XboxGamingBarHelper.Systems
                 {
                     Logger.Info($"GameInput service status changed from {gameInputStatus.Value} to {currentStatus}.");
                     gameInputStatus.SetValue(currentStatus, now.Ticks);
+                }
+            }
+
+            if ((now - lastControllerBatteryCheckTime).TotalSeconds >= 3.0)
+            {
+                lastControllerBatteryCheckTime = now;
+                var currentBattery = ControllerBatteryManager.GetCurrentBatteryStatus();
+                if (controllerBattery.Value != currentBattery)
+                {
+                    Logger.Info($"Controller battery status changed: Connected={currentBattery.IsConnected}, Level={currentBattery.BatteryLevel}%, Category={currentBattery.LevelCategory}, Type={currentBattery.BatteryType}.");
+                    controllerBattery.SetValue(currentBattery, now.Ticks);
                 }
             }
         }

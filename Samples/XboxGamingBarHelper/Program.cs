@@ -231,7 +231,11 @@ namespace XboxGamingBarHelper
                     systemManager.RestartElevated,
                     systemManager.SendShortcut,
                     systemManager.GameInputStatus,
-                    systemManager.RestartGameInputService);
+                    systemManager.RestartGameInputService,
+                    systemManager.ControllerBattery,
+                    systemManager.MouseSpeed,
+                    systemManager.MouseEnhancePointerPrecision,
+                    systemManager.MouseScrollSpeed);
 
                 Logger.Info("Initialize callbacks.");
                 systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;

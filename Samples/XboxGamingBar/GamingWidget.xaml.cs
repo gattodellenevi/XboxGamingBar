@@ -92,7 +92,17 @@ namespace XboxGamingBar
         private readonly GameInputStatusProperty gameInputStatus;
         private readonly GpuTargetProperty gpuTarget;
         private readonly DualGpuSupportProperty dualGpuSupport;
+        private readonly ControllerBatteryProperty controllerBattery;
+        private readonly MouseSpeedProperty mouseSpeed;
+        private readonly MouseScrollSpeedProperty mouseScrollSpeed;
+        private readonly MouseEnhancePointerPrecisionProperty mouseEnhancePointerPrecision;
         private bool isElevationFlyoutOpen = false;
+
+        public bool IsElevationMismatch => App.Connection != null &&
+                                           rtssElevation != null &&
+                                           rtssElevation.Value == 2 &&
+                                           helperElevation != null &&
+                                           !helperElevation.Value;
 
         private readonly WidgetProperties properties;
 
@@ -112,6 +122,9 @@ namespace XboxGamingBar
             hardwareProviderProperty = new HardwareProviderProperty(HardwareProviderBadge, HardwareProviderBadgeText, HardwareProviderSubtitleText, this);
             hardwareTelemetry = new HardwareTelemetryProperty(LiveCPUUsageText, LiveCPUWattageText, LiveGPUUsageText, LiveGPUWattageText, LiveVRAMUsageText, LiveVRAMUsedText, LiveRAMUsageText, LiveRAMUsedText, this);
             gameInputStatus = new GameInputStatusProperty(GameInputStatusBadge, GameInputStatusBadgeText, GameInputStatusSubtitleText, this);
+            mouseSpeed = new MouseSpeedProperty(10, MouseSpeedSlider, this);
+            mouseScrollSpeed = new MouseScrollSpeedProperty(3, MouseScrollSpeedSlider, this);
+            mouseEnhancePointerPrecision = new MouseEnhancePointerPrecisionProperty(EnhancePointerPrecisionToggle, this);
             trackedGame = new TrackedGameProperty(new TrackedGame());
             onScreenDisplayProviderInstalled = new OnScreenDisplayProviderInstalledProperty(PerformanceOverlaySlider, this);
             isForeground = new IsForegroundProperty();
@@ -139,9 +152,27 @@ namespace XboxGamingBar
             judderFreeFPS = new JudderFreeFPSProperty(JudderFreeFPSToggle, this);
             gpuTarget = new GpuTargetProperty(DiscreteGpuButton, IntegratedGpuButton, this);
             dualGpuSupport = new DualGpuSupportProperty(GpuSelectionCard, GpuSelectionSubtitleText, DiscreteGpuButton, IntegratedGpuButton, this);
+            controllerBattery = new ControllerBatteryProperty(
+                ControllerBatteryBadge,
+                ControllerBatteryIcon,
+                ControllerBatteryText,
+                FlyoutBatteryIcon,
+                FlyoutControllerNameText,
+                FlyoutBatterySubtitleText,
+                FlyoutBatteryPercentText,
+                FlyoutBatteryTypeText,
+                FlyoutBatteryStatusText,
+                ControllerBatteryStatusBadge,
+                ControllerBatteryStatusBadgeText,
+                ControllerBatteryStatusSubtitleText,
+                this);
 
             JudderFreeFPSToggle.Toggled += JudderFreeFPSToggle_Toggled;
-            LimitFPSToggle.Toggled += (s, e) => UpdateFPSLimitSliderJudderFree();
+            LimitFPSToggle.Toggled += (s, e) =>
+            {
+                UpdateFPSLimitSliderJudderFree();
+                UpdateFPSLimiterElevationUI();
+            };
             FPSLimitJudderFreeSlider.ValueChanged += FPSLimitJudderFreeSlider_ValueChanged;
             WidgetSliderProperty.AttachEngagementHandler(FPSLimitJudderFreeSlider);
             FPSLimitJudderFreeCanvas.SizeChanged += (s, e) => RenderJudderFreeMarkers();
@@ -166,6 +197,30 @@ namespace XboxGamingBar
                 if (e.PropertyName == nameof(fpsLimit.Value))
                 {
                     UpdateFPSLimitSliderJudderFree();
+                }
+            };
+            helperElevation.PropertyChanged += (s, e) =>
+            {
+                var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    UpdateFPSLimiterElevationUI();
+                });
+            };
+            rtssElevation.PropertyChanged += (s, e) =>
+            {
+                var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    UpdateFPSLimiterElevationUI();
+                });
+            };
+            limitFPS.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(limitFPS.Value))
+                {
+                    var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
+                        UpdateFPSLimiterElevationUI();
+                    });
                 }
             };
 
@@ -208,7 +263,11 @@ namespace XboxGamingBar
                 hardwareTelemetry,
                 gameInputStatus,
                 gpuTarget,
-                dualGpuSupport
+                dualGpuSupport,
+                controllerBattery,
+                mouseSpeed,
+                mouseScrollSpeed,
+                mouseEnhancePointerPrecision
             );
 
             if (HelperElevationFlyout != null)
@@ -235,6 +294,7 @@ namespace XboxGamingBar
             this.KeyDown += GamingWidget_KeyDown;
             InitializeAppVersion();
             InitializeShortcuts();
+            UpdateFPSLimiterElevationUI();
         }
 
         private Control lastElevationFlyoutInvoker;
@@ -921,6 +981,7 @@ namespace XboxGamingBar
             }
 
             await properties.Sync();
+            UpdateFPSLimiterElevationUI();
         }
 
         /// <summary>
@@ -934,6 +995,7 @@ namespace XboxGamingBar
             hardwareTelemetry?.SetDisconnectedState();
             gameInputStatus?.SetDisconnectedState();
             dualGpuSupport?.SetDisconnectedState();
+            UpdateFPSLimiterElevationUI();
 
             if (isRestartingElevated)
             {
@@ -1060,7 +1122,7 @@ namespace XboxGamingBar
             bool isLimitFPSOn = LimitFPSToggle != null && LimitFPSToggle.IsOn;
             bool isJudderFree = JudderFreeFPSToggle != null && JudderFreeFPSToggle.IsOn;
 
-            if (!isLimitFPSOn)
+            if (IsElevationMismatch || !isLimitFPSOn)
             {
                 FPSLimitSlider.Visibility = Visibility.Collapsed;
                 FPSLimitJudderFreeSlider.Visibility = Visibility.Collapsed;
@@ -1115,6 +1177,68 @@ namespace XboxGamingBar
             FPSLimitSlider.Minimum = 30;
             FPSLimitSlider.Maximum = maxRefresh;
             FPSLimitSlider.TickPlacement = TickPlacement.BottomRight;
+        }
+
+        public void UpdateFPSLimiterElevationUI()
+        {
+            if (Dispatcher != null && !Dispatcher.HasThreadAccess)
+            {
+                var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateFPSLimiterElevationUI());
+                return;
+            }
+
+            if (FPSLimitElevationWarningCard == null || FPSLimitElevationWarningBadge == null) return;
+
+            bool isMismatch = IsElevationMismatch;
+
+            if (isMismatch)
+            {
+                limitFPS?.EnableControl(false);
+                FPSLimitElevationWarningBadge.Visibility = Visibility.Visible;
+                if (FPSLimitValueBadge != null)
+                {
+                    FPSLimitValueBadge.Visibility = Visibility.Collapsed;
+                }
+                FPSLimitElevationWarningCard.Visibility = Visibility.Visible;
+                if (FPSLimitSubtitleText != null)
+                {
+                    FPSLimitSubtitleText.Text = "Requires Administrator privileges to modify RTSS";
+                }
+                if (FPSLimitSettingsContainer != null)
+                {
+                    FPSLimitSettingsContainer.Visibility = Visibility.Collapsed;
+                }
+                if (FPSLimitSlider != null)
+                {
+                    FPSLimitSlider.IsEnabled = false;
+                }
+            }
+            else
+            {
+                FPSLimitElevationWarningBadge.Visibility = Visibility.Collapsed;
+                FPSLimitElevationWarningCard.Visibility = Visibility.Collapsed;
+                if (FPSLimitSubtitleText != null)
+                {
+                    FPSLimitSubtitleText.Text = "Cap framerate via RTSS to stabilize frametimes";
+                }
+                if (App.Connection != null)
+                {
+                    limitFPS?.EnableControl(true);
+                }
+                if (FPSLimitSettingsContainer != null)
+                {
+                    FPSLimitSettingsContainer.Visibility = (LimitFPSToggle != null && LimitFPSToggle.IsOn) 
+                        ? Visibility.Visible 
+                        : Visibility.Collapsed;
+                }
+                if (FPSLimitValueBadge != null)
+                {
+                    FPSLimitValueBadge.Visibility = (LimitFPSToggle != null && LimitFPSToggle.IsOn) 
+                        ? Visibility.Visible 
+                        : Visibility.Collapsed;
+                }
+            }
+            UpdateFPSLimitSliderJudderFree();
         }
 
         private async void RenderJudderFreeMarkers()

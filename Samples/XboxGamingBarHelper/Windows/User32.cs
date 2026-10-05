@@ -667,5 +667,143 @@ namespace XboxGamingBarHelper.Windows
 
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         public static extern bool PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+
+        public const uint SPI_GETMOUSESPEED = 0x0070;
+        public const uint SPI_SETMOUSESPEED = 0x0071;
+        public const uint SPI_GETMOUSE = 0x0003;
+        public const uint SPI_SETMOUSE = 0x0004;
+
+        public const uint SPIF_UPDATEINIFILE = 0x01;
+        public const uint SPIF_SENDCHANGE = 0x02;
+
+        [DllImport("user32.dll", EntryPoint = "SystemParametersInfo", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SystemParametersInfoGet(uint uiAction, uint uiParam, ref uint pvParam, uint fWinIni);
+
+        [DllImport("user32.dll", EntryPoint = "SystemParametersInfo", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SystemParametersInfoSet(uint uiAction, uint uiParam, IntPtr pvParam, uint fWinIni);
+
+        [DllImport("user32.dll", EntryPoint = "SystemParametersInfo", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SystemParametersInfoMouse(uint uiAction, uint uiParam, [In, Out] int[] pvParam, uint fWinIni);
+
+        public static int GetMouseSpeed()
+        {
+            try
+            {
+                uint speed = 10;
+                if (SystemParametersInfoGet(SPI_GETMOUSESPEED, 0, ref speed, 0))
+                {
+                    return (int)Math.Max(1, Math.Min(20, speed));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to get mouse speed.");
+            }
+            return 10;
+        }
+
+        public static bool SetMouseSpeed(int speed)
+        {
+            try
+            {
+                int clampedSpeed = Math.Max(1, Math.Min(20, speed));
+                Logger.Info($"Setting system mouse speed to {clampedSpeed}.");
+                return SystemParametersInfoSet(SPI_SETMOUSESPEED, 0, (IntPtr)clampedSpeed, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to set mouse speed.");
+                return false;
+            }
+        }
+
+        public static bool GetEnhancePointerPrecision()
+        {
+            try
+            {
+                int[] mouseParams = new int[3];
+                if (SystemParametersInfoMouse(SPI_GETMOUSE, 0, mouseParams, 0))
+                {
+                    return mouseParams[2] != 0;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to get Enhance Pointer Precision.");
+            }
+            return false;
+        }
+
+        public static bool SetEnhancePointerPrecision(bool enabled)
+        {
+            try
+            {
+                int[] mouseParams = new int[3];
+                if (SystemParametersInfoMouse(SPI_GETMOUSE, 0, mouseParams, 0))
+                {
+                    mouseParams[2] = enabled ? 1 : 0;
+                    Logger.Info($"Setting Enhance Pointer Precision to {enabled}.");
+                    return SystemParametersInfoMouse(SPI_SETMOUSE, 0, mouseParams, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to set Enhance Pointer Precision.");
+            }
+            return false;
+        }
+
+        public const uint SPI_GETWHEELSCROLLLINES = 0x0068;
+        public const uint SPI_SETWHEELSCROLLLINES = 0x0069;
+
+        public static int GetMouseScrollSpeed()
+        {
+            try
+            {
+                uint lines = 3;
+                if (SystemParametersInfoGet(SPI_GETWHEELSCROLLLINES, 0, ref lines, 0))
+                {
+                    return (int)Math.Max(1, Math.Min(100, lines));
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to get mouse scroll speed.");
+            }
+            return 3;
+        }
+
+        public static bool SetMouseScrollSpeed(int lines)
+        {
+            try
+            {
+                uint clampedLines = (uint)Math.Max(1, Math.Min(100, lines));
+                Logger.Info($"Setting mouse wheel scroll lines to {clampedLines}.");
+                bool ok = SystemParametersInfoSet(SPI_SETWHEELSCROLLLINES, clampedLines, IntPtr.Zero, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+                try
+                {
+                    using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Control Panel\Desktop", true))
+                    {
+                        if (key != null)
+                        {
+                            key.SetValue("WheelScrollLines", clampedLines.ToString(), Microsoft.Win32.RegistryValueKind.String);
+                        }
+                    }
+                }
+                catch (Exception regEx)
+                {
+                    Logger.Debug(regEx, "Failed to persist WheelScrollLines to registry.");
+                }
+                return ok;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to set mouse scroll speed.");
+                return false;
+            }
+        }
     }
 }

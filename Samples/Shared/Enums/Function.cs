@@ -50,6 +50,10 @@ namespace Shared.Enums
         HardwareTelemetry,
         Settings_GpuTarget,
         Support_DualGpu,
+        ControllerBattery,
+        MouseSpeed,
+        MouseEnhancePointerPrecision,
+        MouseScrollSpeed,
         AppExit = 100
     }
 }
