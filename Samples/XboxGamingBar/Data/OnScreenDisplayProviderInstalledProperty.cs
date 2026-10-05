@@ -1,4 +1,4 @@
-﻿using Shared.Enums;
+using Shared.Enums;
 using Windows.UI.Xaml.Controls;
 
 namespace XboxGamingBar.Data
@@ -7,6 +7,16 @@ namespace XboxGamingBar.Data
     {
         public OnScreenDisplayProviderInstalledProperty(Slider inUI, Page inOwner) : base(Function.Settings_OnScreenDisplayProviderInstalled, inUI, inOwner)
         {
+        }
+
+        protected override void SetControlEnabled(bool isEnabled)
+        {
+            if (Owner is GamingWidget widget && (widget.IsElevationMismatch || !widget.IsRTSSRunning))
+            {
+                base.SetControlEnabled(false);
+                return;
+            }
+            base.SetControlEnabled(isEnabled);
         }
     }
 }

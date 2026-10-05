@@ -104,6 +104,10 @@ namespace XboxGamingBar
                                            helperElevation != null &&
                                            !helperElevation.Value;
 
+        public bool IsRTSSRunning => App.Connection != null &&
+                                     rtssElevation != null &&
+                                     rtssElevation.Value > 0;
+
         private readonly WidgetProperties properties;
 
         public GamingWidget()
@@ -204,6 +208,7 @@ namespace XboxGamingBar
                 var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
                     UpdateFPSLimiterElevationUI();
+                    UpdateOSDStatusUI();
                 });
             };
             rtssElevation.PropertyChanged += (s, e) =>
@@ -211,6 +216,14 @@ namespace XboxGamingBar
                 var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
                     UpdateFPSLimiterElevationUI();
+                    UpdateOSDStatusUI();
+                });
+            };
+            onScreenDisplayProviderInstalled.PropertyChanged += (s, e) =>
+            {
+                var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    UpdateOSDStatusUI();
                 });
             };
             limitFPS.PropertyChanged += (s, e) =>
@@ -295,6 +308,7 @@ namespace XboxGamingBar
             InitializeAppVersion();
             InitializeShortcuts();
             UpdateFPSLimiterElevationUI();
+            UpdateOSDStatusUI();
         }
 
         private Control lastElevationFlyoutInvoker;
@@ -982,6 +996,7 @@ namespace XboxGamingBar
 
             await properties.Sync();
             UpdateFPSLimiterElevationUI();
+            UpdateOSDStatusUI();
         }
 
         /// <summary>
@@ -996,6 +1011,7 @@ namespace XboxGamingBar
             gameInputStatus?.SetDisconnectedState();
             dualGpuSupport?.SetDisconnectedState();
             UpdateFPSLimiterElevationUI();
+            UpdateOSDStatusUI();
 
             if (isRestartingElevated)
             {
@@ -1122,7 +1138,7 @@ namespace XboxGamingBar
             bool isLimitFPSOn = LimitFPSToggle != null && LimitFPSToggle.IsOn;
             bool isJudderFree = JudderFreeFPSToggle != null && JudderFreeFPSToggle.IsOn;
 
-            if (IsElevationMismatch || !isLimitFPSOn)
+            if (IsElevationMismatch || !IsRTSSRunning || !isLimitFPSOn)
             {
                 FPSLimitSlider.Visibility = Visibility.Collapsed;
                 FPSLimitJudderFreeSlider.Visibility = Visibility.Collapsed;
@@ -1189,11 +1205,91 @@ namespace XboxGamingBar
 
             if (FPSLimitElevationWarningCard == null || FPSLimitElevationWarningBadge == null) return;
 
+            bool isRtssRunning = IsRTSSRunning;
             bool isMismatch = IsElevationMismatch;
 
-            if (isMismatch)
+            if (App.Connection != null && !isRtssRunning)
             {
                 limitFPS?.EnableControl(false);
+                if (FPSLimitValueBadge != null)
+                {
+                    FPSLimitValueBadge.Visibility = Visibility.Collapsed;
+                }
+                if (FPSLimitElevationWarningBadge != null)
+                {
+                    FPSLimitElevationWarningBadge.Visibility = Visibility.Collapsed;
+                }
+                if (FPSLimitElevationWarningCard != null)
+                {
+                    FPSLimitElevationWarningCard.Visibility = Visibility.Collapsed;
+                }
+
+                if (FPSLimitRTSSWarningBadge != null)
+                {
+                    if (FPSLimitRTSSWarningBadgeText != null)
+                    {
+                        FPSLimitRTSSWarningBadgeText.Text = (rtssElevation != null && rtssElevation.Value == -1)
+                            ? "NOT INSTALLED"
+                            : "RTSS NOT RUNNING";
+                    }
+                    FPSLimitRTSSWarningBadge.Visibility = Visibility.Visible;
+                }
+
+                if (FPSLimitRTSSWarningCard != null)
+                {
+                    if (rtssElevation != null && rtssElevation.Value == -1)
+                    {
+                        if (FPSLimitRTSSWarningTitleText != null)
+                        {
+                            FPSLimitRTSSWarningTitleText.Text = "RTSS Not Installed";
+                        }
+                        if (FPSLimitRTSSWarningDescText != null)
+                        {
+                            FPSLimitRTSSWarningDescText.Text = "RivaTuner Statistics Server was not detected on this system. Install RTSS to enable framerate limiting and frame pacing.";
+                        }
+                    }
+                    else
+                    {
+                        if (FPSLimitRTSSWarningTitleText != null)
+                        {
+                            FPSLimitRTSSWarningTitleText.Text = "RTSS is Not Running";
+                        }
+                        if (FPSLimitRTSSWarningDescText != null)
+                        {
+                            FPSLimitRTSSWarningDescText.Text = "RivaTuner Statistics Server is required for framerate limiting and frame pacing. Start RTSS to enable framerate controls.";
+                        }
+                    }
+                    FPSLimitRTSSWarningCard.Visibility = Visibility.Visible;
+                }
+
+                if (FPSLimitSubtitleText != null)
+                {
+                    FPSLimitSubtitleText.Text = (rtssElevation != null && rtssElevation.Value == -1)
+                        ? "RivaTuner Statistics Server is not installed"
+                        : "Requires RivaTuner Statistics Server to be running";
+                }
+
+                if (FPSLimitSettingsContainer != null)
+                {
+                    FPSLimitSettingsContainer.Visibility = Visibility.Collapsed;
+                }
+                if (FPSLimitSlider != null)
+                {
+                    FPSLimitSlider.IsEnabled = false;
+                }
+            }
+            else if (isMismatch)
+            {
+                limitFPS?.EnableControl(false);
+                if (FPSLimitRTSSWarningBadge != null)
+                {
+                    FPSLimitRTSSWarningBadge.Visibility = Visibility.Collapsed;
+                }
+                if (FPSLimitRTSSWarningCard != null)
+                {
+                    FPSLimitRTSSWarningCard.Visibility = Visibility.Collapsed;
+                }
+
                 FPSLimitElevationWarningBadge.Visibility = Visibility.Visible;
                 if (FPSLimitValueBadge != null)
                 {
@@ -1215,8 +1311,17 @@ namespace XboxGamingBar
             }
             else
             {
+                if (FPSLimitRTSSWarningBadge != null)
+                {
+                    FPSLimitRTSSWarningBadge.Visibility = Visibility.Collapsed;
+                }
+                if (FPSLimitRTSSWarningCard != null)
+                {
+                    FPSLimitRTSSWarningCard.Visibility = Visibility.Collapsed;
+                }
                 FPSLimitElevationWarningBadge.Visibility = Visibility.Collapsed;
                 FPSLimitElevationWarningCard.Visibility = Visibility.Collapsed;
+
                 if (FPSLimitSubtitleText != null)
                 {
                     FPSLimitSubtitleText.Text = "Cap framerate via RTSS to stabilize frametimes";
@@ -1239,6 +1344,169 @@ namespace XboxGamingBar
                 }
             }
             UpdateFPSLimitSliderJudderFree();
+        }
+
+        public void UpdateOSDStatusUI()
+        {
+            if (Dispatcher != null && !Dispatcher.HasThreadAccess)
+            {
+                var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateOSDStatusUI());
+                return;
+            }
+
+            if (OSDRTSSWarningCard == null || OSDRTSSWarningBadge == null) return;
+
+            bool isRtssRunning = IsRTSSRunning;
+            bool isMismatch = IsElevationMismatch;
+
+            if (App.Connection != null && !isRtssRunning)
+            {
+                onScreenDisplayProviderInstalled?.EnableControl(false);
+                osdTextSize?.EnableControl(false);
+
+                if (OSDElevationWarningBadge != null)
+                {
+                    OSDElevationWarningBadge.Visibility = Visibility.Collapsed;
+                }
+                if (OSDElevationWarningCard != null)
+                {
+                    OSDElevationWarningCard.Visibility = Visibility.Collapsed;
+                }
+
+                if (OSDRTSSWarningBadge != null)
+                {
+                    if (OSDRTSSWarningBadgeText != null)
+                    {
+                        OSDRTSSWarningBadgeText.Text = (rtssElevation != null && rtssElevation.Value == -1)
+                            ? "NOT INSTALLED"
+                            : "RTSS NOT RUNNING";
+                    }
+                    OSDRTSSWarningBadge.Visibility = Visibility.Visible;
+                }
+
+                if (OSDRTSSWarningCard != null)
+                {
+                    if (rtssElevation != null && rtssElevation.Value == -1)
+                    {
+                        if (OSDRTSSWarningTitleText != null)
+                        {
+                            OSDRTSSWarningTitleText.Text = "RTSS Not Installed";
+                        }
+                        if (OSDRTSSWarningDescText != null)
+                        {
+                            OSDRTSSWarningDescText.Text = "RivaTuner Statistics Server was not detected on this system. Install RTSS to enable the overlay.";
+                        }
+                    }
+                    else
+                    {
+                        if (OSDRTSSWarningTitleText != null)
+                        {
+                            OSDRTSSWarningTitleText.Text = "RTSS is Not Running";
+                        }
+                        if (OSDRTSSWarningDescText != null)
+                        {
+                            OSDRTSSWarningDescText.Text = "RivaTuner Statistics Server is required for on-screen metrics display. Start RTSS to enable the overlay.";
+                        }
+                    }
+                    OSDRTSSWarningCard.Visibility = Visibility.Visible;
+                }
+
+                if (OSDSubtitleText != null)
+                {
+                    OSDSubtitleText.Text = (rtssElevation != null && rtssElevation.Value == -1)
+                        ? "RivaTuner Statistics Server is not installed"
+                        : "Requires RivaTuner Statistics Server to be running";
+                }
+
+                if (OSDControlsContainer != null)
+                {
+                    OSDControlsContainer.Visibility = Visibility.Collapsed;
+                }
+                if (PerformanceOverlaySlider != null)
+                {
+                    PerformanceOverlaySlider.IsEnabled = false;
+                }
+                if (OverlayTextSizeSlider != null)
+                {
+                    OverlayTextSizeSlider.IsEnabled = false;
+                }
+            }
+            else if (isMismatch)
+            {
+                onScreenDisplayProviderInstalled?.EnableControl(false);
+                osdTextSize?.EnableControl(false);
+
+                if (OSDRTSSWarningBadge != null)
+                {
+                    OSDRTSSWarningBadge.Visibility = Visibility.Collapsed;
+                }
+                if (OSDRTSSWarningCard != null)
+                {
+                    OSDRTSSWarningCard.Visibility = Visibility.Collapsed;
+                }
+
+                if (OSDElevationWarningBadge != null)
+                {
+                    OSDElevationWarningBadge.Visibility = Visibility.Visible;
+                }
+                if (OSDElevationWarningCard != null)
+                {
+                    OSDElevationWarningCard.Visibility = Visibility.Visible;
+                }
+
+                if (OSDSubtitleText != null)
+                {
+                    OSDSubtitleText.Text = "Requires Administrator privileges to modify RTSS overlay";
+                }
+
+                if (OSDControlsContainer != null)
+                {
+                    OSDControlsContainer.Visibility = Visibility.Collapsed;
+                }
+                if (PerformanceOverlaySlider != null)
+                {
+                    PerformanceOverlaySlider.IsEnabled = false;
+                }
+                if (OverlayTextSizeSlider != null)
+                {
+                    OverlayTextSizeSlider.IsEnabled = false;
+                }
+            }
+            else
+            {
+                if (OSDRTSSWarningBadge != null)
+                {
+                    OSDRTSSWarningBadge.Visibility = Visibility.Collapsed;
+                }
+                if (OSDRTSSWarningCard != null)
+                {
+                    OSDRTSSWarningCard.Visibility = Visibility.Collapsed;
+                }
+                if (OSDElevationWarningBadge != null)
+                {
+                    OSDElevationWarningBadge.Visibility = Visibility.Collapsed;
+                }
+                if (OSDElevationWarningCard != null)
+                {
+                    OSDElevationWarningCard.Visibility = Visibility.Collapsed;
+                }
+
+                if (OSDSubtitleText != null)
+                {
+                    OSDSubtitleText.Text = "RTSS / ADLX in-game metrics overlay";
+                }
+
+                if (OSDControlsContainer != null)
+                {
+                    OSDControlsContainer.Visibility = Visibility.Visible;
+                }
+
+                if (App.Connection != null)
+                {
+                    onScreenDisplayProviderInstalled?.EnableControl(true);
+                    osdTextSize?.EnableControl(true);
+                }
+            }
         }
 
         private async void RenderJudderFreeMarkers()

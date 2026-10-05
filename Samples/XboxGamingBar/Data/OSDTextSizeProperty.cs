@@ -8,5 +8,15 @@ namespace XboxGamingBar.Data
         public OSDTextSizeProperty(int inValue, Slider inControl, Page inOwner) : base(inValue, Function.OSDTextSize, inControl, inOwner)
         {
         }
+
+        protected override void SetControlEnabled(bool isEnabled)
+        {
+            if (Owner is GamingWidget widget && (widget.IsElevationMismatch || !widget.IsRTSSRunning))
+            {
+                base.SetControlEnabled(false);
+                return;
+            }
+            base.SetControlEnabled(isEnabled);
+        }
     }
 }
