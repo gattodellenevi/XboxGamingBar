@@ -19,6 +19,15 @@ namespace XboxGamingBar.Data
         private readonly TextBlock ramUsageText;
         private readonly TextBlock ramUsedText;
 
+        private readonly TextBlock quickCpuUsageText;
+        private readonly TextBlock quickCpuWattageText;
+        private readonly TextBlock quickGpuUsageText;
+        private readonly TextBlock quickGpuWattageText;
+        private readonly TextBlock quickVramUsageText;
+        private readonly TextBlock quickVramUsedText;
+        private readonly TextBlock quickRamUsageText;
+        private readonly TextBlock quickRamUsedText;
+
         public HardwareTelemetryProperty(
             TextBlock inCpuUsageText,
             TextBlock inCpuWattageText,
@@ -28,7 +37,15 @@ namespace XboxGamingBar.Data
             TextBlock inVramUsedText,
             TextBlock inRamUsageText,
             TextBlock inRamUsedText,
-            Page inOwner)
+            Page inOwner,
+            TextBlock inQuickCpuUsageText = null,
+            TextBlock inQuickCpuWattageText = null,
+            TextBlock inQuickGpuUsageText = null,
+            TextBlock inQuickGpuWattageText = null,
+            TextBlock inQuickVramUsageText = null,
+            TextBlock inQuickVramUsedText = null,
+            TextBlock inQuickRamUsageText = null,
+            TextBlock inQuickRamUsedText = null)
             : base(string.Empty, null, Function.HardwareTelemetry)
         {
             owner = inOwner;
@@ -40,6 +57,15 @@ namespace XboxGamingBar.Data
             vramUsedText = inVramUsedText;
             ramUsageText = inRamUsageText;
             ramUsedText = inRamUsedText;
+
+            quickCpuUsageText = inQuickCpuUsageText;
+            quickCpuWattageText = inQuickCpuWattageText;
+            quickGpuUsageText = inQuickGpuUsageText;
+            quickGpuWattageText = inQuickGpuWattageText;
+            quickVramUsageText = inQuickVramUsageText;
+            quickVramUsedText = inQuickVramUsedText;
+            quickRamUsageText = inQuickRamUsageText;
+            quickRamUsedText = inQuickRamUsedText;
         }
 
         public override bool SetValue(object newValue, long updatedTime = 0)
@@ -85,6 +111,15 @@ namespace XboxGamingBar.Data
                 if (vramUsedText != null) vramUsedText.Text = "-- GB";
                 if (ramUsageText != null) ramUsageText.Text = "--%";
                 if (ramUsedText != null) ramUsedText.Text = "-- GB";
+
+                if (quickCpuUsageText != null) quickCpuUsageText.Text = "--%";
+                if (quickCpuWattageText != null) quickCpuWattageText.Text = "--W";
+                if (quickGpuUsageText != null) quickGpuUsageText.Text = "--%";
+                if (quickGpuWattageText != null) quickGpuWattageText.Text = "--W";
+                if (quickVramUsageText != null) quickVramUsageText.Text = "--%";
+                if (quickVramUsedText != null) quickVramUsedText.Text = "-- GB";
+                if (quickRamUsageText != null) quickRamUsageText.Text = "--%";
+                if (quickRamUsedText != null) quickRamUsedText.Text = "-- GB";
             });
         }
 
@@ -108,43 +143,49 @@ namespace XboxGamingBar.Data
 
             var _ = owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
             {
-                if (cpuUsageText != null)
-                    cpuUsageText.Text = (cpuUsage >= 0) ? $"{Math.Round(cpuUsage)}%" : "--%";
+                string cpuUsageStr = (cpuUsage >= 0) ? $"{Math.Round(cpuUsage)}%" : "--%";
+                if (cpuUsageText != null) cpuUsageText.Text = cpuUsageStr;
+                if (quickCpuUsageText != null) quickCpuUsageText.Text = cpuUsageStr;
 
-                if (cpuWattageText != null)
-                {
-                    if (cpuWatt > 0)
-                        cpuWattageText.Text = $"{Math.Round(cpuWatt)}W";
-                    else if (cpuClock > 0)
-                        cpuWattageText.Text = $"{Math.Round(cpuClock)} MHz";
-                    else
-                        cpuWattageText.Text = "--W";
-                }
+                string cpuWattStr;
+                if (cpuWatt > 0)
+                    cpuWattStr = $"{Math.Round(cpuWatt)}W";
+                else if (cpuClock > 0)
+                    cpuWattStr = $"{Math.Round(cpuClock)} MHz";
+                else
+                    cpuWattStr = "--W";
+                if (cpuWattageText != null) cpuWattageText.Text = cpuWattStr;
+                if (quickCpuWattageText != null) quickCpuWattageText.Text = cpuWattStr;
 
-                if (gpuUsageText != null)
-                    gpuUsageText.Text = (gpuUsage >= 0) ? $"{Math.Round(gpuUsage)}%" : "--%";
+                string gpuUsageStr = (gpuUsage >= 0) ? $"{Math.Round(gpuUsage)}%" : "--%";
+                if (gpuUsageText != null) gpuUsageText.Text = gpuUsageStr;
+                if (quickGpuUsageText != null) quickGpuUsageText.Text = gpuUsageStr;
 
-                if (gpuWattageText != null)
-                {
-                    if (gpuWatt >= 0)
-                        gpuWattageText.Text = $"{Math.Round(gpuWatt)}W";
-                    else if (gpuClock > 0)
-                        gpuWattageText.Text = $"{Math.Round(gpuClock)} MHz";
-                    else
-                        gpuWattageText.Text = "--W";
-                }
+                string gpuWattStr;
+                if (gpuWatt >= 0)
+                    gpuWattStr = $"{Math.Round(gpuWatt)}W";
+                else if (gpuClock > 0)
+                    gpuWattStr = $"{Math.Round(gpuClock)} MHz";
+                else
+                    gpuWattStr = "--W";
+                if (gpuWattageText != null) gpuWattageText.Text = gpuWattStr;
+                if (quickGpuWattageText != null) quickGpuWattageText.Text = gpuWattStr;
 
-                if (vramUsageText != null)
-                    vramUsageText.Text = (vramPercent >= 0) ? $"{Math.Round(vramPercent)}%" : "--%";
+                string vramPercentStr = (vramPercent >= 0) ? $"{Math.Round(vramPercent)}%" : "--%";
+                if (vramUsageText != null) vramUsageText.Text = vramPercentStr;
+                if (quickVramUsageText != null) quickVramUsageText.Text = vramPercentStr;
 
-                if (vramUsedText != null)
-                    vramUsedText.Text = (vramUsedGb >= 0) ? $"{vramUsedGb:F1} GB" : "-- GB";
+                string vramUsedStr = (vramUsedGb >= 0) ? $"{vramUsedGb:F1} GB" : "-- GB";
+                if (vramUsedText != null) vramUsedText.Text = vramUsedStr;
+                if (quickVramUsedText != null) quickVramUsedText.Text = vramUsedStr;
 
-                if (ramUsageText != null)
-                    ramUsageText.Text = (ramPercent >= 0) ? $"{Math.Round(ramPercent)}%" : "--%";
+                string ramPercentStr = (ramPercent >= 0) ? $"{Math.Round(ramPercent)}%" : "--%";
+                if (ramUsageText != null) ramUsageText.Text = ramPercentStr;
+                if (quickRamUsageText != null) quickRamUsageText.Text = ramPercentStr;
 
-                if (ramUsedText != null)
-                    ramUsedText.Text = (ramUsedGb >= 0) ? $"{ramUsedGb:F1} GB" : "-- GB";
+                string ramUsedStr = (ramUsedGb >= 0) ? $"{ramUsedGb:F1} GB" : "-- GB";
+                if (ramUsedText != null) ramUsedText.Text = ramUsedStr;
+                if (quickRamUsedText != null) quickRamUsedText.Text = ramUsedStr;
             });
         }
 

@@ -1,6 +1,7 @@
 using NLog;
 using Shared.Data;
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace XboxGamingBarHelper.Systems
@@ -177,13 +178,16 @@ namespace XboxGamingBarHelper.Systems
 
         public static ControllerBattery GetCurrentBatteryStatus()
         {
+            var list = new List<ControllerBatteryInfo>();
+            var coveredIndices = new HashSet<int>();
+
             // 1. Try Windows.Gaming.Input for detailed battery percentages
             try
             {
                 var gamepads = global::Windows.Gaming.Input.Gamepad.Gamepads;
                 if (gamepads != null && gamepads.Count > 0)
                 {
-                    for (int i = 0; i < gamepads.Count; i++)
+                    for (int i = 0; i < gamepads.Count && list.Count < 4; i++)
                     {
                         var gp = gamepads[i];
                         DetermineGamepadDetails(gp, i, out string deviceName, out string connectionType, out bool isWireless);
@@ -193,15 +197,18 @@ namespace XboxGamingBarHelper.Systems
                         {
                             if (!isWireless)
                             {
-                                return new ControllerBattery
+                                list.Add(new ControllerBatteryInfo
                                 {
+                                    Index = i,
                                     IsConnected = true,
                                     BatteryLevel = 100,
                                     LevelCategory = "Wired",
                                     BatteryType = "Wired",
                                     IsCharging = true,
                                     DeviceName = deviceName
-                                };
+                                });
+                                coveredIndices.Add(i);
+                                continue;
                             }
 
                             if (report.RemainingCapacityInMilliwattHours.HasValue &&
@@ -211,29 +218,106 @@ namespace XboxGamingBarHelper.Systems
                                 int pct = (int)Math.Clamp(Math.Round((double)report.RemainingCapacityInMilliwattHours.Value * 100.0 / report.FullChargeCapacityInMilliwattHours.Value), 0, 100);
                                 bool isCharging = report.Status == global::Windows.System.Power.BatteryStatus.Charging;
                                 string cat = pct >= 70 ? "Full" : (pct >= 35 ? "Medium" : (pct >= 15 ? "Low" : "Empty"));
-                                return new ControllerBattery
+                                list.Add(new ControllerBatteryInfo
                                 {
+                                    Index = i,
                                     IsConnected = true,
                                     BatteryLevel = pct,
                                     LevelCategory = cat,
                                     BatteryType = isCharging ? "Wired" : connectionType,
                                     IsCharging = isCharging,
                                     DeviceName = deviceName
-                                };
+                                });
+                                coveredIndices.Add(i);
+                                continue;
                             }
                             else if (report.Status == global::Windows.System.Power.BatteryStatus.Charging)
                             {
-                                return new ControllerBattery
+                                list.Add(new ControllerBatteryInfo
                                 {
+                                    Index = i,
                                     IsConnected = true,
                                     BatteryLevel = 100,
                                     LevelCategory = "Wired",
                                     BatteryType = "Wired",
                                     IsCharging = true,
                                     DeviceName = deviceName
-                                };
+                                });
+                                coveredIndices.Add(i);
+                                continue;
                             }
                         }
+
+                        // If report didn't have detailed capacity, try XInput for this slot
+                        var xinfo = new XINPUT_BATTERY_INFORMATION();
+                        uint res = SafeXInputGetBattery((uint)i, BATTERY_DEVTYPE_GAMEPAD, ref xinfo);
+                        if (res == 0 && xinfo.BatteryType != BATTERY_TYPE_DISCONNECTED)
+                        {
+                            if (xinfo.BatteryType == BATTERY_TYPE_WIRED)
+                            {
+                                list.Add(new ControllerBatteryInfo
+                                {
+                                    Index = i,
+                                    IsConnected = true,
+                                    BatteryLevel = 100,
+                                    LevelCategory = "Wired",
+                                    BatteryType = "Wired",
+                                    IsCharging = true,
+                                    DeviceName = deviceName
+                                });
+                            }
+                            else
+                            {
+                                int level = 95;
+                                string cat = "Full";
+                                switch (xinfo.BatteryLevel)
+                                {
+                                    case BATTERY_LEVEL_EMPTY:
+                                        level = 10;
+                                        cat = "Empty";
+                                        break;
+                                    case BATTERY_LEVEL_LOW:
+                                        level = 25;
+                                        cat = "Low";
+                                        break;
+                                    case BATTERY_LEVEL_MEDIUM:
+                                        level = 60;
+                                        cat = "Medium";
+                                        break;
+                                    case BATTERY_LEVEL_FULL:
+                                    default:
+                                        level = 95;
+                                        cat = "Full";
+                                        break;
+                                }
+
+                                list.Add(new ControllerBatteryInfo
+                                {
+                                    Index = i,
+                                    IsConnected = true,
+                                    BatteryLevel = level,
+                                    LevelCategory = cat,
+                                    BatteryType = connectionType,
+                                    IsCharging = false,
+                                    DeviceName = deviceName
+                                });
+                            }
+                            coveredIndices.Add(i);
+                            continue;
+                        }
+
+                        // Fallback if neither reported detailed battery:
+                        list.Add(new ControllerBatteryInfo
+                        {
+                            Index = i,
+                            IsConnected = true,
+                            BatteryLevel = 100,
+                            LevelCategory = "Connected",
+                            BatteryType = isWireless ? connectionType : "Wired",
+                            IsCharging = false,
+                            DeviceName = deviceName
+                        });
+                        coveredIndices.Add(i);
                     }
                 }
             }
@@ -242,9 +326,11 @@ namespace XboxGamingBarHelper.Systems
                 Logger.Debug(ex, "Windows.Gaming.Input battery query exception.");
             }
 
-            // 2. Query XInput for wireless or wired controllers (User index 0 - 3)
-            for (uint userIndex = 0; userIndex < 4; userIndex++)
+            // 2. Query XInput for any remaining slots (0 - 3)
+            for (uint userIndex = 0; userIndex < 4 && list.Count < 4; userIndex++)
             {
+                if (coveredIndices.Contains((int)userIndex)) continue;
+
                 var xinfo = new XINPUT_BATTERY_INFORMATION();
                 uint res = SafeXInputGetBattery(userIndex, BATTERY_DEVTYPE_GAMEPAD, ref xinfo);
 
@@ -252,50 +338,70 @@ namespace XboxGamingBarHelper.Systems
                 {
                     if (xinfo.BatteryType == BATTERY_TYPE_WIRED)
                     {
-                        return new ControllerBattery
+                        list.Add(new ControllerBatteryInfo
                         {
+                            Index = (int)userIndex,
                             IsConnected = true,
                             BatteryLevel = 100,
                             LevelCategory = "Wired",
                             BatteryType = "Wired",
                             IsCharging = true,
                             DeviceName = $"Xbox Controller {userIndex + 1}"
-                        };
+                        });
                     }
-
-                    int level = 95;
-                    string cat = "Full";
-                    switch (xinfo.BatteryLevel)
+                    else
                     {
-                        case BATTERY_LEVEL_EMPTY:
-                            level = 10;
-                            cat = "Empty";
-                            break;
-                        case BATTERY_LEVEL_LOW:
-                            level = 25;
-                            cat = "Low";
-                            break;
-                        case BATTERY_LEVEL_MEDIUM:
-                            level = 60;
-                            cat = "Medium";
-                            break;
-                        case BATTERY_LEVEL_FULL:
-                        default:
-                            level = 95;
-                            cat = "Full";
-                            break;
+                        int level = 95;
+                        string cat = "Full";
+                        switch (xinfo.BatteryLevel)
+                        {
+                            case BATTERY_LEVEL_EMPTY:
+                                level = 10;
+                                cat = "Empty";
+                                break;
+                            case BATTERY_LEVEL_LOW:
+                                level = 25;
+                                cat = "Low";
+                                break;
+                            case BATTERY_LEVEL_MEDIUM:
+                                level = 60;
+                                cat = "Medium";
+                                break;
+                            case BATTERY_LEVEL_FULL:
+                            default:
+                                level = 95;
+                                cat = "Full";
+                                break;
+                        }
+
+                        list.Add(new ControllerBatteryInfo
+                        {
+                            Index = (int)userIndex,
+                            IsConnected = true,
+                            BatteryLevel = level,
+                            LevelCategory = cat,
+                            BatteryType = "Xbox Wireless",
+                            IsCharging = false,
+                            DeviceName = $"Xbox Controller {userIndex + 1}"
+                        });
                     }
-
-                    return new ControllerBattery
-                    {
-                        IsConnected = true,
-                        BatteryLevel = level,
-                        LevelCategory = cat,
-                        BatteryType = "Xbox Wireless",
-                        IsCharging = false,
-                        DeviceName = $"Xbox Controller {userIndex + 1}"
-                    };
+                    coveredIndices.Add((int)userIndex);
                 }
+            }
+
+            if (list.Count > 0)
+            {
+                var primary = list[0];
+                return new ControllerBattery
+                {
+                    IsConnected = true,
+                    BatteryLevel = primary.BatteryLevel,
+                    LevelCategory = primary.LevelCategory,
+                    BatteryType = primary.BatteryType,
+                    IsCharging = primary.IsCharging,
+                    DeviceName = primary.DeviceName,
+                    Controllers = list.ToArray()
+                };
             }
 
             return ControllerBattery.Disconnected;

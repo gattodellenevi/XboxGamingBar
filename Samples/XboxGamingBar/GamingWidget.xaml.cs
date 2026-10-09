@@ -58,6 +58,8 @@ namespace XboxGamingBar
         private readonly RefreshRateProperty refreshRate;
         private readonly ResolutionProperty resolution;
         private readonly ResolutionsProperty resolutions;
+        private readonly HDRProperty hdr;
+        private readonly HDRSupportedProperty hdrSupported;
         private readonly TrackedGameProperty trackedGame;
         private readonly OnScreenDisplayProviderInstalledProperty onScreenDisplayProviderInstalled;
         private readonly IsForegroundProperty isForeground;
@@ -96,7 +98,6 @@ namespace XboxGamingBar
         private readonly MouseSpeedProperty mouseSpeed;
         private readonly MouseScrollSpeedProperty mouseScrollSpeed;
         private readonly MouseEnhancePointerPrecisionProperty mouseEnhancePointerPrecision;
-        private bool isElevationFlyoutOpen = false;
 
         public bool IsElevationMismatch => App.Connection != null &&
                                            rtssElevation != null &&
@@ -109,22 +110,44 @@ namespace XboxGamingBar
                                      rtssElevation.Value > 0;
 
         private readonly WidgetProperties properties;
+        private const string SETTING_LAST_ACTIVE_OSD_LEVEL = "LastActiveOSDLevel";
+        private int _lastActiveOsdLevel = 1;
 
         public GamingWidget()
         {
             InitializeComponent();
+            LoadLastActiveOsdLevel();
             osd = new OSDProperty(0, PerformanceOverlaySlider, this);
             osdTextSize = new OSDTextSizeProperty(100, OverlayTextSizeSlider, this);
             runningGame = new RunningGameProperty(RunningGameText, PerGameProfileToggle, this);
             perGameProfile = new PerGameProfileProperty(PerGameProfileToggle, this);
             refreshRates = new RefreshRatesProperty(RefreshRatesComboBox, this);
-            refreshRate = new RefreshRateProperty(RefreshRatesComboBox, this, FPSLimitSlider);
+            refreshRate = new RefreshRateProperty(RefreshRatesComboBox, this);
             resolutions = new ResolutionsProperty(ResolutionsComboBox, this);
             resolution = new ResolutionProperty(ResolutionsComboBox, this);
-            helperElevation = new HelperElevationProperty(HelperElevationBadge, HelperElevationBadgeText, HelperStatusSubtitleText, HeroElevationWarningButton, HeroElevationWarningIcon, HeroElevationWarningText, this);
+            hdr = new HDRProperty(HDRToggle, this);
+            hdrSupported = new HDRSupportedProperty(HDRToggle, this);
+            helperElevation = new HelperElevationProperty(HelperElevationBadge, HelperElevationBadgeText, HelperStatusSubtitleText, this);
             rtssElevation = new RTSSElevationProperty(RTSSElevationBadge, RTSSElevationBadgeText, RTSSStatusSubtitleText, this);
             hardwareProviderProperty = new HardwareProviderProperty(HardwareProviderBadge, HardwareProviderBadgeText, HardwareProviderSubtitleText, this);
-            hardwareTelemetry = new HardwareTelemetryProperty(LiveCPUUsageText, LiveCPUWattageText, LiveGPUUsageText, LiveGPUWattageText, LiveVRAMUsageText, LiveVRAMUsedText, LiveRAMUsageText, LiveRAMUsedText, this);
+            hardwareTelemetry = new HardwareTelemetryProperty(
+                LiveCPUUsageText,
+                LiveCPUWattageText,
+                LiveGPUUsageText,
+                LiveGPUWattageText,
+                LiveVRAMUsageText,
+                LiveVRAMUsedText,
+                LiveRAMUsageText,
+                LiveRAMUsedText,
+                this,
+                QuickCPUUsageText,
+                QuickCPUWattageText,
+                QuickGPUUsageText,
+                QuickGPUWattageText,
+                QuickVRAMUsageText,
+                QuickVRAMUsedText,
+                QuickRAMUsageText,
+                QuickRAMUsedText);
             gameInputStatus = new GameInputStatusProperty(GameInputStatusBadge, GameInputStatusBadgeText, GameInputStatusSubtitleText, this);
             mouseSpeed = new MouseSpeedProperty(10, MouseSpeedSlider, this);
             mouseScrollSpeed = new MouseScrollSpeedProperty(3, MouseScrollSpeedSlider, this);
@@ -149,6 +172,7 @@ namespace XboxGamingBar
             amdRadeonChillSupported = new AMDRadeonChillSupportedProperty(AMDRadeonChillToggle, this);
             amdRadeonChillMinFPSProperty = new AMDRadeonChillMinFPSProperty(AMDRadeonChillMinFPSSlider, this);
             amdRadeonChillMaxFPSProperty = new AMDRadeonChillMaxFPSProperty(AMDRadeonChillMaxFPSSlider, this);
+
             focusingOnOSDSlider = new FocusingOnOSDSliderProperty(PerformanceOverlaySlider, this);
             limitFPS = new LimitFPSProperty(LimitFPSToggle, this);
             fpsLimit = new FPSLimitProperty(60, FPSLimitSlider, this);
@@ -156,6 +180,74 @@ namespace XboxGamingBar
             judderFreeFPS = new JudderFreeFPSProperty(JudderFreeFPSToggle, this);
             gpuTarget = new GpuTargetProperty(DiscreteGpuButton, IntegratedGpuButton, this);
             dualGpuSupport = new DualGpuSupportProperty(GpuSelectionCard, GpuSelectionSubtitleText, DiscreteGpuButton, IntegratedGpuButton, this);
+            var quickGamepadUI = new QuickGamepadUIElements
+            {
+                Section = QuickGamepadSection,
+                Buttons = new[]
+                {
+                    new QuickGamepadButtonUI
+                    {
+                        Button = QuickGamepadButton1,
+                        Icon = QuickGamepadIcon1,
+                        Name = QuickGamepadName1,
+                        Subtitle = QuickGamepadSubtitle1,
+                        Badge = QuickGamepadBadge1,
+                        BadgeText = QuickGamepadBadgeText1,
+                        FlyoutIcon = QuickGamepadFlyoutIcon1,
+                        FlyoutName = QuickGamepadFlyoutName1,
+                        FlyoutSubtitle = QuickGamepadFlyoutSubtitle1,
+                        FlyoutPercent = QuickGamepadFlyoutPercent1,
+                        FlyoutType = QuickGamepadFlyoutType1,
+                        FlyoutStatus = QuickGamepadFlyoutStatus1,
+                    },
+                    new QuickGamepadButtonUI
+                    {
+                        Button = QuickGamepadButton2,
+                        Icon = QuickGamepadIcon2,
+                        Name = QuickGamepadName2,
+                        Subtitle = QuickGamepadSubtitle2,
+                        Badge = QuickGamepadBadge2,
+                        BadgeText = QuickGamepadBadgeText2,
+                        FlyoutIcon = QuickGamepadFlyoutIcon2,
+                        FlyoutName = QuickGamepadFlyoutName2,
+                        FlyoutSubtitle = QuickGamepadFlyoutSubtitle2,
+                        FlyoutPercent = QuickGamepadFlyoutPercent2,
+                        FlyoutType = QuickGamepadFlyoutType2,
+                        FlyoutStatus = QuickGamepadFlyoutStatus2,
+                    },
+                    new QuickGamepadButtonUI
+                    {
+                        Button = QuickGamepadButton3,
+                        Icon = QuickGamepadIcon3,
+                        Name = QuickGamepadName3,
+                        Subtitle = QuickGamepadSubtitle3,
+                        Badge = QuickGamepadBadge3,
+                        BadgeText = QuickGamepadBadgeText3,
+                        FlyoutIcon = QuickGamepadFlyoutIcon3,
+                        FlyoutName = QuickGamepadFlyoutName3,
+                        FlyoutSubtitle = QuickGamepadFlyoutSubtitle3,
+                        FlyoutPercent = QuickGamepadFlyoutPercent3,
+                        FlyoutType = QuickGamepadFlyoutType3,
+                        FlyoutStatus = QuickGamepadFlyoutStatus3,
+                    },
+                    new QuickGamepadButtonUI
+                    {
+                        Button = QuickGamepadButton4,
+                        Icon = QuickGamepadIcon4,
+                        Name = QuickGamepadName4,
+                        Subtitle = QuickGamepadSubtitle4,
+                        Badge = QuickGamepadBadge4,
+                        BadgeText = QuickGamepadBadgeText4,
+                        FlyoutIcon = QuickGamepadFlyoutIcon4,
+                        FlyoutName = QuickGamepadFlyoutName4,
+                        FlyoutSubtitle = QuickGamepadFlyoutSubtitle4,
+                        FlyoutPercent = QuickGamepadFlyoutPercent4,
+                        FlyoutType = QuickGamepadFlyoutType4,
+                        FlyoutStatus = QuickGamepadFlyoutStatus4,
+                    }
+                }
+            };
+
             controllerBattery = new ControllerBatteryProperty(
                 ControllerBatteryBadge,
                 ControllerBatteryIcon,
@@ -169,6 +261,7 @@ namespace XboxGamingBar
                 ControllerBatteryStatusBadge,
                 ControllerBatteryStatusBadgeText,
                 ControllerBatteryStatusSubtitleText,
+                quickGamepadUI,
                 this);
 
             JudderFreeFPSToggle.Toggled += JudderFreeFPSToggle_Toggled;
@@ -176,15 +269,39 @@ namespace XboxGamingBar
             {
                 UpdateFPSLimitSliderJudderFree();
                 UpdateFPSLimiterElevationUI();
+                UpdateQuickFPSLimitButtonUI();
+            };
+            FPSLimitSlider.ValueChanged += (s, e) =>
+            {
+                UpdateQuickFPSLimitButtonUI();
             };
             FPSLimitJudderFreeSlider.ValueChanged += FPSLimitJudderFreeSlider_ValueChanged;
             WidgetSliderProperty.AttachEngagementHandler(FPSLimitJudderFreeSlider);
             FPSLimitJudderFreeCanvas.SizeChanged += (s, e) => RenderJudderFreeMarkers();
-            PerformanceOverlaySlider.ValueChanged += (s, e) => UpdateOSDSegmentedButtons((int)e.NewValue);
+            PerformanceOverlaySlider.ValueChanged += (s, e) =>
+            {
+                int newLevel = (int)e.NewValue;
+                if (newLevel > 0)
+                {
+                    _lastActiveOsdLevel = newLevel;
+                    SaveLastActiveOsdLevel(newLevel);
+                }
+                UpdateOSDSegmentedButtons(newLevel);
+                UpdateQuickOSDButtonUI(newLevel);
+            };
             UpdateOSDSegmentedButtons((int)PerformanceOverlaySlider.Value);
+            UpdateQuickOSDButtonUI((int)PerformanceOverlaySlider.Value);
+            UpdateQuickFPSLimitButtonUI();
             judderFreeFPS.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(judderFreeFPS.Value))
+                {
+                    UpdateFPSLimitSliderJudderFree();
+                }
+            };
+            refreshRates.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(refreshRates.Value))
                 {
                     UpdateFPSLimitSliderJudderFree();
                 }
@@ -194,13 +311,42 @@ namespace XboxGamingBar
                 if (e.PropertyName == nameof(refreshRate.Value))
                 {
                     UpdateFPSLimitSliderJudderFree();
+                    var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateQuickDisplayInfo());
                 }
+            };
+            resolution.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(resolution.Value))
+                {
+                    var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateQuickDisplayInfo());
+                }
+            };
+            hdr.PropertyChanged += (s, e) =>
+            {
+                var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    UpdateQuickDisplayInfo();
+                    UpdateQuickHDRButtonUI(hdr != null && hdr.Value, hdrSupported != null && hdrSupported.Value);
+                });
+            };
+            hdrSupported.PropertyChanged += (s, e) =>
+            {
+                var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    if (HDRSubtitleText != null)
+                    {
+                        HDRSubtitleText.Text = hdrSupported.Value ? "High Dynamic Range display" : "Not supported by display";
+                    }
+                    UpdateQuickDisplayInfo();
+                    UpdateQuickHDRButtonUI(hdr != null && hdr.Value, hdrSupported.Value);
+                });
             };
             fpsLimit.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(fpsLimit.Value))
                 {
                     UpdateFPSLimitSliderJudderFree();
+                    var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateQuickFPSLimitButtonUI());
                 }
             };
             helperElevation.PropertyChanged += (s, e) =>
@@ -209,6 +355,8 @@ namespace XboxGamingBar
                 {
                     UpdateFPSLimiterElevationUI();
                     UpdateOSDStatusUI();
+                    UpdateQuickOSDButtonUI((int)PerformanceOverlaySlider.Value);
+                    UpdateQuickFPSLimitButtonUI();
                 });
             };
             rtssElevation.PropertyChanged += (s, e) =>
@@ -217,6 +365,8 @@ namespace XboxGamingBar
                 {
                     UpdateFPSLimiterElevationUI();
                     UpdateOSDStatusUI();
+                    UpdateQuickOSDButtonUI((int)PerformanceOverlaySlider.Value);
+                    UpdateQuickFPSLimitButtonUI();
                 });
             };
             onScreenDisplayProviderInstalled.PropertyChanged += (s, e) =>
@@ -224,6 +374,7 @@ namespace XboxGamingBar
                 var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
                     UpdateOSDStatusUI();
+                    UpdateQuickOSDButtonUI((int)PerformanceOverlaySlider.Value);
                 });
             };
             limitFPS.PropertyChanged += (s, e) =>
@@ -233,6 +384,7 @@ namespace XboxGamingBar
                     var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                     {
                         UpdateFPSLimiterElevationUI();
+                        UpdateQuickFPSLimitButtonUI();
                     });
                 }
             };
@@ -247,6 +399,8 @@ namespace XboxGamingBar
                 refreshRate,
                 resolutions,
                 resolution,
+                hdr,
+                hdrSupported,
                 trackedGame,
                 onScreenDisplayProviderInstalled,
                 isForeground,
@@ -283,44 +437,15 @@ namespace XboxGamingBar
                 mouseEnhancePointerPrecision
             );
 
-            if (HelperElevationFlyout != null)
-            {
-                HelperElevationFlyout.Opened += (s, e) =>
-                {
-                    isElevationFlyoutOpen = true;
-                    if (lastElevationFlyoutInvoker == null)
-                    {
-                        lastElevationFlyoutInvoker = HeroElevationWarningButton;
-                    }
-                    RestartElevatedButton?.Focus(FocusState.Programmatic);
-                };
-                HelperElevationFlyout.Closed += (s, e) =>
-                {
-                    isElevationFlyoutOpen = false;
-                };
-            }
-            if (HelperElevationFlyoutContent != null)
-            {
-                HelperElevationFlyoutContent.PreviewKeyDown += HelperElevationFlyoutContent_PreviewKeyDown;
-            }
-
-            this.KeyDown += GamingWidget_KeyDown;
+            this.PreviewKeyDown += GamingWidget_KeyDown;
             InitializeAppVersion();
             InitializeShortcuts();
+            InitializeTabNavigation();
             UpdateFPSLimiterElevationUI();
             UpdateOSDStatusUI();
-        }
-
-        private Control lastElevationFlyoutInvoker;
-
-        private void HelperElevationFlyoutContent_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
-        {
-            if (e.Key == VirtualKey.GamepadB || e.Key == VirtualKey.Escape)
-            {
-                HelperElevationFlyout?.Hide();
-                (lastElevationFlyoutInvoker ?? HeroElevationWarningButton)?.Focus(FocusState.Programmatic);
-                e.Handled = true;
-            }
+            UpdateQuickDisplayInfo();
+            UpdateQuickRTSSStatus();
+            UpdateQuickHDRButtonUI(hdr != null && hdr.Value, hdrSupported != null && hdrSupported.Value);
         }
 
         private async Task LaunchExternalUriAsync(string uriString)
@@ -372,6 +497,7 @@ namespace XboxGamingBar
         private async void RestartElevatedButton_Click(object sender, RoutedEventArgs e)
         {
             Logger.Info("RestartElevatedButton clicked.");
+            var clickedButton = sender as Button;
             if (App.Connection != null)
             {
                 try
@@ -391,13 +517,9 @@ namespace XboxGamingBar
                         });
                     });
 
-                    if (RestartElevatedButtonText != null)
+                    if (clickedButton != null)
                     {
-                        RestartElevatedButtonText.Text = "Restarting...";
-                    }
-                    if (RestartElevatedButton != null)
-                    {
-                        RestartElevatedButton.IsEnabled = false;
+                        clickedButton.IsEnabled = false;
                     }
 
                     var valueSet = new ValueSet();
@@ -417,15 +539,10 @@ namespace XboxGamingBar
                 finally
                 {
                     await Task.Delay(1500);
-                    if (RestartElevatedButtonText != null)
+                    if (clickedButton != null)
                     {
-                        RestartElevatedButtonText.Text = "Restart as Administrator";
+                        clickedButton.IsEnabled = true;
                     }
-                    if (RestartElevatedButton != null)
-                    {
-                        RestartElevatedButton.IsEnabled = true;
-                    }
-                    HelperElevationFlyout?.Hide();
                 }
             }
             else
@@ -484,16 +601,98 @@ namespace XboxGamingBar
             }
         }
 
-        private void CloseElevationHelpButton_Click(object sender, RoutedEventArgs e)
+        private async void OpenVirtualKeyboardButton_Click(object sender, RoutedEventArgs e)
         {
-            HelperElevationFlyout?.Hide();
-            (lastElevationFlyoutInvoker ?? HeroElevationWarningButton)?.Focus(FocusState.Programmatic);
+            Logger.Info("OpenVirtualKeyboardButton clicked.");
+            if (App.Connection != null)
+            {
+                try
+                {
+                    if (OpenVirtualKeyboardButtonText != null)
+                    {
+                        OpenVirtualKeyboardButtonText.Text = "Opening...";
+                    }
+                    if (OpenVirtualKeyboardButton != null)
+                    {
+                        OpenVirtualKeyboardButton.IsEnabled = false;
+                    }
+
+                    var valueSet = new ValueSet();
+                    valueSet.Add(nameof(Command), (int)Command.Set);
+                    valueSet.Add(nameof(Function), (int)Function.VirtualKeyboard);
+                    valueSet.Add(nameof(Content), true);
+                    valueSet.Add(nameof(UpdatedTime), DateTime.UtcNow.Ticks);
+
+                    var response = await App.Connection.SendMessageAsync(valueSet);
+                    Logger.Info($"SendMessageAsync VirtualKeyboard status: {response?.Status}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to send VirtualKeyboard message to helper.");
+                }
+                finally
+                {
+                    await Task.Delay(1000);
+                    if (OpenVirtualKeyboardButtonText != null)
+                    {
+                        OpenVirtualKeyboardButtonText.Text = "Open";
+                    }
+                    if (OpenVirtualKeyboardButton != null)
+                    {
+                        OpenVirtualKeyboardButton.IsEnabled = true;
+                    }
+                }
+            }
+            else
+            {
+                Logger.Warn("App.Connection is null when attempting to open virtual keyboard.");
+                await EnsureHelperConnectionOrLaunchAsync();
+            }
         }
 
-        private void HeroElevationWarningButton_Click(object sender, RoutedEventArgs e)
+        private async void OpenGamepadCursorSettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            lastElevationFlyoutInvoker = HeroElevationWarningButton;
-            HelperElevationFlyout?.ShowAt(HeroElevationWarningButton);
+            await OpenGamepadCursorSettingsAsync();
+        }
+
+        private async Task OpenGamepadCursorSettingsAsync()
+        {
+            Logger.Info("OpenGamepadCursorSettingsAsync called.");
+            var uri = new Uri("ms-gamebar://launchforeground/activate/SettingsWidget");
+
+            // 1. Try Xbox Game Bar SDK widget control if hosted inside Game Bar
+            if (widget != null)
+            {
+                try
+                {
+                    var widgetControl = new XboxGameBarWidgetControl(widget);
+                    await widgetControl.ActivateWithUriAsync(uri);
+                    Logger.Info("Successfully activated SettingsWidget via XboxGameBarWidgetControl.");
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "XboxGameBarWidgetControl.ActivateWithUriAsync failed, trying Launcher fallback.");
+                }
+            }
+
+            // 2. Fall back to UWP Launcher.LaunchUriAsync
+            try
+            {
+                bool launched = await Launcher.LaunchUriAsync(uri);
+                Logger.Info($"Launcher.LaunchUriAsync result for {uri}: {launched}");
+                if (launched)
+                {
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, $"Launcher.LaunchUriAsync failed for {uri}.");
+            }
+
+            // 3. Fall back to helper Process.Start via LaunchExternalUriAsync
+            await LaunchExternalUriAsync(uri.AbsoluteUri);
         }
 
         private void DiscreteGpuButton_Click(object sender, RoutedEventArgs e)
@@ -530,14 +729,6 @@ namespace XboxGamingBar
 
         private void GamingWidget_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (isElevationFlyoutOpen && (e.Key == VirtualKey.GamepadB || e.Key == VirtualKey.Escape))
-            {
-                HelperElevationFlyout?.Hide();
-                (lastElevationFlyoutInvoker ?? HeroElevationWarningButton)?.Focus(FocusState.Programmatic);
-                e.Handled = true;
-                return;
-            }
-
             if (ShortcutEditorOverlay != null && ShortcutEditorOverlay.Visibility == Visibility.Visible)
             {
                 if (isRecordingKeys)
@@ -604,15 +795,34 @@ namespace XboxGamingBar
                 }
             }
 
-            if (e.Key == VirtualKey.GamepadLeftTrigger || e.Key == VirtualKey.GamepadLeftShoulder || e.Key == VirtualKey.PageUp)
+            if (e.Key == VirtualKey.GamepadLeftTrigger || e.Key == VirtualKey.PageUp)
             {
                 NavigatePivot(-1);
                 e.Handled = true;
             }
-            else if (e.Key == VirtualKey.GamepadRightTrigger || e.Key == VirtualKey.GamepadRightShoulder || e.Key == VirtualKey.PageDown)
+            else if (e.Key == VirtualKey.GamepadRightTrigger || e.Key == VirtualKey.PageDown)
             {
                 NavigatePivot(1);
                 e.Handled = true;
+            }
+            else if (Window.Current?.CoreWindow != null)
+            {
+                var ctrlState = Window.Current.CoreWindow.GetKeyState(VirtualKey.Control);
+                bool isCtrlPressed = (ctrlState & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
+                var shiftState = Window.Current.CoreWindow.GetKeyState(VirtualKey.Shift);
+                bool isShiftPressed = (shiftState & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
+
+                if (isCtrlPressed && e.Key == VirtualKey.Tab)
+                {
+                    NavigatePivot(isShiftPressed ? -1 : 1);
+                    e.Handled = true;
+                }
+                else if (isCtrlPressed && e.Key >= VirtualKey.Number1 && e.Key <= VirtualKey.Number9)
+                {
+                    int num = (int)e.Key - (int)VirtualKey.Number1;
+                    JumpToVisibleTab(num);
+                    e.Handled = true;
+                }
             }
         }
 
@@ -647,8 +857,14 @@ namespace XboxGamingBar
             if (sender is Button btn && btn.Tag != null && int.TryParse(btn.Tag.ToString(), out int level))
             {
                 Logger.Info($"OSD level button clicked: {level}");
+                if (level > 0)
+                {
+                    _lastActiveOsdLevel = level;
+                    SaveLastActiveOsdLevel(level);
+                }
                 PerformanceOverlaySlider.Value = level;
                 UpdateOSDSegmentedButtons(level);
+                UpdateQuickOSDButtonUI(level);
             }
         }
 
@@ -660,7 +876,9 @@ namespace XboxGamingBar
                 return;
             }
 
-            Button[] buttons = new Button[] { OSDLevel0Button, OSDLevel1Button, OSDLevel2Button, OSDLevel3Button, OSDLevel4Button };
+            Button[] buttons = new Button[] {
+                OSDLevel0Button, OSDLevel1Button, OSDLevel2Button, OSDLevel3Button, OSDLevel4Button
+            };
             var accentBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65)); // Xbox Green
             var transparentBrush = new SolidColorBrush(Windows.UI.Colors.Transparent);
             var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
@@ -670,7 +888,8 @@ namespace XboxGamingBar
             {
                 if (buttons[i] != null)
                 {
-                    if (i == level)
+                    int btnLevel = i % 5;
+                    if (btnLevel == level)
                     {
                         buttons[i].Background = accentBrush;
                         buttons[i].Foreground = whiteBrush;
@@ -686,26 +905,482 @@ namespace XboxGamingBar
             }
         }
 
-        private void NavigatePivot(int direction)
+        #region Couch Essentials Quick Toggles
+
+        private void LoadLastActiveOsdLevel()
         {
-            int count = MainPivot.Items.Count;
-            if (count <= 1) return;
-
-            int currentIndex = MainPivot.SelectedIndex;
-            int targetIndex = currentIndex + direction;
-
-            // Linear navigation: Search in the given direction without circular wrapping
-            while (targetIndex >= 0 && targetIndex < count)
+            try
             {
-                if (MainPivot.Items[targetIndex] is PivotItem item && item.Visibility == Visibility.Visible)
+                if (Windows.Storage.ApplicationData.Current.LocalSettings.Values.TryGetValue(SETTING_LAST_ACTIVE_OSD_LEVEL, out object saved) && saved is int lvl && lvl > 0)
                 {
-                    MainPivot.SelectedIndex = targetIndex;
-                    break;
+                    _lastActiveOsdLevel = lvl;
                 }
-
-                targetIndex += direction;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to load last active OSD level: {ex.Message}");
             }
         }
+
+        private void SaveLastActiveOsdLevel(int level)
+        {
+            if (level <= 0) return;
+            try
+            {
+                Windows.Storage.ApplicationData.Current.LocalSettings.Values[SETTING_LAST_ACTIVE_OSD_LEVEL] = level;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to save last active OSD level: {ex.Message}");
+            }
+        }
+
+        private static string GetOsdLevelName(int level)
+        {
+            switch (level)
+            {
+                case 1: return "FPS";
+                case 2: return "DETAIL";
+                case 3: return "FULL";
+                case 4: return "ALL";
+                default: return "OFF";
+            }
+        }
+
+        private void QuickOSDToggleButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (IsElevationMismatch || !IsRTSSRunning || PerformanceOverlaySlider == null) return;
+
+            int currentLevel = (int)PerformanceOverlaySlider.Value;
+            if (currentLevel > 0)
+            {
+                _lastActiveOsdLevel = currentLevel;
+                SaveLastActiveOsdLevel(currentLevel);
+                Logger.Info($"QuickOSDToggleButton clicked: turning OFF RTSS overlay (saved active level: {currentLevel}).");
+                PerformanceOverlaySlider.Value = 0;
+            }
+            else
+            {
+                int targetLevel = _lastActiveOsdLevel > 0 ? _lastActiveOsdLevel : 1;
+                Logger.Info($"QuickOSDToggleButton clicked: turning ON RTSS overlay to restored level: {targetLevel}.");
+                PerformanceOverlaySlider.Value = targetLevel;
+            }
+        }
+
+        private void QuickFPSLimitToggleButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (IsElevationMismatch || !IsRTSSRunning || LimitFPSToggle == null) return;
+
+            bool newState = !LimitFPSToggle.IsOn;
+            Logger.Info($"QuickFPSLimitToggleButton clicked: toggling frame limiter to {newState} (target limit: {(int)FPSLimitSlider.Value} FPS).");
+            LimitFPSToggle.IsOn = newState;
+        }
+
+        private async void UpdateQuickOSDButtonUI(int level)
+        {
+            if (Dispatcher != null && !Dispatcher.HasThreadAccess)
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateQuickOSDButtonUI(level));
+                return;
+            }
+
+            if (QuickOSDToggleButton == null || QuickOSDSubtitleText == null || QuickOSDBadge == null || QuickOSDBadgeText == null)
+                return;
+
+            var greenBrush = Resources.ContainsKey("XboxGreenBrush")
+                ? (SolidColorBrush)Resources["XboxGreenBrush"]
+                : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65));
+            var mutedBrush = (Brush)Resources["SystemControlForegroundBaseMediumBrush"];
+            var offBgBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 58, 58, 58)); // #3A3A3A
+            var offTextBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 204, 204, 204)); // #CCCCCC
+            var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
+
+            bool isRtssRunning = IsRTSSRunning;
+            bool isMismatch = IsElevationMismatch;
+
+            if (App.Connection != null && !isRtssRunning)
+            {
+                QuickOSDToggleButton.IsEnabled = false;
+                if (QuickOSDIcon != null) QuickOSDIcon.Foreground = mutedBrush;
+                QuickOSDSubtitleText.Text = (rtssElevation != null && rtssElevation.Value == -1) ? "RTSS Not Installed" : "RTSS Offline";
+                QuickOSDBadgeText.Text = "OFFLINE";
+                QuickOSDBadgeText.Foreground = offTextBrush;
+                QuickOSDBadge.Background = offBgBrush;
+                QuickOSDBadge.BorderBrush = offBgBrush;
+                return;
+            }
+
+            if (App.Connection != null && isMismatch)
+            {
+                QuickOSDToggleButton.IsEnabled = false;
+                if (QuickOSDIcon != null) QuickOSDIcon.Foreground = mutedBrush;
+                QuickOSDSubtitleText.Text = "Admin elevation required";
+                QuickOSDBadgeText.Text = "ADMIN";
+                QuickOSDBadgeText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 245, 158, 11)); // Amber
+                var amberBg = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 45, 35, 5));
+                QuickOSDBadge.Background = amberBg;
+                QuickOSDBadge.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 202, 138, 4));
+                return;
+            }
+
+            QuickOSDToggleButton.IsEnabled = true;
+
+            if (level <= 0)
+            {
+                if (QuickOSDIcon != null) QuickOSDIcon.Foreground = mutedBrush;
+                string savedLevelName = GetOsdLevelName(_lastActiveOsdLevel > 0 ? _lastActiveOsdLevel : 1);
+                QuickOSDSubtitleText.Text = $"Disabled (saved: {savedLevelName})";
+                QuickOSDBadgeText.Text = "OFF";
+                QuickOSDBadgeText.Foreground = offTextBrush;
+                QuickOSDBadge.Background = offBgBrush;
+                QuickOSDBadge.BorderBrush = offBgBrush;
+            }
+            else
+            {
+                string levelName = GetOsdLevelName(level);
+                if (QuickOSDIcon != null) QuickOSDIcon.Foreground = greenBrush;
+                QuickOSDSubtitleText.Text = $"Active ({levelName})";
+                QuickOSDBadgeText.Text = levelName;
+                QuickOSDBadgeText.Foreground = whiteBrush;
+                QuickOSDBadge.Background = greenBrush;
+                QuickOSDBadge.BorderBrush = greenBrush;
+            }
+        }
+
+        private async void UpdateQuickFPSLimitButtonUI()
+        {
+            if (Dispatcher != null && !Dispatcher.HasThreadAccess)
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateQuickFPSLimitButtonUI());
+                return;
+            }
+
+            if (QuickFPSLimitToggleButton == null || QuickFPSLimitSubtitleText == null || QuickFPSLimitBadge == null || QuickFPSLimitBadgeText == null)
+                return;
+
+            var greenBrush = Resources.ContainsKey("XboxGreenBrush")
+                ? (SolidColorBrush)Resources["XboxGreenBrush"]
+                : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65));
+            var mutedBrush = (Brush)Resources["SystemControlForegroundBaseMediumBrush"];
+            var offBgBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 58, 58, 58)); // #3A3A3A
+            var offTextBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 204, 204, 204)); // #CCCCCC
+            var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
+
+            bool isRtssRunning = IsRTSSRunning;
+            bool isMismatch = IsElevationMismatch;
+
+            if (App.Connection != null && !isRtssRunning)
+            {
+                QuickFPSLimitToggleButton.IsEnabled = false;
+                if (QuickFPSLimitIcon != null) QuickFPSLimitIcon.Foreground = mutedBrush;
+                QuickFPSLimitSubtitleText.Text = (rtssElevation != null && rtssElevation.Value == -1) ? "RTSS Not Installed" : "RTSS Offline";
+                QuickFPSLimitBadgeText.Text = "OFFLINE";
+                QuickFPSLimitBadgeText.Foreground = offTextBrush;
+                QuickFPSLimitBadge.Background = offBgBrush;
+                QuickFPSLimitBadge.BorderBrush = offBgBrush;
+                return;
+            }
+
+            if (App.Connection != null && isMismatch)
+            {
+                QuickFPSLimitToggleButton.IsEnabled = false;
+                if (QuickFPSLimitIcon != null) QuickFPSLimitIcon.Foreground = mutedBrush;
+                QuickFPSLimitSubtitleText.Text = "Admin elevation required";
+                QuickFPSLimitBadgeText.Text = "ADMIN";
+                QuickFPSLimitBadgeText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 245, 158, 11)); // Amber
+                var amberBg = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 45, 35, 5));
+                QuickFPSLimitBadge.Background = amberBg;
+                QuickFPSLimitBadge.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 202, 138, 4));
+                return;
+            }
+
+            QuickFPSLimitToggleButton.IsEnabled = true;
+
+            bool isLimitOn = LimitFPSToggle != null && LimitFPSToggle.IsOn;
+            int fpsValue = (FPSLimitSlider != null && FPSLimitSlider.Value > 0) ? (int)FPSLimitSlider.Value : 60;
+
+            if (!isLimitOn)
+            {
+                if (QuickFPSLimitIcon != null) QuickFPSLimitIcon.Foreground = mutedBrush;
+                QuickFPSLimitSubtitleText.Text = $"Disabled (saved: {fpsValue} FPS)";
+                QuickFPSLimitBadgeText.Text = "OFF";
+                QuickFPSLimitBadgeText.Foreground = offTextBrush;
+                QuickFPSLimitBadge.Background = offBgBrush;
+                QuickFPSLimitBadge.BorderBrush = offBgBrush;
+            }
+            else
+            {
+                if (QuickFPSLimitIcon != null) QuickFPSLimitIcon.Foreground = greenBrush;
+                QuickFPSLimitSubtitleText.Text = $"Capped at {fpsValue} FPS";
+                QuickFPSLimitBadgeText.Text = $"{fpsValue} FPS";
+                QuickFPSLimitBadgeText.Foreground = whiteBrush;
+                QuickFPSLimitBadge.Background = greenBrush;
+                QuickFPSLimitBadge.BorderBrush = greenBrush;
+            }
+        }
+
+        private void QuickHDRToggleButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (hdrSupported == null || !hdrSupported.Value) return;
+
+            bool newState = hdr != null ? !hdr.Value : true;
+            Logger.Info($"QuickHDRToggleButton clicked: switching HDR to {newState}.");
+            if (hdr != null)
+            {
+                hdr.SetValue(newState);
+            }
+            if (HDRToggle != null)
+            {
+                HDRToggle.IsOn = newState;
+            }
+            UpdateQuickHDRButtonUI(newState, true);
+            UpdateQuickDisplayInfo();
+        }
+
+        private async void UpdateQuickHDRButtonUI(bool isEnabled, bool isSupported)
+        {
+            if (Dispatcher != null && !Dispatcher.HasThreadAccess)
+            {
+                await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateQuickHDRButtonUI(isEnabled, isSupported));
+                return;
+            }
+
+            if (QuickHDRToggleButton == null || QuickHDRSubtitleText == null || QuickHDRBadge == null || QuickHDRBadgeText == null)
+                return;
+
+            var greenBrush = Resources.ContainsKey("XboxGreenBrush")
+                ? (SolidColorBrush)Resources["XboxGreenBrush"]
+                : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65));
+            var mutedBrush = (Brush)Resources["SystemControlForegroundBaseMediumBrush"];
+            var offBgBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 58, 58, 58)); // #3A3A3A
+            var offTextBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 204, 204, 204)); // #CCCCCC
+            var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
+
+            if (!isSupported)
+            {
+                QuickHDRToggleButton.IsEnabled = false;
+                if (QuickHDRIcon != null) QuickHDRIcon.Foreground = mutedBrush;
+                QuickHDRSubtitleText.Text = "Not supported by display";
+                QuickHDRBadgeText.Text = "SDR";
+                QuickHDRBadgeText.Foreground = offTextBrush;
+                QuickHDRBadge.Background = offBgBrush;
+                QuickHDRBadge.BorderBrush = offBgBrush;
+                return;
+            }
+
+            QuickHDRToggleButton.IsEnabled = true;
+
+            if (isEnabled)
+            {
+                if (QuickHDRIcon != null) QuickHDRIcon.Foreground = greenBrush;
+                QuickHDRSubtitleText.Text = "High Dynamic Range active";
+                QuickHDRBadgeText.Text = "ON";
+                QuickHDRBadgeText.Foreground = whiteBrush;
+                QuickHDRBadge.Background = greenBrush;
+                QuickHDRBadge.BorderBrush = greenBrush;
+            }
+            else
+            {
+                if (QuickHDRIcon != null) QuickHDRIcon.Foreground = mutedBrush;
+                QuickHDRSubtitleText.Text = "High Dynamic Range disabled";
+                QuickHDRBadgeText.Text = "OFF";
+                QuickHDRBadgeText.Foreground = offTextBrush;
+                QuickHDRBadge.Background = offBgBrush;
+                QuickHDRBadge.BorderBrush = offBgBrush;
+            }
+        }
+
+        #endregion
+
+        #region Option C Tab Navigation & Living Room HUD
+
+        private class TabNavigationInfo
+        {
+            public PivotItem Item { get; set; }
+            public string Title { get; set; }
+            public string ShortName { get; set; }
+            public string Glyph { get; set; }
+            public SolidColorBrush AccentBrush { get; set; }
+        }
+
+        private List<TabNavigationInfo> tabInfos;
+
+        private void InitializeTabNavigation()
+        {
+            var greenBrush = Resources.ContainsKey("XboxGreenBrush") ? (SolidColorBrush)Resources["XboxGreenBrush"] : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65));
+            var rubyBrush = Resources.ContainsKey("RadeonRubyBrush") ? (SolidColorBrush)Resources["RadeonRubyBrush"] : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 237, 28, 36));
+            var geforceBrush = Resources.ContainsKey("GeForceGreenBrush") ? (SolidColorBrush)Resources["GeForceGreenBrush"] : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 118, 185, 0));
+
+            tabInfos = new List<TabNavigationInfo>
+            {
+                new TabNavigationInfo { Item = QuickAccessPivotItem, Title = "QUICK ACCESS", ShortName = "Quick", Glyph = "\uEC7A", AccentBrush = greenBrush },
+                new TabNavigationInfo { Item = PerformancePivotItem, Title = "PERFORMANCE", ShortName = "Perf", Glyph = "\uE9D2", AccentBrush = greenBrush },
+                new TabNavigationInfo { Item = ShortcutsPivotItem, Title = "SHORTCUTS", ShortName = "Shortcuts", Glyph = "\uE765", AccentBrush = greenBrush },
+                new TabNavigationInfo { Item = CursorPivotItem, Title = "CURSOR", ShortName = "Cursor", Glyph = "\uE962", AccentBrush = greenBrush },
+                new TabNavigationInfo { Item = SystemPivotItem, Title = "SYSTEM", ShortName = "System", Glyph = "\uE770", AccentBrush = greenBrush },
+                new TabNavigationInfo { Item = AMDPivotItem, Title = "AMD RADEON", ShortName = "AMD", Glyph = "\uE945", AccentBrush = rubyBrush },
+                new TabNavigationInfo { Item = NvidiaPivotItem, Title = "NVIDIA", ShortName = "NVIDIA", Glyph = "\uE9D9", AccentBrush = geforceBrush }
+            };
+
+            if (AMDPivotItem != null)
+            {
+                AMDPivotItem.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (s, e) => UpdateTabNavigationHUD());
+            }
+            if (NvidiaPivotItem != null)
+            {
+                NvidiaPivotItem.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (s, e) => UpdateTabNavigationHUD());
+            }
+
+            UpdateTabNavigationHUD();
+        }
+
+        private void MainPivot_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateTabNavigationHUD();
+        }
+
+        private void UpdateTabNavigationHUD()
+        {
+            if (tabInfos == null || MainPivot == null) return;
+
+            var visibleTabs = tabInfos.Where(t => t.Item != null && t.Item.Visibility == Visibility.Visible).ToList();
+            if (visibleTabs.Count == 0) return;
+
+            int activeIndex = visibleTabs.FindIndex(t => t.Item == MainPivot.SelectedItem);
+            if (activeIndex == -1) activeIndex = 0;
+
+            var current = visibleTabs[activeIndex];
+            int prevIndex = (activeIndex - 1 + visibleTabs.Count) % visibleTabs.Count;
+            int nextIndex = (activeIndex + 1) % visibleTabs.Count;
+
+            var prev = visibleTabs[prevIndex];
+            var next = visibleTabs[nextIndex];
+
+            if (NavActiveHeroText != null) NavActiveHeroText.Text = current.Title;
+            if (NavActiveHeroIcon != null) NavActiveHeroIcon.Glyph = current.Glyph;
+            if (NavActiveHeroBadge != null && current.AccentBrush != null) NavActiveHeroBadge.Background = current.AccentBrush;
+
+            if (NavPrevTabText != null) NavPrevTabText.Text = prev.ShortName;
+            if (NavPrevTabIcon != null) NavPrevTabIcon.Glyph = prev.Glyph;
+
+            if (NavNextTabText != null) NavNextTabText.Text = next.ShortName;
+            if (NavNextTabIcon != null) NavNextTabIcon.Glyph = next.Glyph;
+
+            if (NavTabCounterText != null) NavTabCounterText.Text = $"{activeIndex + 1} of {visibleTabs.Count}";
+
+            if (NavPagerDotsPanel != null)
+            {
+                NavPagerDotsPanel.Children.Clear();
+                for (int i = 0; i < visibleTabs.Count; i++)
+                {
+                    int targetPos = i;
+                    var dotButton = new Button
+                    {
+                        Background = new SolidColorBrush(Windows.UI.Colors.Transparent),
+                        BorderThickness = new Thickness(0),
+                        Padding = new Thickness(0),
+                        Margin = new Thickness(2, 0, 2, 0),
+                        Width = 16,
+                        Height = 12,
+                        IsTabStop = false
+                    };
+
+                    var dotBorder = new Border
+                    {
+                        CornerRadius = new CornerRadius(10),
+                        HorizontalAlignment = HorizontalAlignment.Center,
+                        VerticalAlignment = VerticalAlignment.Center
+                    };
+
+                    if (i == activeIndex)
+                    {
+                        dotBorder.Width = 10;
+                        dotBorder.Height = 10;
+                        dotBorder.Background = current.AccentBrush ?? (SolidColorBrush)Resources["XboxGreenBrush"];
+                        dotBorder.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 52, 211, 153));
+                        dotBorder.BorderThickness = new Thickness(1.5);
+                    }
+                    else
+                    {
+                        dotBorder.Width = 7;
+                        dotBorder.Height = 7;
+                        dotBorder.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 75, 85, 99));
+                    }
+
+                    dotButton.Content = dotBorder;
+                    dotButton.Click += (s, e) =>
+                    {
+                        if (targetPos >= 0 && targetPos < visibleTabs.Count)
+                        {
+                            MainPivot.SelectedItem = visibleTabs[targetPos].Item;
+                        }
+                    };
+                    NavPagerDotsPanel.Children.Add(dotButton);
+                }
+            }
+        }
+
+        private void NavTriggerLeftButton_Click(object sender, RoutedEventArgs e)
+        {
+            NavigatePivot(-1);
+        }
+
+        private void NavTriggerRightButton_Click(object sender, RoutedEventArgs e)
+        {
+            NavigatePivot(1);
+        }
+
+        private void NavPrevTabGhostButton_Click(object sender, RoutedEventArgs e)
+        {
+            NavigatePivot(-1);
+        }
+
+        private void NavNextTabGhostButton_Click(object sender, RoutedEventArgs e)
+        {
+            NavigatePivot(1);
+        }
+
+        private void NavTabHUD_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            var props = e.GetCurrentPoint(this).Properties;
+            if (props.MouseWheelDelta > 0)
+            {
+                NavigatePivot(-1);
+                e.Handled = true;
+            }
+            else if (props.MouseWheelDelta < 0)
+            {
+                NavigatePivot(1);
+                e.Handled = true;
+            }
+        }
+
+        private void JumpToVisibleTab(int targetIndex)
+        {
+            if (tabInfos == null || MainPivot == null) return;
+            var visibleTabs = tabInfos.Where(t => t.Item != null && t.Item.Visibility == Visibility.Visible).ToList();
+            if (targetIndex >= 0 && targetIndex < visibleTabs.Count)
+            {
+                MainPivot.SelectedItem = visibleTabs[targetIndex].Item;
+            }
+        }
+
+        private void NavigatePivot(int direction)
+        {
+            if (tabInfos == null || MainPivot == null) return;
+
+            var visibleTabs = tabInfos.Where(t => t.Item != null && t.Item.Visibility == Visibility.Visible).ToList();
+            if (visibleTabs.Count <= 1) return;
+
+            int currentPos = visibleTabs.FindIndex(t => t.Item == MainPivot.SelectedItem);
+            if (currentPos == -1) currentPos = 0;
+
+            // Circular navigation across all visible tabs
+            int targetPos = (currentPos + direction + visibleTabs.Count) % visibleTabs.Count;
+            MainPivot.SelectedItem = visibleTabs[targetPos].Item;
+        }
+
+        #endregion
 
         protected async override void OnNavigatedTo(NavigationEventArgs e)
         {
@@ -1134,7 +1809,8 @@ namespace XboxGamingBar
             if (FPSLimitSlider == null || FPSLimitJudderFreeSlider == null || refreshRate == null || refreshRate.Value <= 0)
                 return;
 
-            int maxRefresh = refreshRate.Value;
+            int activeRefresh = refreshRate.Value;
+            int maxScreenRefresh = GetMaxScreenRefreshRate();
             bool isLimitFPSOn = LimitFPSToggle != null && LimitFPSToggle.IsOn;
             bool isJudderFree = JudderFreeFPSToggle != null && JudderFreeFPSToggle.IsOn;
 
@@ -1150,7 +1826,7 @@ namespace XboxGamingBar
 
             if (isJudderFree)
             {
-                var judderFreeValues = RTSSHelper.GetJudderFreeFPSValues(maxRefresh, 30);
+                var judderFreeValues = RTSSHelper.GetJudderFreeFPSValues(activeRefresh, 30);
                 if (judderFreeValues.Count > 0)
                 {
                     FPSLimitSlider.Visibility = Visibility.Collapsed;
@@ -1164,7 +1840,7 @@ namespace XboxGamingBar
                     FPSLimitJudderFreeSlider.SnapsTo = SliderSnapsTo.StepValues;
                     FPSLimitJudderFreeSlider.TickPlacement = TickPlacement.None;
 
-                    double currentVal = fpsLimit.Value > 0 ? fpsLimit.Value : (FPSLimitSlider.Value > 0 && FPSLimitSlider.Value != 60 ? FPSLimitSlider.Value : maxRefresh);
+                    double currentVal = fpsLimit.Value > 0 ? fpsLimit.Value : (FPSLimitSlider.Value > 0 && FPSLimitSlider.Value != 60 ? FPSLimitSlider.Value : activeRefresh);
                     int closestVal = judderFreeValues.OrderBy(v => Math.Abs(v - currentVal)).First();
                     int idx = judderFreeValues.IndexOf(closestVal);
                     if (idx < 0) idx = 0;
@@ -1175,15 +1851,90 @@ namespace XboxGamingBar
                 }
                 else
                 {
-                    ShowStandardFPSLimitSlider(maxRefresh);
+                    ShowStandardFPSLimitSlider(maxScreenRefresh);
                 }
             }
             else
             {
-                ShowStandardFPSLimitSlider(maxRefresh);
+                ShowStandardFPSLimitSlider(maxScreenRefresh);
             }
 
             RenderJudderFreeMarkers();
+        }
+
+        private int GetMaxScreenRefreshRate()
+        {
+            int maxRate = refreshRate != null && refreshRate.Value > 0 ? refreshRate.Value : 60;
+            if (refreshRates != null && refreshRates.Value != null && refreshRates.Value.Count > 0)
+            {
+                maxRate = Math.Max(maxRate, refreshRates.Value.Max());
+            }
+            return Math.Max(30, maxRate);
+        }
+
+        private void UpdateQuickDisplayInfo()
+        {
+            if (QuickDisplayInfoText == null) return;
+            string res = (resolution != null && resolution.Value.Width > 0) ? resolution.Value.ToString() : "Display";
+            int hz = refreshRate != null ? refreshRate.Value : 0;
+            string baseDisplay = hz > 0 ? $"{res} @ {hz} Hz" : res;
+
+            bool isSupported = hdrSupported != null && hdrSupported.Value;
+            bool isEnabled = hdr != null && hdr.Value;
+
+            if (isSupported)
+            {
+                QuickDisplayInfoText.Text = $"{baseDisplay} • {(isEnabled ? "HDR On" : "HDR Off")}";
+            }
+            else
+            {
+                QuickDisplayInfoText.Text = $"{baseDisplay} • SDR";
+            }
+
+            if (QuickHDRStatusBadge != null && QuickHDRStatusBadgeText != null)
+            {
+                var greenBrush = Resources.ContainsKey("XboxGreenBrush")
+                    ? (SolidColorBrush)Resources["XboxGreenBrush"]
+                    : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65));
+                var offBgBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 58, 58, 58)); // #3A3A3A
+                var offTextBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 204, 204, 204)); // #CCCCCC
+                var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
+
+                if (isSupported)
+                {
+                    if (isEnabled)
+                    {
+                        QuickHDRStatusBadgeText.Text = "HDR ON";
+                        QuickHDRStatusBadgeText.Foreground = whiteBrush;
+                        QuickHDRStatusBadge.Background = greenBrush;
+                        QuickHDRStatusBadge.BorderBrush = greenBrush;
+                    }
+                    else
+                    {
+                        QuickHDRStatusBadgeText.Text = "HDR OFF";
+                        QuickHDRStatusBadgeText.Foreground = offTextBrush;
+                        QuickHDRStatusBadge.Background = offBgBrush;
+                        QuickHDRStatusBadge.BorderBrush = offBgBrush;
+                    }
+                }
+                else
+                {
+                    QuickHDRStatusBadgeText.Text = "SDR";
+                    QuickHDRStatusBadgeText.Foreground = offTextBrush;
+                    QuickHDRStatusBadge.Background = offBgBrush;
+                    QuickHDRStatusBadge.BorderBrush = offBgBrush;
+                }
+            }
+        }
+
+        private void UpdateQuickRTSSStatus()
+        {
+            if (QuickRTSSStatusText == null || QuickRTSSStatusDot == null) return;
+            bool isRunning = IsRTSSRunning;
+            QuickRTSSStatusText.Text = isRunning ? "RTSS Active" : "RTSS Offline";
+            var greenBrush = (SolidColorBrush)Resources["XboxGreenBrush"];
+            var grayBrush = new SolidColorBrush(Windows.UI.Colors.Gray);
+            QuickRTSSStatusDot.Fill = isRunning ? greenBrush : grayBrush;
         }
 
         private void ShowStandardFPSLimitSlider(int maxRefresh)
@@ -1192,6 +1943,8 @@ namespace XboxGamingBar
             FPSLimitJudderFreeSlider.Visibility = Visibility.Collapsed;
             FPSLimitSlider.Minimum = 30;
             FPSLimitSlider.Maximum = maxRefresh;
+            if (FPSLimitSlider.Value < 30) FPSLimitSlider.Value = 30;
+            if (FPSLimitSlider.Value > maxRefresh) FPSLimitSlider.Value = maxRefresh;
             FPSLimitSlider.TickPlacement = TickPlacement.BottomRight;
         }
 
@@ -1344,6 +2097,7 @@ namespace XboxGamingBar
                 }
             }
             UpdateFPSLimitSliderJudderFree();
+            UpdateQuickFPSLimitButtonUI();
         }
 
         public void UpdateOSDStatusUI()
@@ -1355,6 +2109,8 @@ namespace XboxGamingBar
             }
 
             if (OSDRTSSWarningCard == null || OSDRTSSWarningBadge == null) return;
+
+            UpdateQuickRTSSStatus();
 
             bool isRtssRunning = IsRTSSRunning;
             bool isMismatch = IsElevationMismatch;
@@ -1507,6 +2263,7 @@ namespace XboxGamingBar
                     osdTextSize?.EnableControl(true);
                 }
             }
+            UpdateQuickOSDButtonUI((int)PerformanceOverlaySlider.Value);
         }
 
         private async void RenderJudderFreeMarkers()

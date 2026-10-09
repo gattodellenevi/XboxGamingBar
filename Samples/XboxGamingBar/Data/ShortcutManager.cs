@@ -58,6 +58,7 @@ namespace XboxGamingBar.Data
             new ShortcutPreset { Title = "AMD Instant Replay (Ctrl + Shift + S)", Name = "AMD Replay", IconGlyph = "\uE714", Ctrl = true, Alt = false, Shift = true, Win = false, VirtualKey = (int)VirtualKey.S },
             new ShortcutPreset { Title = "Discord Mute (Ctrl + Shift + M)", Name = "Mute Mic", IconGlyph = "\uE720", Ctrl = true, Alt = false, Shift = true, Win = false, VirtualKey = (int)VirtualKey.M },
             new ShortcutPreset { Title = "Mute Audio (Volume Mute)", Name = "Mute Audio", IconGlyph = "\uE74F", Ctrl = false, Alt = false, Shift = false, Win = false, VirtualKey = 173 },
+            new ShortcutPreset { Title = "On-Screen Keyboard (Win + Ctrl + O)", Name = "Keyboard", IconGlyph = "\uE765", Ctrl = true, Alt = false, Shift = false, Win = true, VirtualKey = (int)VirtualKey.O },
         };
 
         public static List<ShortcutIconOption> Icons { get; } = new List<ShortcutIconOption>

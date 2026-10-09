@@ -805,5 +805,301 @@ namespace XboxGamingBarHelper.Windows
                 return false;
             }
         }
+
+        #region CCD / HDR APIs
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct LUID
+        {
+            public uint LowPart;
+            public int HighPart;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DISPLAYCONFIG_PATH_SOURCE_INFO
+        {
+            public LUID adapterId;
+            public uint id;
+            public uint modeInfoIdx;
+            public uint statusFlags;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DISPLAYCONFIG_RATIONAL
+        {
+            public uint Numerator;
+            public uint Denominator;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DISPLAYCONFIG_PATH_TARGET_INFO
+        {
+            public LUID adapterId;
+            public uint id;
+            public uint modeInfoIdx;
+            public uint outputTechnology;
+            public uint rotation;
+            public uint scaling;
+            public DISPLAYCONFIG_RATIONAL refreshRate;
+            public uint scanLineOrdering;
+            public bool targetAvailable;
+            public uint statusFlags;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DISPLAYCONFIG_PATH_INFO
+        {
+            public DISPLAYCONFIG_PATH_SOURCE_INFO sourceInfo;
+            public DISPLAYCONFIG_PATH_TARGET_INFO targetInfo;
+            public uint flags;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DISPLAYCONFIG_MODE_INFO
+        {
+            public uint infoType;
+            public uint id;
+            public LUID adapterId;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 64)]
+            public byte[] modeInfo;
+        }
+
+        public enum DISPLAYCONFIG_DEVICE_INFO_TYPE : uint
+        {
+            DISPLAYCONFIG_DEVICE_INFO_GET_HEADER_NAME = 1,
+            DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO = 9,
+            DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE = 10,
+            DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2 = 15,
+            DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE = 16
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DISPLAYCONFIG_DEVICE_INFO_HEADER
+        {
+            public DISPLAYCONFIG_DEVICE_INFO_TYPE type;
+            public uint size;
+            public LUID adapterId;
+            public uint id;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO
+        {
+            public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+            public uint value;
+            public uint colorEncoding;
+            public uint bitsPerColorChannel;
+
+            public bool AdvancedColorSupported => (value & 0x1) != 0;
+            public bool AdvancedColorEnabled => (value & 0x2) != 0;
+            public bool WideColorEnforced => (value & 0x4) != 0;
+            public bool AdvancedColorForceDisabled => (value & 0x8) != 0;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2
+        {
+            public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+            public uint value;
+            public uint colorEncoding;
+            public uint bitsPerColorChannel;
+            public uint activeColorMode;
+
+            public bool AdvancedColorSupported => (value & 0x1) != 0;
+            public bool AdvancedColorActive => (value & 0x2) != 0;
+            public bool HighDynamicRangeSupported => (value & 0x10) != 0;
+            public bool HighDynamicRangeUserEnabled => (value & 0x20) != 0;
+            public bool WideColorSupported => (value & 0x40) != 0;
+            public bool WideColorUserEnabled => (value & 0x80) != 0;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE
+        {
+            public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+            public uint value;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DISPLAYCONFIG_SET_HDR_STATE
+        {
+            public DISPLAYCONFIG_DEVICE_INFO_HEADER header;
+            public uint value;
+        }
+
+        private const uint QDC_ONLY_ACTIVE_PATHS = 0x00000002;
+
+        [DllImport("user32.dll")]
+        public static extern int GetDisplayConfigBufferSizes(
+            uint flags,
+            out uint numPathArrayElements,
+            out uint numModeInfoArrayElements);
+
+        [DllImport("user32.dll")]
+        public static extern int QueryDisplayConfig(
+            uint flags,
+            ref uint numPathArrayElements,
+            [Out] DISPLAYCONFIG_PATH_INFO[] pathArray,
+            ref uint numModeInfoArrayElements,
+            [Out] DISPLAYCONFIG_MODE_INFO[] modeInfoArray,
+            IntPtr currentTopologyId);
+
+        [DllImport("user32.dll")]
+        public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO requestPacket);
+
+        [DllImport("user32.dll")]
+        public static extern int DisplayConfigGetDeviceInfo(ref DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2 requestPacket);
+
+        [DllImport("user32.dll")]
+        public static extern int DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE setPacket);
+
+        [DllImport("user32.dll")]
+        public static extern int DisplayConfigSetDeviceInfo(ref DISPLAYCONFIG_SET_HDR_STATE setPacket);
+
+        public static (bool supported, bool enabled) GetHDRStatus()
+        {
+            try
+            {
+                uint pathCount, modeCount;
+                int err = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, out pathCount, out modeCount);
+                if (err != 0 || pathCount == 0)
+                {
+                    return (false, false);
+                }
+
+                var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
+                var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
+
+                err = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
+                if (err != 0)
+                {
+                    return (false, false);
+                }
+
+                for (int i = 0; i < pathCount; i++)
+                {
+                    var p = paths[i];
+
+                    // Try v2 first (Windows 11 24H2+)
+                    var colorPacket2 = new DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2();
+                    colorPacket2.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO_2;
+                    colorPacket2.header.size = (uint)Marshal.SizeOf(typeof(DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO_2));
+                    colorPacket2.header.adapterId = p.targetInfo.adapterId;
+                    colorPacket2.header.id = p.targetInfo.id;
+
+                    if (DisplayConfigGetDeviceInfo(ref colorPacket2) == 0)
+                    {
+                        bool supported = colorPacket2.HighDynamicRangeSupported;
+                        bool enabled = colorPacket2.HighDynamicRangeUserEnabled || colorPacket2.activeColorMode == 2;
+                        if (supported)
+                        {
+                            return (true, enabled);
+                        }
+                    }
+
+                    // Fallback to v1 (legacy Windows 10/11)
+                    var colorPacket = new DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO();
+                    colorPacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_GET_ADVANCED_COLOR_INFO;
+                    colorPacket.header.size = (uint)Marshal.SizeOf(typeof(DISPLAYCONFIG_GET_ADVANCED_COLOR_INFO));
+                    colorPacket.header.adapterId = p.targetInfo.adapterId;
+                    colorPacket.header.id = p.targetInfo.id;
+
+                    if (DisplayConfigGetDeviceInfo(ref colorPacket) == 0)
+                    {
+                        bool supported = colorPacket.AdvancedColorSupported && !colorPacket.WideColorEnforced;
+                        bool enabled = supported && colorPacket.AdvancedColorEnabled;
+                        if (supported)
+                        {
+                            return (true, enabled);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to get HDR status.");
+            }
+
+            return (false, false);
+        }
+
+        public static bool SetHDR(bool enable)
+        {
+            Logger.Info($"Setting HDR to {enable}...");
+            try
+            {
+                uint pathCount, modeCount;
+                int err = GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, out pathCount, out modeCount);
+                if (err != 0 || pathCount == 0)
+                {
+                    Logger.Warn($"GetDisplayConfigBufferSizes failed: {err}. Falling back to Win+Alt+B.");
+                    InputSimulator.SendKeyCombo(false, true, false, true, 0x42);
+                    return true;
+                }
+
+                var paths = new DISPLAYCONFIG_PATH_INFO[pathCount];
+                var modes = new DISPLAYCONFIG_MODE_INFO[modeCount];
+
+                err = QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, ref pathCount, paths, ref modeCount, modes, IntPtr.Zero);
+                if (err != 0)
+                {
+                    Logger.Warn($"QueryDisplayConfig failed: {err}. Falling back to Win+Alt+B.");
+                    InputSimulator.SendKeyCombo(false, true, false, true, 0x42);
+                    return true;
+                }
+
+                bool appliedAny = false;
+                for (int i = 0; i < pathCount; i++)
+                {
+                    var p = paths[i];
+
+                    // Try Windows 11 24H2+ SET_HDR_STATE (16)
+                    var hdrPacket = new DISPLAYCONFIG_SET_HDR_STATE();
+                    hdrPacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_SET_HDR_STATE;
+                    hdrPacket.header.size = (uint)Marshal.SizeOf(typeof(DISPLAYCONFIG_SET_HDR_STATE));
+                    hdrPacket.header.adapterId = p.targetInfo.adapterId;
+                    hdrPacket.header.id = p.targetInfo.id;
+                    hdrPacket.value = enable ? 1u : 0u;
+
+                    int setErr = DisplayConfigSetDeviceInfo(ref hdrPacket);
+                    Logger.Info($"DisplayConfigSetDeviceInfo (SET_HDR_STATE 16) returned {setErr} for path {i}");
+
+                    if (setErr != 0)
+                    {
+                        // Fallback to legacy SET_ADVANCED_COLOR_STATE (10)
+                        var advPacket = new DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE();
+                        advPacket.header.type = DISPLAYCONFIG_DEVICE_INFO_TYPE.DISPLAYCONFIG_DEVICE_INFO_SET_ADVANCED_COLOR_STATE;
+                        advPacket.header.size = (uint)Marshal.SizeOf(typeof(DISPLAYCONFIG_SET_ADVANCED_COLOR_STATE));
+                        advPacket.header.adapterId = p.targetInfo.adapterId;
+                        advPacket.header.id = p.targetInfo.id;
+                        advPacket.value = enable ? 1u : 0u;
+
+                        setErr = DisplayConfigSetDeviceInfo(ref advPacket);
+                        Logger.Info($"DisplayConfigSetDeviceInfo (SET_ADVANCED_COLOR_STATE 10) returned {setErr} for path {i}");
+                    }
+
+                    if (setErr == 0)
+                    {
+                        appliedAny = true;
+                    }
+                }
+
+                if (!appliedAny)
+                {
+                    Logger.Warn("DisplayConfigSetDeviceInfo failed for all paths. Falling back to Win+Alt+B shortcut.");
+                    InputSimulator.SendKeyCombo(false, true, false, true, 0x42);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to set HDR status. Falling back to Win+Alt+B shortcut.");
+                InputSimulator.SendKeyCombo(false, true, false, true, 0x42);
+                return false;
+            }
+        }
+
+        #endregion
     }
 }

@@ -128,6 +128,12 @@ namespace XboxGamingBarHelper.Systems
             get { return restartGameInputService; }
         }
 
+        private readonly VirtualKeyboardProperty virtualKeyboard;
+        public VirtualKeyboardProperty VirtualKeyboard
+        {
+            get { return virtualKeyboard; }
+        }
+
         private readonly ControllerBatteryProperty controllerBattery;
         public ControllerBatteryProperty ControllerBattery
         {
@@ -152,6 +158,18 @@ namespace XboxGamingBarHelper.Systems
             get { return mouseScrollSpeed; }
         }
 
+        private readonly HDRProperty hdr;
+        public HDRProperty HDR
+        {
+            get { return hdr; }
+        }
+
+        private readonly HDRSupportedProperty hdrSupported;
+        public HDRSupportedProperty HDRSupported
+        {
+            get { return hdrSupported; }
+        }
+
         private IReadOnlyDictionary<GameId, GameProfile> Profiles { get; }
 
         // Keep track to current opening windows to determine currently running game.
@@ -164,6 +182,7 @@ namespace XboxGamingBarHelper.Systems
         private DateTime lastWindowScanTime = DateTime.MinValue;
         private DateTime lastGameInputCheckTime = DateTime.MinValue;
         private DateTime lastControllerBatteryCheckTime = DateTime.MinValue;
+        private DateTime lastHdrCheckTime = DateTime.MinValue;
 
         public event ResumeFromSleepEventHandler ResumeFromSleep;
 
@@ -201,6 +220,7 @@ namespace XboxGamingBarHelper.Systems
             Logger.Info($"Check GameInput service status: {initialGameInputStatus}.");
             gameInputStatus = new GameInputStatusProperty(initialGameInputStatus, this);
             restartGameInputService = new RestartGameInputServiceProperty(this);
+            virtualKeyboard = new VirtualKeyboardProperty(this);
             var initialBattery = ControllerBatteryManager.GetCurrentBatteryStatus();
             Logger.Info($"Check controller battery status: Connected={initialBattery.IsConnected}, Level={initialBattery.BatteryLevel}%, Category={initialBattery.LevelCategory}.");
             controllerBattery = new ControllerBatteryProperty(initialBattery, this);
@@ -230,6 +250,11 @@ namespace XboxGamingBarHelper.Systems
             {
                 Logger.Info($"Supported native resolution: {res.Width}x{res.Height} vs {resolution.Width}x{resolution.Height}");
             }
+
+            var (initialHdrSupported, initialHdrEnabled) = User32.GetHDRStatus();
+            Logger.Info($"Check initial HDR status: Supported={initialHdrSupported}, Enabled={initialHdrEnabled}.");
+            hdr = new HDRProperty(initialHdrEnabled, this);
+            hdrSupported = new HDRSupportedProperty(initialHdrSupported, this);
 
             displayUpdateTimer = new Timer(500); // 500ms debounce
             displayUpdateTimer.AutoReset = false;
@@ -436,6 +461,22 @@ namespace XboxGamingBarHelper.Systems
                     controllerBattery.SetValue(currentBattery, now.Ticks);
                 }
             }
+
+            if ((now - lastHdrCheckTime).TotalSeconds >= 3.0)
+            {
+                lastHdrCheckTime = now;
+                var (currentHdrSupported, currentHdrEnabled) = User32.GetHDRStatus();
+                if (hdrSupported.Value != currentHdrSupported)
+                {
+                    Logger.Info($"HDR support status changed: {currentHdrSupported}.");
+                    hdrSupported.SetValue(currentHdrSupported, now.Ticks);
+                }
+                if (hdr.Value != currentHdrEnabled)
+                {
+                    Logger.Info($"HDR status changed: {currentHdrEnabled}.");
+                    hdr.SetValue(currentHdrEnabled, now.Ticks);
+                }
+            }
         }
 
         private void SystemEvents_PowerModeChanged(object sender, PowerModeChangedEventArgs e)
@@ -478,6 +519,10 @@ namespace XboxGamingBarHelper.Systems
 
             var resolutionList = User32.GetSupportedNativeResolutions().Select(res => new Resolution(res.width, res.height)).ToList();
             resolutions.SetValue(new Resolutions(resolutionList));
+
+            var (currentHdrSupported, currentHdrEnabled) = User32.GetHDRStatus();
+            hdr.SetValue(currentHdrEnabled);
+            hdrSupported.SetValue(currentHdrSupported);
         }
     }
 }

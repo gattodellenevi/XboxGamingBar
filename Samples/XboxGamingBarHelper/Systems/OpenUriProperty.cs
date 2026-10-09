@@ -38,9 +38,11 @@ namespace XboxGamingBarHelper.Systems
             try
             {
                 if (Uri.TryCreate(uriString, UriKind.Absolute, out var uri) &&
-                    (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+                    (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps ||
+                     uri.Scheme.Equals("ms-gamebar", StringComparison.OrdinalIgnoreCase) ||
+                     uri.Scheme.Equals("ms-settings", StringComparison.OrdinalIgnoreCase)))
                 {
-                    Logger.Info($"Launching external URI in default browser: {uriString}");
+                    Logger.Info($"Launching external URI: {uriString}");
                     Process.Start(new ProcessStartInfo
                     {
                         FileName = uriString,
@@ -49,7 +51,7 @@ namespace XboxGamingBarHelper.Systems
                 }
                 else
                 {
-                    Logger.Warn($"Rejected non-HTTP(S) URI for OpenUri: {uriString}");
+                    Logger.Warn($"Rejected non-whitelisted URI for OpenUri: {uriString}");
                 }
             }
             catch (Exception ex)

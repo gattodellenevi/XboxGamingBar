@@ -88,8 +88,28 @@
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="FontWeight" Value="Bold"/>
             <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-            <Setter Property="Margin" Value="14,8,14,6"/>
+            <Setter Property="Margin" Value="14,4,14,6"/>
             <Setter Property="CharacterSpacing" Value="50"/>
+        </Style>
+
+        <!-- Reusable Controller Battery Flyout Presenter Style -->
+        <Style x:Key="ControllerBatteryFlyoutPresenterStyle" TargetType="FlyoutPresenter">
+            <Setter Property="MaxWidth" Value="300"/>
+            <Setter Property="Padding" Value="14,14,14,14"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Background" Value="#252525"/>
+            <Setter Property="BorderBrush" Value="#484848"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+
+        <!-- Hide default Pivot headers in favor of the 10-Foot HUD -->
+        <Style TargetType="PivotHeaderItem">
+            <Setter Property="Height" Value="0"/>
+            <Setter Property="MaxHeight" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Visibility" Value="Collapsed"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
         </Style>
     </Page.Resources>
 
@@ -282,7 +302,6 @@
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 
                 <!-- Gamepad Icon Badge -->
@@ -304,75 +323,8 @@
                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
                 </StackPanel>
 
-                <!-- Helper Elevation Warning Button (Shown when not elevated or offline) -->
-                <Button x:Name="HeroElevationWarningButton" Grid.Column="2" 
-                        Margin="0,0,8,0" Padding="8,3,8,3"
-                        Height="28" CornerRadius="6"
-                        Background="#2D2305" BorderBrush="#CA8A04" BorderThickness="1"
-                        VerticalAlignment="Center"
-                        Visibility="Collapsed"
-                        ToolTipService.ToolTip="Helper running without Administrator privileges. Hardware power controls are limited."
-                        Click="HeroElevationWarningButton_Click">
-                    <Button.Flyout>
-                        <Flyout x:Name="HelperElevationFlyout" Placement="Bottom" LightDismissOverlayMode="On">
-                            <Flyout.FlyoutPresenterStyle>
-                                <Style TargetType="FlyoutPresenter">
-                                    <Setter Property="MaxWidth" Value="320"/>
-                                    <Setter Property="Padding" Value="14,14,14,14"/>
-                                    <Setter Property="CornerRadius" Value="8"/>
-                                    <Setter Property="Background" Value="#252525"/>
-                                    <Setter Property="BorderBrush" Value="#484848"/>
-                                    <Setter Property="BorderThickness" Value="1"/>
-                                    <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
-                                    <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
-                                    <Setter Property="IsTabStop" Value="False"/>
-                                </Style>
-                            </Flyout.FlyoutPresenterStyle>
-                            <StackPanel x:Name="HelperElevationFlyoutContent" Width="280" XYFocusKeyboardNavigation="Enabled">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
-                                    <FontIcon Glyph="&#xE897;" FontSize="16" Margin="0,0,8,0" Foreground="{StaticResource XboxGreenBrush}"/>
-                                    <TextBlock Text="Helper Elevation" FontWeight="SemiBold" FontSize="15" Foreground="White"/>
-                                </StackPanel>
-                                <TextBlock Text="Running the helper with administrator privileges allows CouchGamingBar to fully control RTSS and system settings. Frame limiting may not work without administrator privileges."
-                                           Style="{StaticResource SubtitleTextStyle}"
-                                           Foreground="#D0D0D0"
-                                           TextWrapping="Wrap"
-                                           Margin="0,0,0,14"/>
-                                <Button x:Name="RestartElevatedButton"
-                                        HorizontalAlignment="Stretch"
-                                        Margin="0,0,0,10"
-                                        Padding="10,6,10,6"
-                                        CornerRadius="6"
-                                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
-                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                        BorderThickness="1"
-                                        IsTabStop="True"
-                                        XYFocusDown="{Binding ElementName=CloseElevationHelpButton}"
-                                        Click="RestartElevatedButton_Click">
-                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                        <FontIcon Glyph="&#xE7EF;" FontSize="13" Margin="0,0,6,0" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
-                                        <TextBlock x:Name="RestartElevatedButtonText" Text="Restart as Administrator" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Button>
-                                <Button x:Name="CloseElevationHelpButton"
-                                        Content="Close"
-                                        HorizontalAlignment="Stretch"
-                                        Padding="0,6,0,6"
-                                        CornerRadius="6"
-                                        IsTabStop="True"
-                                        XYFocusUp="{Binding ElementName=RestartElevatedButton}"
-                                        Click="CloseElevationHelpButton_Click"/>
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <FontIcon x:Name="HeroElevationWarningIcon" Glyph="&#xE7BA;" FontSize="12" Foreground="#F59E0B" Margin="0,0,5,0" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="HeroElevationWarningText" Text="Admin Needed" FontSize="11" FontWeight="SemiBold" Foreground="#F59E0B" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Button>
-
                 <!-- Controller Battery Badge (Shown when controller is connected) -->
-                <Button x:Name="ControllerBatteryBadge" Grid.Column="3" 
+                <Button x:Name="ControllerBatteryBadge" Grid.Column="2" 
                         Margin="0,0,8,0" Padding="8,3,8,3"
                         Height="28" CornerRadius="6"
                         Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
@@ -381,17 +333,8 @@
                         Visibility="Collapsed"
                         ToolTipService.ToolTip="Controller Battery Status">
                     <Button.Flyout>
-                        <Flyout x:Name="ControllerBatteryFlyout" Placement="Bottom" LightDismissOverlayMode="On">
-                            <Flyout.FlyoutPresenterStyle>
-                                <Style TargetType="FlyoutPresenter">
-                                    <Setter Property="MaxWidth" Value="300"/>
-                                    <Setter Property="Padding" Value="14,14,14,14"/>
-                                    <Setter Property="CornerRadius" Value="8"/>
-                                    <Setter Property="Background" Value="#252525"/>
-                                    <Setter Property="BorderBrush" Value="#484848"/>
-                                    <Setter Property="BorderThickness" Value="1"/>
-                                </Style>
-                            </Flyout.FlyoutPresenterStyle>
+                        <Flyout x:Name="ControllerBatteryFlyout" Placement="Bottom" LightDismissOverlayMode="On"
+                                FlyoutPresenterStyle="{StaticResource ControllerBatteryFlyoutPresenterStyle}">
                             <StackPanel Width="240" Spacing="8">
                                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                     <FontIcon x:Name="FlyoutBatteryIcon" Glyph="&#xEBB5;" FontSize="18" Margin="0,0,10,0" Foreground="{StaticResource XboxGreenBrush}"/>
@@ -423,39 +366,641 @@
                 </Button>
 
                 <!-- Profile Switch -->
-                <ToggleSwitch x:Name="PerGameProfileToggle" Grid.Column="4" IsEnabled="False" 
+                <ToggleSwitch x:Name="PerGameProfileToggle" Grid.Column="3" IsEnabled="False" 
                               OffContent="Global" OnContent="Per-game"
                               VerticalAlignment="Center" HorizontalAlignment="Right"/>
             </Grid>
         </Border>
 
         <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-            <!-- Tab Navigation Indicators (Modern Pill Bumpers with Xbox Theme) -->
-            <Border Width="28" Height="22" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8,10,0,0" 
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1.2" CornerRadius="6" 
-                    Background="{ThemeResource LayerFillColorDefaultBrush}" IsHitTestVisible="False" Canvas.ZIndex="2">
-                <TextBlock Text="LT" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" 
-                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" CharacterSpacing="30"/>
+            <!-- Option C: 10-Foot Living Room HUD with Pager Dots and LT/RT Triggers -->
+            <Border Grid.Row="0" Margin="10,0,10,2" CornerRadius="10"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1" Padding="8,6,8,4"
+                    XYFocusKeyboardNavigation="Enabled"
+                    Canvas.ZIndex="2"
+                    PointerWheelChanged="NavTabHUD_PointerWheelChanged">
+                <StackPanel>
+                    <!-- Top Row: [LT] [Ghost Prev] [ACTIVE HERO TAB] [Ghost Next] [RT] -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Left Trigger Pill (LT) -->
+                        <Button x:Name="NavTriggerLeftButton" Grid.Column="0"
+                                Width="34" Height="28" CornerRadius="6" Padding="0"
+                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1.2"
+                                VerticalAlignment="Center" HorizontalAlignment="Left"
+                                ToolTipService.ToolTip="Previous Tab (Left Trigger)"
+                                Click="NavTriggerLeftButton_Click">
+                            <TextBlock Text="LT" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+                        </Button>
+
+                        <!-- Previous Ghost Tab Button -->
+                        <Button x:Name="NavPrevTabGhostButton" Grid.Column="1"
+                                Background="Transparent" BorderThickness="0" Padding="4,4,4,4"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Click="NavPrevTabGhostButton_Click">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Opacity="0.55">
+                                <FontIcon x:Name="NavPrevTabIcon" Glyph="&#xEC7A;" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                                <TextBlock x:Name="NavPrevTabText" Text="Quick" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" MaxWidth="90"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Center Active Hero Tab Badge -->
+                        <Border x:Name="NavActiveHeroBadge" Grid.Column="2"
+                                Background="{StaticResource XboxGreenBrush}" CornerRadius="8"
+                                Padding="14,5,14,5" VerticalAlignment="Center" HorizontalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <FontIcon x:Name="NavActiveHeroIcon" Glyph="&#xEC7A;" FontSize="14" Margin="0,0,7,0" VerticalAlignment="Center" Foreground="White"/>
+                                <TextBlock x:Name="NavActiveHeroText" Text="QUICK ACCESS" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" Foreground="White"
+                                           CharacterSpacing="40"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Next Ghost Tab Button -->
+                        <Button x:Name="NavNextTabGhostButton" Grid.Column="3"
+                                Background="Transparent" BorderThickness="0" Padding="4,4,4,4"
+                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Click="NavNextTabGhostButton_Click">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Opacity="0.55">
+                                <FontIcon x:Name="NavNextTabIcon" Glyph="&#xE9D2;" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                                <TextBlock x:Name="NavNextTabText" Text="Perf" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis" MaxWidth="90"/>
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Right Trigger Pill (RT) -->
+                        <Button x:Name="NavTriggerRightButton" Grid.Column="4"
+                                Width="34" Height="28" CornerRadius="6" Padding="0"
+                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1.2"
+                                VerticalAlignment="Center" HorizontalAlignment="Right"
+                                ToolTipService.ToolTip="Next Tab (Right Trigger)"
+                                Click="NavTriggerRightButton_Click">
+                            <TextBlock Text="RT" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+                        </Button>
+                    </Grid>
+
+                    <!-- Bottom Row: Interactive Pager Dots + Numeric Counter Badge -->
+                    <Grid Margin="0,3,0,0">
+                        <!-- Centered Pager Dots -->
+                        <StackPanel x:Name="NavPagerDotsPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                        <!-- Numeric Counter Badge (Right Aligned) -->
+                        <Border x:Name="NavTabCounterBorder" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                Style="{StaticResource ValueBadgeStyle}" Padding="6,1,6,1">
+                            <TextBlock x:Name="NavTabCounterText" Text="1 of 5" Style="{StaticResource ValueBadgeTextStyle}"/>
+                        </Border>
+                    </Grid>
+                </StackPanel>
             </Border>
-            <Border Width="28" Height="22" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,10,8,0" 
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1.2" CornerRadius="6" 
-                    Background="{ThemeResource LayerFillColorDefaultBrush}" IsHitTestVisible="False" Canvas.ZIndex="2">
-                <TextBlock Text="RT" FontSize="10" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" 
-                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" CharacterSpacing="30"/>
-            </Border>
-            
-            <Pivot x:Name="MainPivot" IsHeaderItemsCarouselEnabled="False" XYFocusKeyboardNavigation="Enabled" UseSystemFocusVisuals="True">
-                <!-- PERFORMANCE TAB -->
-                <PivotItem>
+
+            <Pivot x:Name="MainPivot" Grid.Row="1" Margin="0,-46,0,0" IsHeaderItemsCarouselEnabled="False" XYFocusKeyboardNavigation="Enabled" UseSystemFocusVisuals="True"
+                   SelectionChanged="MainPivot_SelectionChanged">
+                <!-- QUICK ACCESS TAB (FIRST TAB) -->
+                <PivotItem x:Name="QuickAccessPivotItem">
                     <PivotItem.Header>
                         <StackPanel Orientation="Horizontal" Margin="24,0,6,0">
+                            <FontIcon Glyph="&#xEC7A;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                            <TextBlock Text="Quick Access" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </PivotItem.Header>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
+                        <StackPanel Margin="0,2,0,16">
+
+                            <!-- SECTION 1: LIVE HARDWARE VITALS (SINGLE ROW STRIP) -->
+                            <TextBlock Text="LIVE HARDWARE VITALS" Style="{StaticResource SectionHeaderTextStyle}"/>
+                            <Border Style="{StaticResource SettingsCardStyle}" Margin="10,0,10,12" Padding="6,10,6,10">
+                                <StackPanel>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- 1. CPU COLUMN -->
+                                        <StackPanel Grid.Column="0" HorizontalAlignment="Center">
+                                            <Border Background="#2600D2B4" CornerRadius="4" Padding="6,2,6,2" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                <TextBlock Text="CPU" FontSize="10" FontWeight="Bold" Foreground="#00D2B4"/>
+                                            </Border>
+                                            <TextBlock x:Name="QuickCPUUsageText" Text="--%" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center"/>
+                                            <TextBlock x:Name="QuickCPUWattageText" Text="--W" FontSize="11"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <!-- Divider 1 -->
+                                        <Border Grid.Column="1" Width="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="2,4,2,4"/>
+
+                                        <!-- 2. RAM COLUMN -->
+                                        <StackPanel Grid.Column="2" HorizontalAlignment="Center">
+                                            <Border Background="#26FF69B4" CornerRadius="4" Padding="6,2,6,2" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                <TextBlock Text="RAM" FontSize="10" FontWeight="Bold" Foreground="#FF69B4"/>
+                                            </Border>
+                                            <TextBlock x:Name="QuickRAMUsageText" Text="--%" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center"/>
+                                            <TextBlock x:Name="QuickRAMUsedText" Text="-- GB" FontSize="11"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <!-- Divider 2 -->
+                                        <Border Grid.Column="3" Width="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="2,4,2,4"/>
+
+                                        <!-- 3. GPU COLUMN -->
+                                        <StackPanel Grid.Column="4" HorizontalAlignment="Center">
+                                            <Border Background="#267CFC00" CornerRadius="4" Padding="6,2,6,2" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                <TextBlock Text="GPU" FontSize="10" FontWeight="Bold" Foreground="#7CFC00"/>
+                                            </Border>
+                                            <TextBlock x:Name="QuickGPUUsageText" Text="--%" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center"/>
+                                            <TextBlock x:Name="QuickGPUWattageText" Text="--W" FontSize="11"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+
+                                        <!-- Divider 3 -->
+                                        <Border Grid.Column="5" Width="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="2,4,2,4"/>
+
+                                        <!-- 4. VRAM COLUMN -->
+                                        <StackPanel Grid.Column="6" HorizontalAlignment="Center">
+                                            <Border Background="#26BA55D3" CornerRadius="4" Padding="6,2,6,2" HorizontalAlignment="Center" Margin="0,0,0,4">
+                                                <TextBlock Text="VRAM" FontSize="10" FontWeight="Bold" Foreground="#BA55D3"/>
+                                            </Border>
+                                            <TextBlock x:Name="QuickVRAMUsageText" Text="--%" FontWeight="Bold" FontSize="16" HorizontalAlignment="Center"/>
+                                            <TextBlock x:Name="QuickVRAMUsedText" Text="-- GB" FontSize="11"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" HorizontalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <!-- Vitals Footer: Display Info + RTSS Server Status -->
+                                    <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,8,0,8"/>
+                                    <Grid Margin="2,0,2,0">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE770;" FontSize="12" Margin="0,0,6,0" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="QuickDisplayInfoText" Text="Display: Auto" FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                            <Border x:Name="QuickHDRStatusBadge" Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0" Padding="5,1,5,1" VerticalAlignment="Center"
+                                                    Background="#3A3A3A" BorderBrush="#3A3A3A">
+                                                <TextBlock x:Name="QuickHDRStatusBadgeText" Text="SDR" FontSize="9" FontWeight="SemiBold" Foreground="#CCCCCC"/>
+                                            </Border>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                            <Ellipse x:Name="QuickRTSSStatusDot" Width="6" Height="6" Fill="{StaticResource XboxGreenBrush}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                            <TextBlock x:Name="QuickRTSSStatusText" Text="RTSS Active" FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- SECTION: GAMEPAD BATTERY (SHOWN WHEN GAMEPADS CONNECTED) -->
+                            <StackPanel x:Name="QuickGamepadSection" Visibility="Collapsed">
+                                <TextBlock Text="GAMEPAD BATTERY" Style="{StaticResource SectionHeaderTextStyle}"/>
+                                <Grid x:Name="QuickGamepadGrid" Margin="10,0,10,10" XYFocusKeyboardNavigation="Enabled">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+
+                                    <!-- Gamepad 1 Button -->
+                                    <Button x:Name="QuickGamepadButton1" Grid.Row="0" Grid.Column="0"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                            Margin="0,0,5,6" Padding="12,10,12,10" CornerRadius="8"
+                                            Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            Visibility="Collapsed"
+                                            XYFocusRight="{x:Bind QuickGamepadButton2}">
+                                        <Button.Flyout>
+                                            <Flyout x:Name="QuickGamepadFlyout1" Placement="Bottom" LightDismissOverlayMode="On"
+                                                    FlyoutPresenterStyle="{StaticResource ControllerBatteryFlyoutPresenterStyle}">
+                                                <StackPanel Width="240" Spacing="8">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <FontIcon x:Name="QuickGamepadFlyoutIcon1" Glyph="&#xEBB5;" FontSize="18" Margin="0,0,10,0" Foreground="{StaticResource XboxGreenBrush}"/>
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <TextBlock x:Name="QuickGamepadFlyoutName1" Text="Controller 1" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                                                            <TextBlock x:Name="QuickGamepadFlyoutSubtitle1" Text="Wireless Connection" Style="{StaticResource SubtitleTextStyle}"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                    <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,2,0,2"/>
+                                                    <Grid>
+                                                        <TextBlock Text="Charge Level" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutPercent1" Text="100%" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                    <Grid>
+                                                        <TextBlock Text="Power Source" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutType1" Text="Wireless" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                    <Grid>
+                                                        <TextBlock Text="Status" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutStatus1" Text="Discharging" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Flyout>
+                                        </Button.Flyout>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="6" 
+                                                    Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                                    Margin="0,0,10,0" VerticalAlignment="Center">
+                                                <FontIcon x:Name="QuickGamepadIcon1" Glyph="&#xEBB5;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                          Foreground="{StaticResource XboxGreenBrush}"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
+                                                <TextBlock x:Name="QuickGamepadName1" Text="Controller 1" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock x:Name="QuickGamepadSubtitle1" Text="Wireless" Style="{StaticResource SubtitleTextStyle}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <Border x:Name="QuickGamepadBadge1" Grid.Column="2" VerticalAlignment="Center"
+                                                    Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2"
+                                                    Background="#107C41" BorderBrush="#107C41">
+                                                <TextBlock x:Name="QuickGamepadBadgeText1" Text="100%" Style="{StaticResource ValueBadgeTextStyle}" Foreground="White"/>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+
+                                    <!-- Gamepad 2 Button -->
+                                    <Button x:Name="QuickGamepadButton2" Grid.Row="0" Grid.Column="1"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                            Margin="5,0,0,6" Padding="12,10,12,10" CornerRadius="8"
+                                            Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            Visibility="Collapsed"
+                                            XYFocusLeft="{x:Bind QuickGamepadButton1}">
+                                        <Button.Flyout>
+                                            <Flyout x:Name="QuickGamepadFlyout2" Placement="Bottom" LightDismissOverlayMode="On"
+                                                    FlyoutPresenterStyle="{StaticResource ControllerBatteryFlyoutPresenterStyle}">
+                                                <StackPanel Width="240" Spacing="8">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <FontIcon x:Name="QuickGamepadFlyoutIcon2" Glyph="&#xEBB5;" FontSize="18" Margin="0,0,10,0" Foreground="{StaticResource XboxGreenBrush}"/>
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <TextBlock x:Name="QuickGamepadFlyoutName2" Text="Controller 2" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                                                            <TextBlock x:Name="QuickGamepadFlyoutSubtitle2" Text="Wireless Connection" Style="{StaticResource SubtitleTextStyle}"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                    <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,2,0,2"/>
+                                                    <Grid>
+                                                        <TextBlock Text="Charge Level" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutPercent2" Text="100%" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                    <Grid>
+                                                        <TextBlock Text="Power Source" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutType2" Text="Wireless" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                    <Grid>
+                                                        <TextBlock Text="Status" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutStatus2" Text="Discharging" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Flyout>
+                                        </Button.Flyout>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="6" 
+                                                    Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                                    Margin="0,0,10,0" VerticalAlignment="Center">
+                                                <FontIcon x:Name="QuickGamepadIcon2" Glyph="&#xEBB5;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                          Foreground="{StaticResource XboxGreenBrush}"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
+                                                <TextBlock x:Name="QuickGamepadName2" Text="Controller 2" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock x:Name="QuickGamepadSubtitle2" Text="Wireless" Style="{StaticResource SubtitleTextStyle}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <Border x:Name="QuickGamepadBadge2" Grid.Column="2" VerticalAlignment="Center"
+                                                    Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2"
+                                                    Background="#107C41" BorderBrush="#107C41">
+                                                <TextBlock x:Name="QuickGamepadBadgeText2" Text="100%" Style="{StaticResource ValueBadgeTextStyle}" Foreground="White"/>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+
+                                    <!-- Gamepad 3 Button -->
+                                    <Button x:Name="QuickGamepadButton3" Grid.Row="1" Grid.Column="0"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                            Margin="0,0,5,6" Padding="12,10,12,10" CornerRadius="8"
+                                            Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            Visibility="Collapsed"
+                                            XYFocusRight="{x:Bind QuickGamepadButton4}">
+                                        <Button.Flyout>
+                                            <Flyout x:Name="QuickGamepadFlyout3" Placement="Bottom" LightDismissOverlayMode="On"
+                                                    FlyoutPresenterStyle="{StaticResource ControllerBatteryFlyoutPresenterStyle}">
+                                                <StackPanel Width="240" Spacing="8">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <FontIcon x:Name="QuickGamepadFlyoutIcon3" Glyph="&#xEBB5;" FontSize="18" Margin="0,0,10,0" Foreground="{StaticResource XboxGreenBrush}"/>
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <TextBlock x:Name="QuickGamepadFlyoutName3" Text="Controller 3" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                                                            <TextBlock x:Name="QuickGamepadFlyoutSubtitle3" Text="Wireless Connection" Style="{StaticResource SubtitleTextStyle}"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                    <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,2,0,2"/>
+                                                    <Grid>
+                                                        <TextBlock Text="Charge Level" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutPercent3" Text="100%" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                    <Grid>
+                                                        <TextBlock Text="Power Source" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutType3" Text="Wireless" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                    <Grid>
+                                                        <TextBlock Text="Status" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutStatus3" Text="Discharging" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Flyout>
+                                        </Button.Flyout>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="6" 
+                                                    Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                                    Margin="0,0,10,0" VerticalAlignment="Center">
+                                                <FontIcon x:Name="QuickGamepadIcon3" Glyph="&#xEBB5;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                          Foreground="{StaticResource XboxGreenBrush}"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
+                                                <TextBlock x:Name="QuickGamepadName3" Text="Controller 3" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock x:Name="QuickGamepadSubtitle3" Text="Wireless" Style="{StaticResource SubtitleTextStyle}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <Border x:Name="QuickGamepadBadge3" Grid.Column="2" VerticalAlignment="Center"
+                                                    Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2"
+                                                    Background="#107C41" BorderBrush="#107C41">
+                                                <TextBlock x:Name="QuickGamepadBadgeText3" Text="100%" Style="{StaticResource ValueBadgeTextStyle}" Foreground="White"/>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+
+                                    <!-- Gamepad 4 Button -->
+                                    <Button x:Name="QuickGamepadButton4" Grid.Row="1" Grid.Column="1"
+                                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                            Margin="5,0,0,6" Padding="12,10,12,10" CornerRadius="8"
+                                            Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            Visibility="Collapsed"
+                                            XYFocusLeft="{x:Bind QuickGamepadButton3}">
+                                        <Button.Flyout>
+                                            <Flyout x:Name="QuickGamepadFlyout4" Placement="Bottom" LightDismissOverlayMode="On"
+                                                    FlyoutPresenterStyle="{StaticResource ControllerBatteryFlyoutPresenterStyle}">
+                                                <StackPanel Width="240" Spacing="8">
+                                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                        <FontIcon x:Name="QuickGamepadFlyoutIcon4" Glyph="&#xEBB5;" FontSize="18" Margin="0,0,10,0" Foreground="{StaticResource XboxGreenBrush}"/>
+                                                        <StackPanel VerticalAlignment="Center">
+                                                            <TextBlock x:Name="QuickGamepadFlyoutName4" Text="Controller 4" FontWeight="SemiBold" FontSize="14" Foreground="White"/>
+                                                            <TextBlock x:Name="QuickGamepadFlyoutSubtitle4" Text="Wireless Connection" Style="{StaticResource SubtitleTextStyle}"/>
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                    <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,2,0,2"/>
+                                                    <Grid>
+                                                        <TextBlock Text="Charge Level" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutPercent4" Text="100%" FontWeight="Bold" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                    <Grid>
+                                                        <TextBlock Text="Power Source" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutType4" Text="Wireless" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                    <Grid>
+                                                        <TextBlock Text="Status" FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                                        <TextBlock x:Name="QuickGamepadFlyoutStatus4" Text="Discharging" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White"/>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Flyout>
+                                        </Button.Flyout>
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Width="32" Height="32" CornerRadius="6" 
+                                                    Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                                    Margin="0,0,10,0" VerticalAlignment="Center">
+                                                <FontIcon x:Name="QuickGamepadIcon4" Glyph="&#xEBB5;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                          Foreground="{StaticResource XboxGreenBrush}"/>
+                                            </Border>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
+                                                <TextBlock x:Name="QuickGamepadName4" Text="Controller 4" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                                <TextBlock x:Name="QuickGamepadSubtitle4" Text="Wireless" Style="{StaticResource SubtitleTextStyle}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                            <Border x:Name="QuickGamepadBadge4" Grid.Column="2" VerticalAlignment="Center"
+                                                    Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2"
+                                                    Background="#107C41" BorderBrush="#107C41">
+                                                <TextBlock x:Name="QuickGamepadBadgeText4" Text="100%" Style="{StaticResource ValueBadgeTextStyle}" Foreground="White"/>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+                                </Grid>
+                            </StackPanel>
+
+                            <!-- SECTION 2: COUCH ESSENTIALS -->
+                            <TextBlock Text="COUCH ESSENTIALS" Style="{StaticResource SectionHeaderTextStyle}"/>
+                            <Grid Margin="10,0,10,10">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Row 0: Virtual Keyboard & Gamepad Cursor -->
+                                <Button x:Name="QuickVirtualKeyboardButton" Grid.Row="0" Grid.Column="0"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                        Margin="0,0,5,6" Padding="12,10,12,10" CornerRadius="8"
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        XYFocusRight="{x:Bind QuickGamepadCursorButton}"
+                                        Click="OpenVirtualKeyboardButton_Click">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="32" Height="32" CornerRadius="6" 
+                                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                                Margin="0,0,10,0" VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE765;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                      Foreground="{StaticResource XboxGreenBrush}"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="Touch Keyboard" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="Open on-screen keyboard" Style="{StaticResource SubtitleTextStyle}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+
+                                <Button x:Name="QuickGamepadCursorButton" Grid.Row="0" Grid.Column="1"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                        Margin="5,0,0,6" Padding="12,10,12,10" CornerRadius="8"
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        XYFocusLeft="{x:Bind QuickVirtualKeyboardButton}"
+                                        Click="OpenGamepadCursorSettingsButton_Click">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border Grid.Column="0" Width="32" Height="32" CornerRadius="6" 
+                                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                                Margin="0,0,10,0" VerticalAlignment="Center">
+                                            <FontIcon Glyph="&#xE962;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                      Foreground="{StaticResource XboxGreenBrush}"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Text="Gamepad Cursor" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="Open Game Bar setting" Style="{StaticResource SubtitleTextStyle}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+
+                                <!-- Row 1: RTSS Overlay & Frame Limiter Quick Toggles -->
+                                <Button x:Name="QuickOSDToggleButton" Grid.Row="1" Grid.Column="0"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                        Margin="0,0,5,6" Padding="12,10,12,10" CornerRadius="8"
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        XYFocusRight="{x:Bind QuickFPSLimitToggleButton}"
+                                        Click="QuickOSDToggleButton_Click">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="QuickOSDIconBorder" Grid.Column="0" Width="32" Height="32" CornerRadius="6" 
+                                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                                Margin="0,0,10,0" VerticalAlignment="Center">
+                                            <FontIcon x:Name="QuickOSDIcon" Glyph="&#xE9D2;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                      Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
+                                            <TextBlock Text="RTSS Overlay" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock x:Name="QuickOSDSubtitleText" Text="Disabled" Style="{StaticResource SubtitleTextStyle}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <Border x:Name="QuickOSDBadge" Grid.Column="2" VerticalAlignment="Center"
+                                                Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2"
+                                                Background="#3A3A3A" BorderBrush="#3A3A3A">
+                                            <TextBlock x:Name="QuickOSDBadgeText" Text="OFF" Style="{StaticResource ValueBadgeTextStyle}" Foreground="#CCCCCC"/>
+                                        </Border>
+                                    </Grid>
+                                </Button>
+
+                                <Button x:Name="QuickFPSLimitToggleButton" Grid.Row="1" Grid.Column="1"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                        Margin="5,0,0,6" Padding="12,10,12,10" CornerRadius="8"
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        XYFocusLeft="{x:Bind QuickOSDToggleButton}"
+                                        Click="QuickFPSLimitToggleButton_Click">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="QuickFPSLimitIconBorder" Grid.Column="0" Width="32" Height="32" CornerRadius="6" 
+                                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                                Margin="0,0,10,0" VerticalAlignment="Center">
+                                            <FontIcon x:Name="QuickFPSLimitIcon" Glyph="&#xEDA7;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                      Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
+                                            <TextBlock Text="Frame Limiter" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock x:Name="QuickFPSLimitSubtitleText" Text="Disabled" Style="{StaticResource SubtitleTextStyle}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <Border x:Name="QuickFPSLimitBadge" Grid.Column="2" VerticalAlignment="Center"
+                                                Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2"
+                                                Background="#3A3A3A" BorderBrush="#3A3A3A">
+                                            <TextBlock x:Name="QuickFPSLimitBadgeText" Text="OFF" Style="{StaticResource ValueBadgeTextStyle}" Foreground="#CCCCCC"/>
+                                        </Border>
+                                    </Grid>
+                                </Button>
+
+                                <!-- Row 2: HDR Quick Toggle -->
+                                <Button x:Name="QuickHDRToggleButton" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                        Margin="0,0,0,0" Padding="12,10,12,10" CornerRadius="8"
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        Click="QuickHDRToggleButton_Click">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="QuickHDRIconBorder" Grid.Column="0" Width="32" Height="32" CornerRadius="6" 
+                                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                                Margin="0,0,10,0" VerticalAlignment="Center">
+                                            <FontIcon x:Name="QuickHDRIcon" Glyph="&#xE793;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                      Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
+                                            <TextBlock Text="HDR (High Dynamic Range)" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock x:Name="QuickHDRSubtitleText" Text="Disabled" Style="{StaticResource SubtitleTextStyle}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <Border x:Name="QuickHDRBadge" Grid.Column="2" VerticalAlignment="Center"
+                                                Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2"
+                                                Background="#3A3A3A" BorderBrush="#3A3A3A">
+                                            <TextBlock x:Name="QuickHDRBadgeText" Text="OFF" Style="{StaticResource ValueBadgeTextStyle}" Foreground="#CCCCCC"/>
+                                        </Border>
+                                    </Grid>
+                                </Button>
+                            </Grid>
+
+                        </StackPanel>
+                    </ScrollViewer>
+                </PivotItem>
+
+                <!-- PERFORMANCE TAB -->
+                <PivotItem x:Name="PerformancePivotItem">
+                    <PivotItem.Header>
+                        <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                             <FontIcon Glyph="&#xE9D2;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
                             <TextBlock Text="Performance" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
-                        <StackPanel Margin="0,8,0,16">
+                        <StackPanel Margin="0,2,0,16">
 
                             <!-- SECTION: LIVE HARDWARE METRICS (SINGLE ROW STRIP) -->
                             <Border Style="{StaticResource SettingsCardStyle}" Margin="10,2,10,12" Padding="6,10,6,10">
@@ -825,7 +1370,7 @@
                                         <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
 
                                         <Slider x:Name="FPSLimitSlider"
-                                            Minimum="30" Maximum="300"
+                                            Minimum="30" Maximum="120"
                                             TickFrequency="1"
                                             SnapsTo="Ticks"
                                             TickPlacement="BottomRight"
@@ -884,7 +1429,7 @@
                         </StackPanel>
                     </PivotItem.Header>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
-                        <StackPanel Margin="0,8,0,16">
+                        <StackPanel Margin="0,2,0,16">
 
                             <!-- SECTION: SHORTCUT BUTTONS -->
                             <TextBlock Text="SHORTCUTS" Style="{StaticResource SectionHeaderTextStyle}"/>
@@ -1022,7 +1567,7 @@
                         </StackPanel>
                     </PivotItem.Header>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
-                        <StackPanel Margin="0,8,0,16">
+                        <StackPanel Margin="0,2,0,16">
 
                             <!-- SECTION: MOUSE POINTER -->
                             <TextBlock Text="GAMEPAD &amp; MOUSE CURSOR" Style="{StaticResource SectionHeaderTextStyle}"/>
@@ -1097,6 +1642,60 @@
                                             OnContent="On" OffContent="Off"
                                             IsEnabled="False"/>
                                     </Grid>
+
+                                    <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
+
+                                    <!-- Game Bar Gamepad Cursor Setting -->
+                                    <Grid Margin="0,2,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <TextBlock x:Name="GamepadCursorSettingTitleText" Text="Game Bar Gamepad Cursor" FontWeight="SemiBold" FontSize="15"
+                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            <TextBlock x:Name="GamepadCursorSettingSubtitleText" Text="Configure stick cursor navigation, button clicks, and auto-activation in Game Bar" Style="{StaticResource SubtitleTextStyle}"/>
+                                        </StackPanel>
+                                        <Button x:Name="OpenGamepadCursorSettingsButton" Grid.Column="1"
+                                                VerticalAlignment="Center" Padding="12,6,12,6"
+                                                CornerRadius="6"
+                                                Click="OpenGamepadCursorSettingsButton_Click"
+                                                ToolTipService.ToolTip="Open Game Bar Gamepad Cursor settings">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon Glyph="&#xE713;" FontSize="13" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="OpenGamepadCursorSettingsButtonText" Text="Open" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- SECTION: ON-SCREEN KEYBOARD -->
+                            <TextBlock Text="ON-SCREEN KEYBOARD" Style="{StaticResource SectionHeaderTextStyle}"/>
+
+                            <Border Style="{StaticResource SettingsCardStyle}">
+                                <StackPanel>
+                                    <Grid Margin="0,2,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <TextBlock x:Name="VirtualKeyboardTitleText" Text="Touch / Virtual Keyboard" FontWeight="SemiBold" FontSize="15"
+                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            <TextBlock x:Name="VirtualKeyboardSubtitleText" Text="Open Windows virtual keyboard for text input without a physical keyboard" Style="{StaticResource SubtitleTextStyle}"/>
+                                        </StackPanel>
+                                        <Button x:Name="OpenVirtualKeyboardButton" Grid.Column="1"
+                                                VerticalAlignment="Center" Padding="12,6,12,6"
+                                                CornerRadius="6"
+                                                Click="OpenVirtualKeyboardButton_Click"
+                                                ToolTipService.ToolTip="Summon the Windows Touch Keyboard or On-Screen Keyboard">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon Glyph="&#xE765;" FontSize="13" VerticalAlignment="Center"/>
+                                                <TextBlock x:Name="OpenVirtualKeyboardButtonText" Text="Open" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                        </Button>
+                                    </Grid>
                                 </StackPanel>
                             </Border>
 
@@ -1142,7 +1741,7 @@
                 </PivotItem>
 
                 <!-- SYSTEM TAB -->
-                <PivotItem>
+                <PivotItem x:Name="SystemPivotItem">
                     <PivotItem.Header>
                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
                             <FontIcon Glyph="&#xE770;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center"/>
@@ -1150,7 +1749,7 @@
                         </StackPanel>
                     </PivotItem.Header>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
-                        <StackPanel Margin="0,8,0,16">
+                        <StackPanel Margin="0,2,0,16">
 
                             <!-- SECTION: DISPLAY -->
                             <TextBlock Text="DISPLAY" Style="{StaticResource SectionHeaderTextStyle}"/>
@@ -1179,6 +1778,17 @@
                                         <ComboBox x:Name="ResolutionsComboBox" PlaceholderText="1920x1080" Width="140" IsEnabled="False" HorizontalAlignment="Right">
                                             <x:String>1920x1080</x:String>
                                         </ComboBox>
+                                    </Grid>
+
+                                    <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
+
+                                    <Grid Margin="0,2,0,2">
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <TextBlock x:Name="HDRText" Text="HDR" FontWeight="SemiBold" FontSize="15"
+                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            <TextBlock x:Name="HDRSubtitleText" Text="High Dynamic Range display" Style="{StaticResource SubtitleTextStyle}"/>
+                                        </StackPanel>
+                                        <ToggleSwitch x:Name="HDRToggle" IsOn="False" IsEnabled="False" HorizontalAlignment="Right"/>
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -1282,7 +1892,7 @@
                         </StackPanel>
                     </PivotItem.Header>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
-                        <StackPanel Margin="0,8,0,16">
+                        <StackPanel Margin="0,2,0,16">
 
                             <!-- SECTION: UPSCALING & FRAME GEN -->
                             <TextBlock Text="RADEON UPSCALING &amp; FRAMES" Style="{StaticResource SectionHeaderTextStyle}"/>
@@ -1461,7 +2071,7 @@
                         </StackPanel>
                     </PivotItem.Header>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
-                        <StackPanel Margin="0,8,0,16">
+                        <StackPanel Margin="0,2,0,16">
 
                             <!-- SECTION: NVIDIA APP -->
                             <TextBlock Text="NVIDIA SOFTWARE" Style="{StaticResource SectionHeaderTextStyle}"/>

@@ -128,6 +128,8 @@
     <Compile Include="Data\MouseEnhancePointerPrecisionProperty.cs" />
     <Compile Include="Data\RefreshRateProperty.cs" />
     <Compile Include="Data\RefreshRatesProperty.cs" />
+    <Compile Include="Data\HDRProperty.cs" />
+    <Compile Include="Data\HDRSupportedProperty.cs" />
     <Compile Include="Data\OnScreenDisplayProviderInstalledProperty.cs" />
     <Compile Include="Data\ResolutionProperty.cs" />
     <Compile Include="Data\ResolutionsProperty.cs" />

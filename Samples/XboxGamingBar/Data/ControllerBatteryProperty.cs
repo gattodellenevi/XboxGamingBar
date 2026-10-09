@@ -11,6 +11,28 @@ using Windows.UI.Xaml.Media;
 
 namespace XboxGamingBar.Data
 {
+    internal class QuickGamepadButtonUI
+    {
+        public Button Button;
+        public FontIcon Icon;
+        public TextBlock Name;
+        public TextBlock Subtitle;
+        public Border Badge;
+        public TextBlock BadgeText;
+        public FontIcon FlyoutIcon;
+        public TextBlock FlyoutName;
+        public TextBlock FlyoutSubtitle;
+        public TextBlock FlyoutPercent;
+        public TextBlock FlyoutType;
+        public TextBlock FlyoutStatus;
+    }
+
+    internal class QuickGamepadUIElements
+    {
+        public StackPanel Section;
+        public QuickGamepadButtonUI[] Buttons;
+    }
+
     internal class ControllerBatteryProperty : WidgetProperty<ControllerBattery>
     {
         private static new readonly Logger Logger = LogManager.GetCurrentClassLogger();
@@ -33,6 +55,9 @@ namespace XboxGamingBar.Data
         private readonly TextBlock systemBadgeText;
         private readonly TextBlock systemSubtitleText;
 
+        // Quick Access elements
+        private readonly QuickGamepadUIElements quickGamepadUI;
+
         private readonly Page owner;
 
         private static readonly Color GreenColor = Color.FromArgb(255, 16, 124, 65);   // Xbox Green #107C41
@@ -54,6 +79,7 @@ namespace XboxGamingBar.Data
             Border inSystemBadgeBorder,
             TextBlock inSystemBadgeText,
             TextBlock inSystemSubtitleText,
+            QuickGamepadUIElements inQuickGamepadUI,
             Page inOwner)
             : base(ControllerBattery.Disconnected, null, Function.ControllerBattery)
         {
@@ -69,6 +95,7 @@ namespace XboxGamingBar.Data
             systemBadgeBorder = inSystemBadgeBorder;
             systemBadgeText = inSystemBadgeText;
             systemSubtitleText = inSystemSubtitleText;
+            quickGamepadUI = inQuickGamepadUI;
             owner = inOwner;
 
             // Listen for local gamepad events as a fallback if helper is not yet connected
@@ -209,7 +236,8 @@ namespace XboxGamingBar.Data
                 var gamepads = global::Windows.Gaming.Input.Gamepad.Gamepads;
                 if (gamepads != null && gamepads.Count > 0)
                 {
-                    for (int i = 0; i < gamepads.Count; i++)
+                    var list = new System.Collections.Generic.List<ControllerBatteryInfo>();
+                    for (int i = 0; i < gamepads.Count && list.Count < 4; i++)
                     {
                         var gp = gamepads[i];
                         DetermineGamepadDetails(gp, i, out string deviceName, out string connectionType, out bool isWireless);
@@ -219,15 +247,17 @@ namespace XboxGamingBar.Data
                         {
                             if (!isWireless)
                             {
-                                return new ControllerBattery
+                                list.Add(new ControllerBatteryInfo
                                 {
+                                    Index = i,
                                     IsConnected = true,
                                     BatteryLevel = 100,
                                     LevelCategory = "Wired",
                                     BatteryType = "Wired",
                                     IsCharging = true,
                                     DeviceName = deviceName
-                                };
+                                });
+                                continue;
                             }
 
                             if (report.RemainingCapacityInMilliwattHours.HasValue &&
@@ -237,42 +267,60 @@ namespace XboxGamingBar.Data
                                 int pct = (int)Math.Clamp(Math.Round((double)report.RemainingCapacityInMilliwattHours.Value * 100.0 / report.FullChargeCapacityInMilliwattHours.Value), 0, 100);
                                 bool isCharging = report.Status == global::Windows.System.Power.BatteryStatus.Charging;
                                 string cat = pct >= 70 ? "Full" : (pct >= 35 ? "Medium" : (pct >= 15 ? "Low" : "Empty"));
-                                return new ControllerBattery
+                                list.Add(new ControllerBatteryInfo
                                 {
+                                    Index = i,
                                     IsConnected = true,
                                     BatteryLevel = pct,
                                     LevelCategory = cat,
                                     BatteryType = isCharging ? "Wired" : connectionType,
                                     IsCharging = isCharging,
                                     DeviceName = deviceName
-                                };
+                                });
+                                continue;
                             }
                             else if (report.Status == global::Windows.System.Power.BatteryStatus.Charging)
                             {
-                                return new ControllerBattery
+                                list.Add(new ControllerBatteryInfo
                                 {
+                                    Index = i,
                                     IsConnected = true,
                                     BatteryLevel = 100,
                                     LevelCategory = "Wired",
                                     BatteryType = "Wired",
                                     IsCharging = true,
                                     DeviceName = deviceName
-                                };
+                                });
+                                continue;
                             }
                         }
+
+                        list.Add(new ControllerBatteryInfo
+                        {
+                            Index = i,
+                            IsConnected = true,
+                            BatteryLevel = 100,
+                            LevelCategory = "Connected",
+                            BatteryType = isWireless ? connectionType : "Wired",
+                            IsCharging = false,
+                            DeviceName = deviceName
+                        });
                     }
 
-                    var firstGp = gamepads[0];
-                    DetermineGamepadDetails(firstGp, 0, out string fallbackName, out string fallbackConnType, out bool fallbackWireless);
-                    return new ControllerBattery
+                    if (list.Count > 0)
                     {
-                        IsConnected = true,
-                        BatteryLevel = 100,
-                        LevelCategory = "Connected",
-                        BatteryType = fallbackWireless ? fallbackConnType : "Wired",
-                        IsCharging = false,
-                        DeviceName = fallbackName
-                    };
+                        var primary = list[0];
+                        return new ControllerBattery
+                        {
+                            IsConnected = true,
+                            BatteryLevel = primary.BatteryLevel,
+                            LevelCategory = primary.LevelCategory,
+                            BatteryType = primary.BatteryType,
+                            IsCharging = primary.IsCharging,
+                            DeviceName = primary.DeviceName,
+                            Controllers = list.ToArray()
+                        };
+                    }
                 }
             }
             catch (Exception ex)
@@ -401,6 +449,158 @@ namespace XboxGamingBar.Data
                     {
                         systemSubtitleText.Text = $"{battery.DeviceName} ({battery.BatteryType})";
                     }
+
+                    // 4. Quick Access Gamepad Buttons
+                    if (quickGamepadUI != null)
+                    {
+                        var controllers = battery.Controllers;
+                        if ((controllers == null || controllers.Length == 0) && battery.IsConnected)
+                        {
+                            controllers = new[]
+                            {
+                                new ControllerBatteryInfo
+                                {
+                                    Index = 0,
+                                    IsConnected = true,
+                                    BatteryLevel = battery.BatteryLevel,
+                                    LevelCategory = battery.LevelCategory,
+                                    BatteryType = battery.BatteryType,
+                                    IsCharging = battery.IsCharging,
+                                    DeviceName = battery.DeviceName
+                                }
+                            };
+                        }
+
+                        int connectedCount = (controllers != null) ? controllers.Length : 0;
+                        if (connectedCount > 0)
+                        {
+                            if (quickGamepadUI.Section != null)
+                            {
+                                quickGamepadUI.Section.Visibility = Visibility.Visible;
+                            }
+
+                            for (int i = 0; i < quickGamepadUI.Buttons.Length; i++)
+                            {
+                                var ui = quickGamepadUI.Buttons[i];
+                                if (ui == null) continue;
+
+                                if (i < connectedCount && controllers[i].IsConnected)
+                                {
+                                    var info = controllers[i];
+                                    ui.Button.Visibility = Visibility.Visible;
+
+                                    string btnGlyph;
+                                    Color btnColor;
+                                    string btnBadgeText;
+
+                                    if (info.IsCharging || string.Equals(info.BatteryType, "Wired", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        btnGlyph = "\uEA93"; // Lightning bolt / plugged
+                                        btnColor = GreenColor;
+                                        btnBadgeText = "Wired";
+                                    }
+                                    else if (info.BatteryLevel >= 70 || string.Equals(info.LevelCategory, "Full", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        btnGlyph = "\uEBB5"; // Battery 10 (Full)
+                                        btnColor = GreenColor;
+                                        btnBadgeText = info.BatteryLevel >= 0 ? $"{info.BatteryLevel}%" : "Full";
+                                    }
+                                    else if (info.BatteryLevel >= 35 || string.Equals(info.LevelCategory, "Medium", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        btnGlyph = "\uEBAE"; // Battery 4 (Medium)
+                                        btnColor = GreenColor;
+                                        btnBadgeText = info.BatteryLevel >= 0 ? $"{info.BatteryLevel}%" : "Med";
+                                    }
+                                    else if (info.BatteryLevel >= 15 || string.Equals(info.LevelCategory, "Low", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        btnGlyph = "\uEBAB"; // Battery 2 (Low)
+                                        btnColor = AmberColor;
+                                        btnBadgeText = info.BatteryLevel >= 0 ? $"{info.BatteryLevel}%" : "Low";
+                                    }
+                                    else
+                                    {
+                                        btnGlyph = "\uEBAA"; // Battery 1 (Critical)
+                                        btnColor = RedColor;
+                                        btnBadgeText = info.BatteryLevel >= 0 ? $"{info.BatteryLevel}%" : "Crit";
+                                    }
+
+                                    string displayName = string.IsNullOrEmpty(info.DeviceName)
+                                        ? $"Controller {i + 1}"
+                                        : (connectedCount > 1 && !info.DeviceName.EndsWith((i + 1).ToString()) ? $"{info.DeviceName} {i + 1}" : info.DeviceName);
+
+                                    // Button UI
+                                    if (ui.Icon != null)
+                                    {
+                                        ui.Icon.Glyph = btnGlyph;
+                                        ui.Icon.Foreground = new SolidColorBrush(btnColor);
+                                    }
+                                    if (ui.Name != null)
+                                    {
+                                        ui.Name.Text = displayName;
+                                    }
+                                    if (ui.Subtitle != null)
+                                    {
+                                        ui.Subtitle.Text = info.IsCharging ? "Charging" : (string.Equals(info.BatteryType, "Wired", StringComparison.OrdinalIgnoreCase) ? "Wired" : $"{info.BatteryType}");
+                                    }
+                                    if (ui.Badge != null)
+                                    {
+                                        ui.Badge.Background = new SolidColorBrush(btnColor);
+                                        ui.Badge.BorderBrush = new SolidColorBrush(btnColor);
+                                    }
+                                    if (ui.BadgeText != null)
+                                    {
+                                        ui.BadgeText.Text = btnBadgeText;
+                                        ui.BadgeText.Foreground = new SolidColorBrush(WhiteColor);
+                                    }
+
+                                    // Flyout UI
+                                    if (ui.FlyoutIcon != null)
+                                    {
+                                        ui.FlyoutIcon.Glyph = btnGlyph;
+                                        ui.FlyoutIcon.Foreground = new SolidColorBrush(btnColor);
+                                    }
+                                    if (ui.FlyoutName != null)
+                                    {
+                                        ui.FlyoutName.Text = displayName;
+                                    }
+                                    if (ui.FlyoutSubtitle != null)
+                                    {
+                                        ui.FlyoutSubtitle.Text = info.IsCharging ? "Charging / Wired" : $"{info.BatteryType} Connection";
+                                    }
+                                    if (ui.FlyoutPercent != null)
+                                    {
+                                        ui.FlyoutPercent.Text = info.BatteryLevel >= 0 ? $"{info.BatteryLevel}%" : info.LevelCategory;
+                                    }
+                                    if (ui.FlyoutType != null)
+                                    {
+                                        ui.FlyoutType.Text = info.BatteryType;
+                                    }
+                                    if (ui.FlyoutStatus != null)
+                                    {
+                                        ui.FlyoutStatus.Text = info.IsCharging ? "Charging" : (string.Equals(info.BatteryType, "Wired", StringComparison.OrdinalIgnoreCase) ? "Wired" : "Discharging");
+                                    }
+                                }
+                                else
+                                {
+                                    ui.Button.Visibility = Visibility.Collapsed;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (quickGamepadUI.Section != null)
+                            {
+                                quickGamepadUI.Section.Visibility = Visibility.Collapsed;
+                            }
+                            for (int i = 0; i < quickGamepadUI.Buttons.Length; i++)
+                            {
+                                if (quickGamepadUI.Buttons[i] != null)
+                                {
+                                    quickGamepadUI.Buttons[i].Button.Visibility = Visibility.Collapsed;
+                                }
+                            }
+                        }
+                    }
                 }
                 else
                 {
@@ -422,6 +622,22 @@ namespace XboxGamingBar.Data
                     if (systemSubtitleText != null)
                     {
                         systemSubtitleText.Text = "No game controller detected";
+                    }
+
+                    // 4. Quick Access Gamepad Buttons (Disconnected)
+                    if (quickGamepadUI != null)
+                    {
+                        if (quickGamepadUI.Section != null)
+                        {
+                            quickGamepadUI.Section.Visibility = Visibility.Collapsed;
+                        }
+                        for (int i = 0; i < quickGamepadUI.Buttons.Length; i++)
+                        {
+                            if (quickGamepadUI.Buttons[i] != null)
+                            {
+                                quickGamepadUI.Buttons[i].Button.Visibility = Visibility.Collapsed;
+                            }
+                        }
                     }
                 }
             });

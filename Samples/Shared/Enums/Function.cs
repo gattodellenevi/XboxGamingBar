@@ -54,6 +54,10 @@ namespace Shared.Enums
         MouseSpeed,
         MouseEnhancePointerPrecision,
         MouseScrollSpeed,
+        VirtualKeyboard,
+        HDR,
+        HDRSupported,
+
         AppExit = 100
     }
 }
