@@ -949,7 +949,7 @@ namespace XboxGamingBar
 
         private void QuickOSDToggleButton_Click(object sender, RoutedEventArgs e)
         {
-            if (IsElevationMismatch || !IsRTSSRunning || PerformanceOverlaySlider == null) return;
+            if (!IsRTSSRunning || PerformanceOverlaySlider == null) return;
 
             int currentLevel = (int)PerformanceOverlaySlider.Value;
             if (currentLevel > 0)
@@ -996,7 +996,6 @@ namespace XboxGamingBar
             var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
 
             bool isRtssRunning = IsRTSSRunning;
-            bool isMismatch = IsElevationMismatch;
 
             if (App.Connection != null && !isRtssRunning)
             {
@@ -1007,19 +1006,6 @@ namespace XboxGamingBar
                 QuickOSDBadgeText.Foreground = offTextBrush;
                 QuickOSDBadge.Background = offBgBrush;
                 QuickOSDBadge.BorderBrush = offBgBrush;
-                return;
-            }
-
-            if (App.Connection != null && isMismatch)
-            {
-                QuickOSDToggleButton.IsEnabled = false;
-                if (QuickOSDIcon != null) QuickOSDIcon.Foreground = mutedBrush;
-                QuickOSDSubtitleText.Text = "Admin elevation required";
-                QuickOSDBadgeText.Text = "ADMIN";
-                QuickOSDBadgeText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 245, 158, 11)); // Amber
-                var amberBg = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 45, 35, 5));
-                QuickOSDBadge.Background = amberBg;
-                QuickOSDBadge.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 202, 138, 4));
                 return;
             }
 
@@ -2113,7 +2099,6 @@ namespace XboxGamingBar
             UpdateQuickRTSSStatus();
 
             bool isRtssRunning = IsRTSSRunning;
-            bool isMismatch = IsElevationMismatch;
 
             if (App.Connection != null && !isRtssRunning)
             {
@@ -2172,47 +2157,6 @@ namespace XboxGamingBar
                     OSDSubtitleText.Text = (rtssElevation != null && rtssElevation.Value == -1)
                         ? "RivaTuner Statistics Server is not installed"
                         : "Requires RivaTuner Statistics Server to be running";
-                }
-
-                if (OSDControlsContainer != null)
-                {
-                    OSDControlsContainer.Visibility = Visibility.Collapsed;
-                }
-                if (PerformanceOverlaySlider != null)
-                {
-                    PerformanceOverlaySlider.IsEnabled = false;
-                }
-                if (OverlayTextSizeSlider != null)
-                {
-                    OverlayTextSizeSlider.IsEnabled = false;
-                }
-            }
-            else if (isMismatch)
-            {
-                onScreenDisplayProviderInstalled?.EnableControl(false);
-                osdTextSize?.EnableControl(false);
-
-                if (OSDRTSSWarningBadge != null)
-                {
-                    OSDRTSSWarningBadge.Visibility = Visibility.Collapsed;
-                }
-                if (OSDRTSSWarningCard != null)
-                {
-                    OSDRTSSWarningCard.Visibility = Visibility.Collapsed;
-                }
-
-                if (OSDElevationWarningBadge != null)
-                {
-                    OSDElevationWarningBadge.Visibility = Visibility.Visible;
-                }
-                if (OSDElevationWarningCard != null)
-                {
-                    OSDElevationWarningCard.Visibility = Visibility.Visible;
-                }
-
-                if (OSDSubtitleText != null)
-                {
-                    OSDSubtitleText.Text = "Requires Administrator privileges to modify RTSS overlay";
                 }
 
                 if (OSDControlsContainer != null)

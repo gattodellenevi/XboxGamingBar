@@ -11,7 +11,7 @@ namespace XboxGamingBar.Data
 
         protected override void SetControlEnabled(bool isEnabled)
         {
-            if (Owner is GamingWidget widget && (widget.IsElevationMismatch || !widget.IsRTSSRunning))
+            if (Owner is GamingWidget widget && !widget.IsRTSSRunning)
             {
                 base.SetControlEnabled(false);
                 return;
