@@ -28,6 +28,8 @@ namespace XboxGamingBar.Data
         private readonly TextBlock quickRamUsageText;
         private readonly TextBlock quickRamUsedText;
 
+        public Action<string, string, string, string, string, string, string, string> OnTelemetryUpdated { get; set; }
+
         public HardwareTelemetryProperty(
             TextBlock inCpuUsageText,
             TextBlock inCpuWattageText,
@@ -120,6 +122,8 @@ namespace XboxGamingBar.Data
                 if (quickVramUsedText != null) quickVramUsedText.Text = "-- GB";
                 if (quickRamUsageText != null) quickRamUsageText.Text = "--%";
                 if (quickRamUsedText != null) quickRamUsedText.Text = "-- GB";
+
+                OnTelemetryUpdated?.Invoke("--%", "--W", "--%", "--W", "--%", "-- GB", "--%", "-- GB");
             });
         }
 
@@ -186,6 +190,8 @@ namespace XboxGamingBar.Data
                 string ramUsedStr = (ramUsedGb >= 0) ? $"{ramUsedGb:F1} GB" : "-- GB";
                 if (ramUsedText != null) ramUsedText.Text = ramUsedStr;
                 if (quickRamUsedText != null) quickRamUsedText.Text = ramUsedStr;
+
+                OnTelemetryUpdated?.Invoke(cpuUsageStr, cpuWattStr, gpuUsageStr, gpuWattStr, ramPercentStr, ramUsedStr, vramPercentStr, vramUsedStr);
             });
         }
 

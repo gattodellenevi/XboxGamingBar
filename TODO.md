@@ -95,19 +95,20 @@
 
 ## 5. UI Modernization & MVVM Separation
 
-- [ ] **5.1. Decouple Monolithic `GamingWidget.xaml.cs` into ViewModels**
+- [x] **5.1. Decouple Monolithic `GamingWidget.xaml.cs` into ViewModels**
   - **Files:** `Samples/XboxGamingBar/GamingWidget.xaml.cs`, `Samples/XboxGamingBar/ViewModels/`
-  - **Problem:** `GamingWidget.xaml.cs` currently has 2,785 lines mixing navigation, gamepad input, theme changes, judder-free math, and direct UI manipulation.
   - **Task:**
-    - Break logic into modular ViewModels:
-      - `QuickAccessViewModel`: HUD cards, battery, quick toggles.
+    - Decoupled logic into modular domain ViewModels inheriting `ViewModelBase` with thread-safe UI marshaling via `CoreDispatcher`:
+      - `QuickAccessViewModel`: HUD cards, battery, quick toggles (OSD, FPS limit, HDR), live telemetry vitals.
       - `DisplayViewModel`: Resolution, refresh rates, HDR.
-      - `PerformanceViewModel`: RTSS limits, judder-free calculations, OSD levels and text size.
+      - `PerformanceViewModel`: RTSS limits, judder-free calculations (`CalculateMarkers`), OSD levels and text size, RTSS elevation sync.
       - `AMDFeaturesViewModel`: RSR, Anti-Lag, Boost, Chill, AFMF.
-      - `SettingsViewModel`: OSD provider, GPU target, elevation status.
+      - `SettingsViewModel`: OSD provider, GPU target, elevation status, mouse settings.
+      - `MainViewModel`: Aggregates the domain ViewModels and game profile tracking state.
 
-- [ ] **5.2. Compiled `{x:Bind}` Data Binding**
-  - **Files:** `Samples/XboxGamingBar/GamingWidget.xaml`, `Samples/XboxGamingBar/Data/`
+- [x] **5.2. Compiled `{x:Bind}` Data Binding**
+  - **Files:** `Samples/XboxGamingBar/GamingWidget.xaml`, `Samples/XboxGamingBar/Data/HardwareTelemetryProperty.cs`, `Samples/XboxGamingBar/GamingWidget.xaml.cs`
   - **Task:**
-    - Replace manual event wireups (`ToggleSwitch.Toggled += ...`, `Dispatcher.RunAsync(...)`) with compiled `{x:Bind Mode=OneWay}` and `{x:Bind Mode=TwoWay}` bindings.
-    - Eliminate boilerplate wrapper property classes in `Data/` in favor of standard `INotifyPropertyChanged` ViewModel properties.
+    - Replaced manual element string manipulation with compiled `{x:Bind Mode=OneWay}` data bindings across the Quick Access HUD vitals, Performance tab telemetry, active game detection, and display/RTSS summaries.
+    - Wired `HardwareTelemetryProperty.OnTelemetryUpdated` directly to `ViewModel.QuickAccess.UpdateTelemetry`, cleanly driving UI updates via standard `INotifyPropertyChanged` notifications.
+    - Preserved all required `x:Name` references and container-level `XYFocusKeyboardNavigation` per project guidelines.

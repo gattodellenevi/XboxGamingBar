@@ -25,6 +25,7 @@ using Windows.UI.Xaml.Input;
 using Windows.System;
 using XboxGamingBar.Data;
 using XboxGamingBar.Event;
+using XboxGamingBar.ViewModels;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -113,6 +114,8 @@ namespace XboxGamingBar
                                      rtssElevation != null &&
                                      rtssElevation.Value > 0;
 
+        public MainViewModel ViewModel { get; }
+
         private readonly WidgetProperties properties;
         private const string SETTING_LAST_ACTIVE_OSD_LEVEL = "LastActiveOSDLevel";
         private int _lastActiveOsdLevel = 1;
@@ -120,6 +123,7 @@ namespace XboxGamingBar
         public GamingWidget()
         {
             InitializeComponent();
+            ViewModel = new MainViewModel(Dispatcher);
             LoadLastActiveOsdLevel();
             osd = new OSDProperty(0, PerformanceOverlaySlider, this);
             osdTextSize = new OSDTextSizeProperty(100, OverlayTextSizeSlider, this);
@@ -443,6 +447,7 @@ namespace XboxGamingBar
 
             // Optimistic Local Cache Rendering: Instantly populate UI from last known state
             properties.TryApplyCachedSnapshot();
+            InitializeViewModelBindings();
 
             this.PreviewKeyDown += GamingWidget_KeyDown;
             InitializeAppVersion();
@@ -1016,41 +1021,25 @@ namespace XboxGamingBar
             var offTextBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 204, 204, 204)); // #CCCCCC
             var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
 
-            bool isRtssRunning = IsRTSSRunning;
+            ViewModel.QuickAccess.UpdateOsdUI(level, App.Connection != null, IsRTSSRunning, rtssElevation != null ? rtssElevation.Value : -1, _lastActiveOsdLevel);
 
-            if (App.Connection != null && !isRtssRunning)
-            {
-                QuickOSDToggleButton.IsEnabled = false;
-                if (QuickOSDIcon != null) QuickOSDIcon.Foreground = mutedBrush;
-                QuickOSDSubtitleText.Text = (rtssElevation != null && rtssElevation.Value == -1) ? "RTSS Not Installed" : "RTSS Offline";
-                QuickOSDBadgeText.Text = "OFFLINE";
-                QuickOSDBadgeText.Foreground = offTextBrush;
-                QuickOSDBadge.Background = offBgBrush;
-                QuickOSDBadge.BorderBrush = offBgBrush;
-                return;
-            }
+            QuickOSDToggleButton.IsEnabled = ViewModel.QuickAccess.IsOsdButtonEnabled;
+            QuickOSDSubtitleText.Text = ViewModel.QuickAccess.OsdSubtitle;
+            QuickOSDBadgeText.Text = ViewModel.QuickAccess.OsdBadgeText;
 
-            QuickOSDToggleButton.IsEnabled = true;
-
-            if (level <= 0)
+            if (ViewModel.QuickAccess.IsOsdActive)
             {
-                if (QuickOSDIcon != null) QuickOSDIcon.Foreground = mutedBrush;
-                string savedLevelName = GetOsdLevelName(_lastActiveOsdLevel > 0 ? _lastActiveOsdLevel : 1);
-                QuickOSDSubtitleText.Text = $"Disabled (saved: {savedLevelName})";
-                QuickOSDBadgeText.Text = "OFF";
-                QuickOSDBadgeText.Foreground = offTextBrush;
-                QuickOSDBadge.Background = offBgBrush;
-                QuickOSDBadge.BorderBrush = offBgBrush;
-            }
-            else
-            {
-                string levelName = GetOsdLevelName(level);
                 if (QuickOSDIcon != null) QuickOSDIcon.Foreground = greenBrush;
-                QuickOSDSubtitleText.Text = $"Active ({levelName})";
-                QuickOSDBadgeText.Text = levelName;
                 QuickOSDBadgeText.Foreground = whiteBrush;
                 QuickOSDBadge.Background = greenBrush;
                 QuickOSDBadge.BorderBrush = greenBrush;
+            }
+            else
+            {
+                if (QuickOSDIcon != null) QuickOSDIcon.Foreground = mutedBrush;
+                QuickOSDBadgeText.Foreground = offTextBrush;
+                QuickOSDBadge.Background = offBgBrush;
+                QuickOSDBadge.BorderBrush = offBgBrush;
             }
         }
 
@@ -1073,56 +1062,36 @@ namespace XboxGamingBar
             var offTextBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 204, 204, 204)); // #CCCCCC
             var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
 
-            bool isRtssRunning = IsRTSSRunning;
-            bool isMismatch = IsElevationMismatch;
+            bool isLimitOn = LimitFPSToggle != null && LimitFPSToggle.IsOn;
+            int fpsValue = (FPSLimitSlider != null && FPSLimitSlider.Value > 0) ? (int)FPSLimitSlider.Value : 60;
 
-            if (App.Connection != null && !isRtssRunning)
-            {
-                QuickFPSLimitToggleButton.IsEnabled = false;
-                if (QuickFPSLimitIcon != null) QuickFPSLimitIcon.Foreground = mutedBrush;
-                QuickFPSLimitSubtitleText.Text = (rtssElevation != null && rtssElevation.Value == -1) ? "RTSS Not Installed" : "RTSS Offline";
-                QuickFPSLimitBadgeText.Text = "OFFLINE";
-                QuickFPSLimitBadgeText.Foreground = offTextBrush;
-                QuickFPSLimitBadge.Background = offBgBrush;
-                QuickFPSLimitBadge.BorderBrush = offBgBrush;
-                return;
-            }
+            ViewModel.QuickAccess.UpdateFpsLimitUI(isLimitOn, fpsValue, App.Connection != null, IsRTSSRunning, IsElevationMismatch, rtssElevation != null ? rtssElevation.Value : -1);
 
-            if (App.Connection != null && isMismatch)
+            QuickFPSLimitToggleButton.IsEnabled = ViewModel.QuickAccess.IsFpsLimitButtonEnabled;
+            QuickFPSLimitSubtitleText.Text = ViewModel.QuickAccess.FpsLimitSubtitle;
+            QuickFPSLimitBadgeText.Text = ViewModel.QuickAccess.FpsLimitBadgeText;
+
+            if (ViewModel.QuickAccess.IsFpsLimitMismatch)
             {
-                QuickFPSLimitToggleButton.IsEnabled = false;
                 if (QuickFPSLimitIcon != null) QuickFPSLimitIcon.Foreground = mutedBrush;
-                QuickFPSLimitSubtitleText.Text = "Admin elevation required";
-                QuickFPSLimitBadgeText.Text = "ADMIN";
                 QuickFPSLimitBadgeText.Foreground = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 245, 158, 11)); // Amber
                 var amberBg = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 45, 35, 5));
                 QuickFPSLimitBadge.Background = amberBg;
                 QuickFPSLimitBadge.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 202, 138, 4));
-                return;
             }
-
-            QuickFPSLimitToggleButton.IsEnabled = true;
-
-            bool isLimitOn = LimitFPSToggle != null && LimitFPSToggle.IsOn;
-            int fpsValue = (FPSLimitSlider != null && FPSLimitSlider.Value > 0) ? (int)FPSLimitSlider.Value : 60;
-
-            if (!isLimitOn)
-            {
-                if (QuickFPSLimitIcon != null) QuickFPSLimitIcon.Foreground = mutedBrush;
-                QuickFPSLimitSubtitleText.Text = $"Disabled (saved: {fpsValue} FPS)";
-                QuickFPSLimitBadgeText.Text = "OFF";
-                QuickFPSLimitBadgeText.Foreground = offTextBrush;
-                QuickFPSLimitBadge.Background = offBgBrush;
-                QuickFPSLimitBadge.BorderBrush = offBgBrush;
-            }
-            else
+            else if (ViewModel.QuickAccess.IsFpsLimitActive)
             {
                 if (QuickFPSLimitIcon != null) QuickFPSLimitIcon.Foreground = greenBrush;
-                QuickFPSLimitSubtitleText.Text = $"Capped at {fpsValue} FPS";
-                QuickFPSLimitBadgeText.Text = $"{fpsValue} FPS";
                 QuickFPSLimitBadgeText.Foreground = whiteBrush;
                 QuickFPSLimitBadge.Background = greenBrush;
                 QuickFPSLimitBadge.BorderBrush = greenBrush;
+            }
+            else
+            {
+                if (QuickFPSLimitIcon != null) QuickFPSLimitIcon.Foreground = mutedBrush;
+                QuickFPSLimitBadgeText.Foreground = offTextBrush;
+                QuickFPSLimitBadge.Background = offBgBrush;
+                QuickFPSLimitBadge.BorderBrush = offBgBrush;
             }
         }
 
@@ -1163,25 +1132,15 @@ namespace XboxGamingBar
             var offTextBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 204, 204, 204)); // #CCCCCC
             var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
 
-            if (!isSupported)
-            {
-                QuickHDRToggleButton.IsEnabled = false;
-                if (QuickHDRIcon != null) QuickHDRIcon.Foreground = mutedBrush;
-                QuickHDRSubtitleText.Text = "Not supported by display";
-                QuickHDRBadgeText.Text = "SDR";
-                QuickHDRBadgeText.Foreground = offTextBrush;
-                QuickHDRBadge.Background = offBgBrush;
-                QuickHDRBadge.BorderBrush = offBgBrush;
-                return;
-            }
+            ViewModel.QuickAccess.UpdateHdrUI(isEnabled, isSupported);
 
-            QuickHDRToggleButton.IsEnabled = true;
+            QuickHDRToggleButton.IsEnabled = ViewModel.QuickAccess.IsHdrButtonEnabled;
+            QuickHDRSubtitleText.Text = ViewModel.QuickAccess.HdrSubtitle;
+            QuickHDRBadgeText.Text = ViewModel.QuickAccess.HdrBadgeText;
 
-            if (isEnabled)
+            if (ViewModel.QuickAccess.IsHdrActive)
             {
                 if (QuickHDRIcon != null) QuickHDRIcon.Foreground = greenBrush;
-                QuickHDRSubtitleText.Text = "High Dynamic Range active";
-                QuickHDRBadgeText.Text = "ON";
                 QuickHDRBadgeText.Foreground = whiteBrush;
                 QuickHDRBadge.Background = greenBrush;
                 QuickHDRBadge.BorderBrush = greenBrush;
@@ -1189,11 +1148,120 @@ namespace XboxGamingBar
             else
             {
                 if (QuickHDRIcon != null) QuickHDRIcon.Foreground = mutedBrush;
-                QuickHDRSubtitleText.Text = "High Dynamic Range disabled";
-                QuickHDRBadgeText.Text = "OFF";
                 QuickHDRBadgeText.Foreground = offTextBrush;
                 QuickHDRBadge.Background = offBgBrush;
                 QuickHDRBadge.BorderBrush = offBgBrush;
+            }
+        }
+
+        private void InitializeViewModelBindings()
+        {
+            if (refreshRate != null) ViewModel.Display.SelectedRefreshRate = refreshRate.Value;
+            if (refreshRates != null) ViewModel.Display.RefreshRates = refreshRates.Value;
+            if (resolution != null) ViewModel.Display.SelectedResolution = resolution.Value.ToString();
+            if (resolutions != null && resolutions.Value.AvailableResolutions != null) ViewModel.Display.Resolutions = resolutions.Value.AvailableResolutions.Select(r => r.ToString()).ToList();
+            if (hdr != null) ViewModel.Display.IsHdrEnabled = hdr.Value;
+            if (hdrSupported != null) ViewModel.Display.IsHdrSupported = hdrSupported.Value;
+
+            if (limitFPS != null) ViewModel.Performance.IsLimitFpsEnabled = limitFPS.Value;
+            if (fpsLimit != null) ViewModel.Performance.FpsLimit = fpsLimit.Value;
+            if (fpsLimitMode != null) ViewModel.Performance.FpsLimitMode = fpsLimitMode.Value;
+            if (judderFreeFPS != null) ViewModel.Performance.IsJudderFreeEnabled = judderFreeFPS.Value;
+            if (osd != null) ViewModel.Performance.OsdLevel = osd.Value;
+            if (osdTextSize != null) ViewModel.Performance.OsdTextSize = osdTextSize.Value;
+            if (rtssElevation != null) ViewModel.Performance.RtssElevationStatus = rtssElevation.Value;
+
+            if (amdSettingsSupported != null) ViewModel.AMD.IsAmdSettingsSupported = amdSettingsSupported.Value;
+            if (amdRadeonSuperResolutionSupported != null) ViewModel.AMD.IsRsrSupported = amdRadeonSuperResolutionSupported.Value;
+            if (amdRadeonSuperResolutionEnabled != null) ViewModel.AMD.IsRsrEnabled = amdRadeonSuperResolutionEnabled.Value;
+            if (amdRadeonSuperResolutionSharpness != null) ViewModel.AMD.RsrSharpness = amdRadeonSuperResolutionSharpness.Value;
+            if (amdFluidMotionFrameSupported != null) ViewModel.AMD.IsAfmfSupported = amdFluidMotionFrameSupported.Value;
+            if (amdFluidMotionFrameEnabled != null) ViewModel.AMD.IsAfmfEnabled = amdFluidMotionFrameEnabled.Value;
+            if (amdRadeonAntiLagSupported != null) ViewModel.AMD.IsAntiLagSupported = amdRadeonAntiLagSupported.Value;
+            if (amdRadeonAntiLagEnabled != null) ViewModel.AMD.IsAntiLagEnabled = amdRadeonAntiLagEnabled.Value;
+            if (amdRadeonBoostSupported != null) ViewModel.AMD.IsBoostSupported = amdRadeonBoostSupported.Value;
+            if (amdRadeonBoostEnabled != null) ViewModel.AMD.IsBoostEnabled = amdRadeonBoostEnabled.Value;
+            if (amdRadeonBoostResolution != null) ViewModel.AMD.BoostResolution = amdRadeonBoostResolution.Value;
+            if (amdRadeonChillSupported != null) ViewModel.AMD.IsChillSupported = amdRadeonChillSupported.Value;
+            if (amdRadeonChillEnabled != null) ViewModel.AMD.IsChillEnabled = amdRadeonChillEnabled.Value;
+            if (amdRadeonChillMinFPSProperty != null) ViewModel.AMD.ChillMinFps = amdRadeonChillMinFPSProperty.Value;
+            if (amdRadeonChillMaxFPSProperty != null) ViewModel.AMD.ChillMaxFps = amdRadeonChillMaxFPSProperty.Value;
+
+            if (onScreenDisplayProviderInstalled != null) ViewModel.Settings.IsOsdProviderInstalled = onScreenDisplayProviderInstalled.Value;
+            if (dualGpuSupport != null) ViewModel.Settings.IsDualGpuSupported = !string.IsNullOrEmpty(dualGpuSupport.Value);
+            if (gpuTarget != null) ViewModel.Settings.GpuTarget = gpuTarget.Value;
+            if (helperElevation != null) ViewModel.Settings.IsHelperElevated = helperElevation.Value;
+            if (gameInputStatus != null) ViewModel.Settings.GameInputStatus = gameInputStatus.Value;
+            if (mouseSpeed != null) ViewModel.Settings.MouseSpeed = mouseSpeed.Value;
+            if (mouseScrollSpeed != null) ViewModel.Settings.MouseScrollSpeed = mouseScrollSpeed.Value;
+            if (mouseEnhancePointerPrecision != null) ViewModel.Settings.IsMouseEnhancePointerPrecision = mouseEnhancePointerPrecision.Value;
+
+            // Wire up event updates
+            if (refreshRate != null) refreshRate.PropertyChanged += (s, e) => { ViewModel.Display.SelectedRefreshRate = refreshRate.Value; UpdateQuickDisplayInfo(); };
+            if (refreshRates != null) refreshRates.PropertyChanged += (s, e) => { ViewModel.Display.RefreshRates = refreshRates.Value; UpdateQuickDisplayInfo(); };
+            if (resolution != null) resolution.PropertyChanged += (s, e) => { ViewModel.Display.SelectedResolution = resolution.Value.ToString(); UpdateQuickDisplayInfo(); };
+            if (resolutions != null) resolutions.PropertyChanged += (s, e) => { if (resolutions.Value.AvailableResolutions != null) ViewModel.Display.Resolutions = resolutions.Value.AvailableResolutions.Select(r => r.ToString()).ToList(); };
+            if (hdr != null) hdr.PropertyChanged += (s, e) => { ViewModel.Display.IsHdrEnabled = hdr.Value; UpdateQuickHDRButtonUI(hdr.Value, hdrSupported != null && hdrSupported.Value); };
+            if (hdrSupported != null) hdrSupported.PropertyChanged += (s, e) => { ViewModel.Display.IsHdrSupported = hdrSupported.Value; UpdateQuickHDRButtonUI(hdr != null && hdr.Value, hdrSupported.Value); };
+
+            if (limitFPS != null) limitFPS.PropertyChanged += (s, e) => { ViewModel.Performance.IsLimitFpsEnabled = limitFPS.Value; UpdateFPSLimitSliderJudderFree(); UpdateFPSLimiterElevationUI(); UpdateQuickFPSLimitButtonUI(); };
+            if (fpsLimit != null) fpsLimit.PropertyChanged += (s, e) => { ViewModel.Performance.FpsLimit = fpsLimit.Value; UpdateQuickFPSLimitButtonUI(); };
+            if (fpsLimitMode != null) fpsLimitMode.PropertyChanged += (s, e) => { ViewModel.Performance.FpsLimitMode = fpsLimitMode.Value; };
+            if (judderFreeFPS != null) judderFreeFPS.PropertyChanged += (s, e) => { ViewModel.Performance.IsJudderFreeEnabled = judderFreeFPS.Value; UpdateFPSLimitSliderJudderFree(); };
+            if (osd != null) osd.PropertyChanged += (s, e) => { ViewModel.Performance.OsdLevel = osd.Value; UpdateOSDSegmentedButtons(osd.Value); UpdateQuickOSDButtonUI(osd.Value); };
+            if (osdTextSize != null) osdTextSize.PropertyChanged += (s, e) => { ViewModel.Performance.OsdTextSize = osdTextSize.Value; };
+
+            if (amdSettingsSupported != null) amdSettingsSupported.PropertyChanged += (s, e) => { ViewModel.AMD.IsAmdSettingsSupported = amdSettingsSupported.Value; };
+            if (amdRadeonSuperResolutionSupported != null) amdRadeonSuperResolutionSupported.PropertyChanged += (s, e) => { ViewModel.AMD.IsRsrSupported = amdRadeonSuperResolutionSupported.Value; };
+            if (amdRadeonSuperResolutionEnabled != null) amdRadeonSuperResolutionEnabled.PropertyChanged += (s, e) => { ViewModel.AMD.IsRsrEnabled = amdRadeonSuperResolutionEnabled.Value; };
+            if (amdRadeonSuperResolutionSharpness != null) amdRadeonSuperResolutionSharpness.PropertyChanged += (s, e) => { ViewModel.AMD.RsrSharpness = amdRadeonSuperResolutionSharpness.Value; };
+            if (amdFluidMotionFrameSupported != null) amdFluidMotionFrameSupported.PropertyChanged += (s, e) => { ViewModel.AMD.IsAfmfSupported = amdFluidMotionFrameSupported.Value; };
+            if (amdFluidMotionFrameEnabled != null) amdFluidMotionFrameEnabled.PropertyChanged += (s, e) => { ViewModel.AMD.IsAfmfEnabled = amdFluidMotionFrameEnabled.Value; };
+            if (amdRadeonAntiLagSupported != null) amdRadeonAntiLagSupported.PropertyChanged += (s, e) => { ViewModel.AMD.IsAntiLagSupported = amdRadeonAntiLagSupported.Value; };
+            if (amdRadeonAntiLagEnabled != null) amdRadeonAntiLagEnabled.PropertyChanged += (s, e) => { ViewModel.AMD.IsAntiLagEnabled = amdRadeonAntiLagEnabled.Value; };
+            if (amdRadeonBoostSupported != null) amdRadeonBoostSupported.PropertyChanged += (s, e) => { ViewModel.AMD.IsBoostSupported = amdRadeonBoostSupported.Value; };
+            if (amdRadeonBoostEnabled != null) amdRadeonBoostEnabled.PropertyChanged += (s, e) => { ViewModel.AMD.IsBoostEnabled = amdRadeonBoostEnabled.Value; };
+            if (amdRadeonBoostResolution != null) amdRadeonBoostResolution.PropertyChanged += (s, e) => { ViewModel.AMD.BoostResolution = amdRadeonBoostResolution.Value; };
+            if (amdRadeonChillSupported != null) amdRadeonChillSupported.PropertyChanged += (s, e) => { ViewModel.AMD.IsChillSupported = amdRadeonChillSupported.Value; };
+            if (amdRadeonChillEnabled != null) amdRadeonChillEnabled.PropertyChanged += (s, e) => { ViewModel.AMD.IsChillEnabled = amdRadeonChillEnabled.Value; };
+            if (amdRadeonChillMinFPSProperty != null) amdRadeonChillMinFPSProperty.PropertyChanged += (s, e) => { ViewModel.AMD.ChillMinFps = amdRadeonChillMinFPSProperty.Value; };
+            if (amdRadeonChillMaxFPSProperty != null) amdRadeonChillMaxFPSProperty.PropertyChanged += (s, e) => { ViewModel.AMD.ChillMaxFps = amdRadeonChillMaxFPSProperty.Value; };
+
+            if (onScreenDisplayProviderInstalled != null) onScreenDisplayProviderInstalled.PropertyChanged += (s, e) => { ViewModel.Settings.IsOsdProviderInstalled = onScreenDisplayProviderInstalled.Value; };
+            if (dualGpuSupport != null) dualGpuSupport.PropertyChanged += (s, e) => { ViewModel.Settings.IsDualGpuSupported = !string.IsNullOrEmpty(dualGpuSupport.Value); };
+            if (gpuTarget != null) gpuTarget.PropertyChanged += (s, e) => { ViewModel.Settings.GpuTarget = gpuTarget.Value; };
+            if (helperElevation != null) helperElevation.PropertyChanged += (s, e) => { ViewModel.Settings.IsHelperElevated = helperElevation.Value; UpdateFPSLimiterElevationUI(); UpdateOSDStatusUI(); UpdateQuickFPSLimitButtonUI(); UpdateQuickRTSSStatus(); };
+            if (rtssElevation != null) rtssElevation.PropertyChanged += (s, e) => { ViewModel.Performance.EvaluateElevationStatus(App.Connection != null, rtssElevation.Value, helperElevation != null && helperElevation.Value); UpdateFPSLimiterElevationUI(); UpdateOSDStatusUI(); UpdateQuickFPSLimitButtonUI(); UpdateQuickOSDButtonUI((int)PerformanceOverlaySlider.Value); UpdateQuickRTSSStatus(); };
+            if (gameInputStatus != null) gameInputStatus.PropertyChanged += (s, e) => { ViewModel.Settings.GameInputStatus = gameInputStatus.Value; };
+            if (mouseSpeed != null) mouseSpeed.PropertyChanged += (s, e) => { ViewModel.Settings.MouseSpeed = mouseSpeed.Value; };
+            if (mouseScrollSpeed != null) mouseScrollSpeed.PropertyChanged += (s, e) => { ViewModel.Settings.MouseScrollSpeed = mouseScrollSpeed.Value; };
+            if (mouseEnhancePointerPrecision != null) mouseEnhancePointerPrecision.PropertyChanged += (s, e) => { ViewModel.Settings.IsMouseEnhancePointerPrecision = mouseEnhancePointerPrecision.Value; };
+
+            if (runningGame != null)
+            {
+                ViewModel.RunningGameName = runningGame.Value.IsValid() ? runningGame.Value.GameId.Name : "No game detected";
+                ViewModel.IsGameRunning = runningGame.Value.IsValid();
+                runningGame.PropertyChanged += (s, e) =>
+                {
+                    ViewModel.RunningGameName = runningGame.Value.IsValid() ? runningGame.Value.GameId.Name : "No game detected";
+                    ViewModel.IsGameRunning = runningGame.Value.IsValid();
+                };
+            }
+            if (perGameProfile != null)
+            {
+                ViewModel.IsPerGameProfile = perGameProfile.Value;
+                perGameProfile.PropertyChanged += (s, e) =>
+                {
+                    ViewModel.IsPerGameProfile = perGameProfile.Value;
+                };
+            }
+
+            if (hardwareTelemetry != null)
+            {
+                hardwareTelemetry.OnTelemetryUpdated = (cpuU, cpuW, gpuU, gpuW, ramU, ramUsed, vramU, vramUsed) =>
+                {
+                    ViewModel.QuickAccess.UpdateTelemetry(cpuU, cpuW, gpuU, gpuW, ramU, ramUsed, vramU, vramUsed);
+                };
             }
         }
 
@@ -1927,7 +1995,7 @@ namespace XboxGamingBar
             if (refreshRate != null && refreshRate.Value > 0)
             {
                 int maxRefresh = refreshRate.Value;
-                var judderFreeValues = RTSSHelper.GetJudderFreeFPSValues(maxRefresh, 30);
+                var judderFreeValues = ViewModel.Performance.GetJudderFreeValues(maxRefresh, 30);
                 int idx = (int)Math.Round(e.NewValue);
                 if (idx >= 0 && idx < judderFreeValues.Count)
                 {
@@ -1964,7 +2032,7 @@ namespace XboxGamingBar
 
             if (isJudderFree)
             {
-                var judderFreeValues = RTSSHelper.GetJudderFreeFPSValues(activeRefresh, 30);
+                var judderFreeValues = ViewModel.Performance.GetJudderFreeValues(activeRefresh, 30);
                 if (judderFreeValues.Count > 0)
                 {
                     FPSLimitSlider.Visibility = Visibility.Collapsed;
@@ -2069,8 +2137,9 @@ namespace XboxGamingBar
         {
             if (QuickRTSSStatusText == null || QuickRTSSStatusDot == null) return;
             bool isRunning = IsRTSSRunning;
+            ViewModel.QuickAccess.UpdateRtssSummary(App.Connection != null, isRunning, rtssElevation != null ? rtssElevation.Value : 0, IsElevationMismatch);
             QuickRTSSStatusText.Text = isRunning ? "RTSS Active" : "RTSS Offline";
-            var greenBrush = (SolidColorBrush)Resources["XboxGreenBrush"];
+            var greenBrush = Resources.ContainsKey("XboxGreenBrush") ? (SolidColorBrush)Resources["XboxGreenBrush"] : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65));
             var grayBrush = new SolidColorBrush(Windows.UI.Colors.Gray);
             QuickRTSSStatusDot.Fill = isRunning ? greenBrush : grayBrush;
         }
@@ -2380,39 +2449,15 @@ namespace XboxGamingBar
             if (canvasWidth <= 0)
                 return;
 
-            var judderFreeValues = RTSSHelper.GetJudderFreeFPSValues(maxRefresh, 30);
-            if (judderFreeValues == null || judderFreeValues.Count == 0)
-                return;
-
             bool isJudderFree = JudderFreeFPSToggle != null && JudderFreeFPSToggle.IsOn;
+            double min = FPSLimitSlider != null ? FPSLimitSlider.Minimum : 30;
+            double max = FPSLimitSlider != null ? FPSLimitSlider.Maximum : maxRefresh;
 
-            if (isJudderFree)
+            var markers = ViewModel.Performance.CalculateMarkers(maxRefresh, isJudderFree, min, max);
+            foreach (var marker in markers)
             {
-                int count = judderFreeValues.Count;
-                for (int i = 0; i < count; i++)
-                {
-                    int val = judderFreeValues[i];
-                    double percent = count > 1 ? (double)i / (count - 1) : 0;
-                    double xPos = percent * canvasWidth;
-
-                    AddCanvasLabel(val.ToString(), xPos, canvasWidth);
-                }
-            }
-            else
-            {
-                double min = FPSLimitSlider.Minimum;
-                double max = FPSLimitSlider.Maximum;
-                if (max <= min) return;
-
-                foreach (int val in judderFreeValues)
-                {
-                    if (val < min || val > max) continue;
-
-                    double percent = (val - min) / (max - min);
-                    double xPos = percent * canvasWidth;
-
-                    AddCanvasLabel(val.ToString(), xPos, canvasWidth);
-                }
+                double xPos = marker.XPercent * canvasWidth;
+                AddCanvasLabel(marker.Value.ToString(), xPos, canvasWidth);
             }
         }
 
