@@ -19,6 +19,8 @@ namespace XboxGamingBarHelper.Hardware
 
         private readonly IHardwareProvider hardwareProvider;
 
+        public Func<bool> IsDemandActive { get; set; }
+
         public HardwareProviderProperty HardwareProvider { get; }
         public HardwareTelemetryProperty HardwareTelemetry { get; }
         public GpuTargetProperty GpuTarget { get; }
@@ -166,6 +168,11 @@ namespace XboxGamingBarHelper.Hardware
         public override void Update()
         {
             base.Update();
+
+            if (IsDemandActive != null && !IsDemandActive())
+            {
+                return;
+            }
 
             hardwareProvider.Update();
 

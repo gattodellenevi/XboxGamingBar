@@ -124,6 +124,64 @@ namespace XboxGamingBarHelper.Windows
         [DllImport("user32.dll")]
         private static extern IntPtr GetShellWindow();
 
+        #region WinEventHook & Message Loop APIs
+
+        public const uint EVENT_SYSTEM_FOREGROUND = 0x0003;
+        public const uint WINEVENT_OUTOFCONTEXT = 0x0000;
+        public const uint WINEVENT_SKIPOWNPROCESS = 0x0002;
+        public const uint WM_QUIT = 0x0012;
+
+        public delegate void WinEventDelegate(IntPtr hWinEventHook, uint eventType, IntPtr hWnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern IntPtr SetWinEventHook(
+            uint eventMin,
+            uint eventMax,
+            IntPtr hmodWinEventProc,
+            WinEventDelegate lpfnWinEventProc,
+            uint idProcess,
+            uint idThread,
+            uint dwFlags);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool UnhookWinEvent(IntPtr hWinEventHook);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int x;
+            public int y;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct MSG
+        {
+            public IntPtr hwnd;
+            public uint message;
+            public UIntPtr wParam;
+            public IntPtr lParam;
+            public uint time;
+            public POINT pt;
+            public uint lPrivate;
+        }
+
+        [DllImport("user32.dll")]
+        public static extern bool GetMessage(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
+
+        [DllImport("user32.dll")]
+        public static extern bool TranslateMessage(ref MSG lpMsg);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr DispatchMessage(ref MSG lpMsg);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        public static extern bool PostThreadMessage(uint idThread, uint Msg, UIntPtr wParam, IntPtr lParam);
+
+        [DllImport("kernel32.dll")]
+        public static extern uint GetCurrentThreadId();
+
+        #endregion
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
 
@@ -135,7 +193,7 @@ namespace XboxGamingBarHelper.Windows
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern int ChangeDisplaySettings(ref DEVMODE lpDevMode, int dwFlags);
 
-        private static int GetWindowProcessId(IntPtr windowHandle)
+        public static int GetWindowProcessId(IntPtr windowHandle)
         {
             if (windowHandle == IntPtr.Zero)
             {
@@ -250,6 +308,19 @@ namespace XboxGamingBarHelper.Windows
             info = new CachedProcessInfo(processName, executablePath, isProtected);
             ProcessCache[processId] = info;
             return true;
+        }
+
+        public static bool TryGetProcessInfo(int processId, out string processName, out string executablePath)
+        {
+            if (GetProcessInfo(processId, out var info))
+            {
+                processName = info.ProcessName;
+                executablePath = info.ExecutablePath;
+                return true;
+            }
+            processName = string.Empty;
+            executablePath = string.Empty;
+            return false;
         }
 
         public static void GetOpenWindows(IDictionary<int, ProcessWindow> windows)

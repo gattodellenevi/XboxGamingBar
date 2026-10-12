@@ -2,6 +2,7 @@ using NLog;
 using Shared.Data;
 using Shared.Enums;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.AppService;
@@ -106,27 +107,80 @@ namespace XboxGamingBar.Data
             return true;
         }
 
-        public void CacheSnapshot(StateSnapshotDTO snapshot)
+        private static string GetCacheFilePath()
         {
-            if (snapshot == null) return;
             try
             {
-                string json = snapshot.ToJson();
-                if (!string.IsNullOrEmpty(json))
-                {
-                    var localSettings = ApplicationData.Current.LocalSettings;
-                    localSettings.Values[CACHED_SNAPSHOT_KEY] = json;
-                    Logger.Info($"Cached StateSnapshotDTO with {snapshot.Properties?.Count ?? 0} properties to LocalSettings.");
-                }
+                return Path.Combine(ApplicationData.Current.LocalFolder.Path, "cached_snapshot.json");
             }
             catch (Exception ex)
             {
-                Logger.Warn(ex, "Failed to cache StateSnapshotDTO to LocalSettings.");
+                Logger.Warn(ex, "Failed to get LocalFolder path for cached snapshot.");
+                return null;
             }
+        }
+
+        public void CacheSnapshot(StateSnapshotDTO snapshot)
+        {
+            if (snapshot == null) return;
+            Task.Run(() =>
+            {
+                try
+                {
+                    string json = snapshot.ToJson();
+                    if (!string.IsNullOrEmpty(json))
+                    {
+                        string filePath = GetCacheFilePath();
+                        if (!string.IsNullOrEmpty(filePath))
+                        {
+                            File.WriteAllText(filePath, json);
+                            Logger.Info($"Cached StateSnapshotDTO with {snapshot.Properties?.Count ?? 0} properties to file: {filePath}");
+                        }
+                    }
+
+                    // Clean up any old setting in LocalSettings if present
+                    try
+                    {
+                        var localSettings = ApplicationData.Current.LocalSettings;
+                        if (localSettings.Values.ContainsKey(CACHED_SNAPSHOT_KEY))
+                        {
+                            localSettings.Values.Remove(CACHED_SNAPSHOT_KEY);
+                        }
+                    }
+                    catch { }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "Failed to cache StateSnapshotDTO to file.");
+                }
+            });
         }
 
         public StateSnapshotDTO LoadCachedSnapshot()
         {
+            try
+            {
+                string filePath = GetCacheFilePath();
+                if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+                {
+                    string json = File.ReadAllText(filePath);
+                    if (!string.IsNullOrWhiteSpace(json))
+                    {
+                        var snapshot = StateSnapshotDTO.FromJson(json);
+                        if (snapshot != null && snapshot.Properties != null && snapshot.Properties.Count > 0)
+                        {
+                            Logger.Info($"Loaded cached StateSnapshotDTO with {snapshot.Properties.Count} properties from file: {filePath}");
+                            return snapshot;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to load cached StateSnapshotDTO from file.");
+            }
+
+            // Fallback: Check legacy LocalSettings in case file didn't exist yet
             try
             {
                 var localSettings = ApplicationData.Current.LocalSettings;
@@ -135,15 +189,16 @@ namespace XboxGamingBar.Data
                     var snapshot = StateSnapshotDTO.FromJson(json);
                     if (snapshot != null && snapshot.Properties != null && snapshot.Properties.Count > 0)
                     {
-                        Logger.Info($"Loaded cached StateSnapshotDTO with {snapshot.Properties.Count} properties from LocalSettings.");
+                        Logger.Info($"Loaded cached StateSnapshotDTO with {snapshot.Properties.Count} properties from legacy LocalSettings.");
                         return snapshot;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Logger.Warn(ex, "Failed to load cached StateSnapshotDTO from LocalSettings.");
+                Logger.Warn(ex, "Failed to load cached StateSnapshotDTO from legacy LocalSettings.");
             }
+
             return null;
         }
 

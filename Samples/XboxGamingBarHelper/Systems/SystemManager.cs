@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Shared.Utilities;
 using Microsoft.Win32;
 using System.Timers;
+using System.Threading;
 
 namespace XboxGamingBarHelper.Systems
 {
@@ -175,14 +176,19 @@ namespace XboxGamingBarHelper.Systems
         // Keep track to current opening windows to determine currently running game.
         private Dictionary<int, ProcessWindow> ProcessWindows { get; }
         private Dictionary<int, AppEntry> AppEntries { get; }
-        private readonly Timer displayUpdateTimer;
+        private readonly System.Timers.Timer displayUpdateTimer;
 
         private IntPtr lastForegroundHwnd = IntPtr.Zero;
         private RunningGame lastDetectedGame = new RunningGame();
         private DateTime lastWindowScanTime = DateTime.MinValue;
         private DateTime lastGameInputCheckTime = DateTime.MinValue;
         private DateTime lastControllerBatteryCheckTime = DateTime.MinValue;
-        private DateTime lastHdrCheckTime = DateTime.MinValue;
+
+        private readonly Thread foregroundHookThread;
+        private User32.WinEventDelegate winEventDelegate;
+        private IntPtr hWinEventHook = IntPtr.Zero;
+        private uint hookThreadNativeId = 0;
+        private readonly System.Timers.Timer foregroundDebounceTimer;
 
         public event ResumeFromSleepEventHandler ResumeFromSleep;
 
@@ -253,7 +259,7 @@ namespace XboxGamingBarHelper.Systems
             hdr = new HDRProperty(initialHdrEnabled, this);
             hdrSupported = new HDRSupportedProperty(initialHdrSupported, this);
 
-            displayUpdateTimer = new Timer(500); // 500ms debounce
+            displayUpdateTimer = new System.Timers.Timer(500); // 500ms debounce
             displayUpdateTimer.AutoReset = false;
             displayUpdateTimer.Elapsed += DisplayUpdateTimer_Elapsed;
 
@@ -278,6 +284,22 @@ namespace XboxGamingBarHelper.Systems
                     Logger.Warn(ex, "Failed in background display mode enumeration.");
                 }
             });
+
+            // Initialize event-driven foreground window hook
+            foregroundDebounceTimer = new System.Timers.Timer(150); // 150ms debounce
+            foregroundDebounceTimer.AutoReset = false;
+            foregroundDebounceTimer.Elapsed += (s, e) => EvaluateForegroundWindow();
+
+            foregroundHookThread = new Thread(ForegroundHookThreadProc)
+            {
+                IsBackground = true,
+                Name = "ForegroundWindowHookThread"
+            };
+            foregroundHookThread.SetApartmentState(ApartmentState.STA);
+            foregroundHookThread.Start();
+
+            // Evaluate initial foreground game immediately
+            EvaluateForegroundWindow();
         }
 
         private RunningGame GetRunningGame()
@@ -437,22 +459,95 @@ namespace XboxGamingBarHelper.Systems
             };
         }
 
+        private void ForegroundHookThreadProc()
+        {
+            try
+            {
+                hookThreadNativeId = User32.GetCurrentThreadId();
+                winEventDelegate = new User32.WinEventDelegate(WinEventCallback);
+
+                hWinEventHook = User32.SetWinEventHook(
+                    User32.EVENT_SYSTEM_FOREGROUND,
+                    User32.EVENT_SYSTEM_FOREGROUND,
+                    IntPtr.Zero,
+                    winEventDelegate,
+                    0,
+                    0,
+                    User32.WINEVENT_OUTOFCONTEXT | User32.WINEVENT_SKIPOWNPROCESS);
+
+                if (hWinEventHook == IntPtr.Zero)
+                {
+                    Logger.Warn("Failed to install SetWinEventHook for EVENT_SYSTEM_FOREGROUND.");
+                    return;
+                }
+
+                Logger.Info("Installed SetWinEventHook for EVENT_SYSTEM_FOREGROUND.");
+
+                while (User32.GetMessage(out User32.MSG msg, IntPtr.Zero, 0, 0))
+                {
+                    User32.TranslateMessage(ref msg);
+                    User32.DispatchMessage(ref msg);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in ForegroundHookThreadProc.");
+            }
+            finally
+            {
+                if (hWinEventHook != IntPtr.Zero)
+                {
+                    User32.UnhookWinEvent(hWinEventHook);
+                    hWinEventHook = IntPtr.Zero;
+                }
+            }
+        }
+
+        private void WinEventCallback(IntPtr hWinEventHook, uint eventType, IntPtr hWnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
+        {
+            if (eventType == User32.EVENT_SYSTEM_FOREGROUND)
+            {
+                foregroundDebounceTimer.Stop();
+                foregroundDebounceTimer.Start();
+            }
+        }
+
+        private void EvaluateForegroundWindow()
+        {
+            try
+            {
+                var currentRunningGame = GetRunningGame();
+                if (RunningGame.Value != currentRunningGame)
+                {
+                    if (currentRunningGame.GameId.IsValid())
+                    {
+                        Logger.Info($"Detect new running game {currentRunningGame.GameId.Name}.");
+                    }
+                    else
+                    {
+                        Logger.Info($"Running game {RunningGame.Value.GameId.Name} stopped.");
+                    }
+                    RunningGame.SetValue(currentRunningGame);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error evaluating foreground window.");
+            }
+        }
+
         public override void Update()
         {
             base.Update();
 
-            var currentRunningGame = GetRunningGame();
-            if (RunningGame != currentRunningGame)
+            // Event-driven model: if a game is currently tracked, verify liveness with lightweight check
+            if (RunningGame.Value.IsValid())
             {
-                if (currentRunningGame.GameId.IsValid())
+                if (!User32.IsProcessAlive(RunningGame.Value.ProcessId))
                 {
-                    Logger.Info($"Detect new running game {currentRunningGame.GameId.Name}.");
+                    Logger.Info($"Running game {RunningGame.Value.GameId.Name} (PID {RunningGame.Value.ProcessId}) exited.");
+                    RunningGame.SetValue(new RunningGame());
                 }
-                else
-                {
-                    Logger.Info($"Running game {RunningGame.Value.GameId.Name} stopped.");
-                }
-                RunningGame.SetValue(currentRunningGame);
             }
 
             var now = DateTime.UtcNow;
@@ -478,21 +573,7 @@ namespace XboxGamingBarHelper.Systems
                 }
             }
 
-            if ((now - lastHdrCheckTime).TotalSeconds >= 3.0)
-            {
-                lastHdrCheckTime = now;
-                var (currentHdrSupported, currentHdrEnabled) = User32.GetHDRStatus();
-                if (hdrSupported.Value != currentHdrSupported)
-                {
-                    Logger.Info($"HDR support status changed: {currentHdrSupported}.");
-                    hdrSupported.SetValue(currentHdrSupported, now.Ticks);
-                }
-                if (hdr.Value != currentHdrEnabled)
-                {
-                    Logger.Info($"HDR status changed: {currentHdrEnabled}.");
-                    hdr.SetValue(currentHdrEnabled, now.Ticks);
-                }
-            }
+            // HDR updates are event-driven via SystemEvents.DisplaySettingsChanged (Task 4.2)
         }
 
         private void SystemEvents_PowerModeChanged(object sender, PowerModeChangedEventArgs e)

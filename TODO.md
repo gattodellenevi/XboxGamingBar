@@ -33,7 +33,7 @@
 - [x] **2.2. Widget Startup Fast-Path**
   - **Files:** `Samples/XboxGamingBar/Data/WidgetProperties.cs`, `Samples/XboxGamingBar/GamingWidget.xaml.cs`, `Samples/XboxGamingBar/Data/*Property.cs`
   - **Tasks:**
-    - [x] **Optimistic Local Cache Rendering**: Instantly render the widget using cached last-known values from `ApplicationData.Current.LocalSettings` without blocking modal dialogs. Seamlessly reconcile live state when `StateSnapshotDTO` arrives over AppService. Synchronous inline UI updating on UI thread avoids dispatcher lag.
+    - [x] **Optimistic Local Cache Rendering**: Instantly render the widget using cached last-known values from `cached_snapshot.json` in `LocalFolder` without blocking modal dialogs (bypassing UWP's 8 KB `LocalSettings` limitation). Seamlessly reconcile live state when `StateSnapshotDTO` arrives over AppService. Robust UI thread marshaling (`CoreDispatcher`) and guaranteed modal dismissal on connection.
 
 ---
 
@@ -64,30 +64,32 @@
 
 ## 4. Replacing Wait/Check Loops with an Event-Driven Architecture
 
-- [ ] **4.1. Event-Driven Active Game & Window Detection**
+- [x] **4.1. Event-Driven Active Game & Window Detection**
   - **Files:** `Samples/XboxGamingBarHelper/Systems/SystemManager.cs`, `Samples/XboxGamingBarHelper/Windows/User32.cs`
   - **Task:**
-    - Replace the 1,000ms `GetRunningGame()` window scanning loop with native Win32 `SetWinEventHook` listening for `EVENT_SYSTEM_FOREGROUND`.
-    - Evaluate game process profiles only when the foreground window changes (0% idle CPU overhead).
+    - Replaced the 1,000ms `GetRunningGame()` window scanning loop with native Win32 `SetWinEventHook` listening for `EVENT_SYSTEM_FOREGROUND` via a dedicated STA message loop thread.
+    - Profiles and active window states are evaluated only upon foreground window changes (0% idle CPU overhead).
+    - Lightweight liveness checks (`User32.IsProcessAlive`) ensure exited games are cleaned up without full window enumeration.
 
-- [ ] **4.2. Native OS Event Handlers for Display & Power**
+- [x] **4.2. Native OS Event Handlers for Display & Power**
   - **Files:** `Samples/XboxGamingBarHelper/Systems/SystemManager.cs`, `Samples/XboxGamingBarHelper/RTSS/RTSSManager.cs`
   - **Task:**
-    - Rely entirely on `SystemEvents.DisplaySettingsChanged` for display resolution, refresh rate, and HDR mode updates.
-    - Rely on `SystemEvents.PowerModeChanged` to re-apply profiles immediately upon resume without polling.
+    - Rely entirely on `SystemEvents.DisplaySettingsChanged` for debounced display resolution, refresh rate, and HDR mode updates; eliminated 3,000ms periodic CCD polling.
+    - Subscribed `RTSSManager` to `SystemEvents.PowerModeChanged` (`PowerModes.Resume`) to re-apply active FPS limits immediately upon system resume without polling.
+    - Optimized RTSS elevation status checks to run only on process state transitions.
 
-- [ ] **4.3. On-Demand Telemetry Subscription Model**
+- [x] **4.3. On-Demand Telemetry Subscription Model**
   - **Files:** `Samples/XboxGamingBarHelper/Hardware/HardwareManager.cs`, `Samples/XboxGamingBarHelper/Program.cs`
   - **Task:**
-    - Turn hardware telemetry into an on-demand subscription push model.
-    - Run hardware sensor timers (1,000ms) only when the widget is in the foreground OR when OnScreenDisplay level > 0.
-    - Completely stop sensor polling loops when both the widget and OSD are idle.
+    - Converted hardware telemetry to an on-demand subscription model using `hardwareManager.IsDemandActive`.
+    - Sensor polling and WMI/LibreHardwareMonitor updates run only when OnScreenDisplay level > 0 OR when the widget is actively in the foreground with an open AppService connection.
+    - Hardware sensor polling completely halts (0% CPU) when both the widget and OSD are idle.
 
-- [ ] **4.4. Reactive Connection & Elevation State Machine**
+- [x] **4.4. Reactive Connection & Elevation State Machine**
   - **Files:** `Samples/XboxGamingBar/GamingWidget.xaml.cs`, `Samples/XboxGamingBarHelper/Program.cs`
   - **Task:**
-    - Remove the helper's 2,000ms reconnect polling loop; handle disconnections purely via `Connection_ServiceClosed`.
-    - Replace the widget's `Task.Delay(15000)` arbitrary elevation timeout with a reactive state machine listening to `AppServiceConnected`. Unlock UI the exact millisecond the elevated process connects.
+    - Eliminated the helper's 2,000ms reconnect polling loop. Implemented a native global event handle (`@"Global\CouchGamingBarHelper_ConnectEvent"`) with `ALL APPLICATION PACKAGES` ACL and `ThreadPool.RegisterWaitForSingleObject` so the widget reactively signals the running helper to connect instantly.
+    - Replaced the widget's `Task.Delay(15000)` arbitrary timeout with a reactive state machine using a cancelable fallback token; cancels timeout and unlocks UI the exact millisecond the elevated process connects via `AppServiceConnected`.
 
 ---
 

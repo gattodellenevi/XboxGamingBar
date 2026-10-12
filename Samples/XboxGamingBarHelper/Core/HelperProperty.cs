@@ -1,4 +1,4 @@
-﻿using Shared.Data;
+using Shared.Data;
 using Shared.Enums;
 using System;
 using System.Threading.Tasks;
@@ -44,9 +44,8 @@ namespace XboxGamingBarHelper.Core
                 return null;
             }
 
-            if (Manager.Connection == null)
+            if (!Program.IsConnected || Manager.Connection == null)
             {
-                Logger.Warn($"Property {Function}'s manager doesn't have connection.");
                 return null;
             }
 

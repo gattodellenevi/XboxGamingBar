@@ -7,10 +7,12 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.AppService;
 using Windows.ApplicationModel.Background;
+using Windows.ApplicationModel.Core;
 using Windows.Foundation.Collections;
 using Windows.Foundation.Metadata;
 using Windows.UI.Core;
@@ -91,6 +93,8 @@ namespace XboxGamingBar
         private readonly HardwareProviderProperty hardwareProviderProperty;
         private readonly HardwareTelemetryProperty hardwareTelemetry;
         private bool isRestartingElevated = false;
+        private CancellationTokenSource elevationFallbackCts = null;
+        private CancellationTokenSource modalTimeoutCts = null;
         private readonly GameInputStatusProperty gameInputStatus;
         private readonly GpuTargetProperty gpuTarget;
         private readonly DualGpuSupportProperty dualGpuSupport;
@@ -506,24 +510,38 @@ namespace XboxGamingBar
                 try
                 {
                     isRestartingElevated = true;
-                    // Reset flag after 15 seconds if user cancels UAC or elevation fails
-                    var _ = Task.Delay(15000).ContinueWith(t =>
-                    {
-                        var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
-                        {
-                            if (isRestartingElevated)
-                            {
-                                Logger.Warn("Elevated restart timed out without reconnection. Resetting isRestartingElevated flag.");
-                                isRestartingElevated = false;
-                                HideLoadingModal();
-                            }
-                        });
-                    });
-
                     if (clickedButton != null)
                     {
                         clickedButton.IsEnabled = false;
                     }
+
+                    ShowLoadingModal("Restarting Helper as Administrator...", "Awaiting elevated background service connection...");
+
+                    elevationFallbackCts?.Cancel();
+                    elevationFallbackCts?.Dispose();
+                    elevationFallbackCts = new CancellationTokenSource();
+                    var token = elevationFallbackCts.Token;
+
+                    // Fallback timeout only if user cancels UAC prompt or process fails to spawn
+                    _ = Task.Delay(25000, token).ContinueWith(t =>
+                    {
+                        if (!t.IsCanceled)
+                        {
+                            var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                            {
+                                if (isRestartingElevated)
+                                {
+                                    Logger.Warn("Elevated restart timed out without reconnection. Resetting isRestartingElevated flag.");
+                                    isRestartingElevated = false;
+                                    if (clickedButton != null)
+                                    {
+                                        clickedButton.IsEnabled = true;
+                                    }
+                                    HideLoadingModal();
+                                }
+                            });
+                        }
+                    }, TaskScheduler.Default);
 
                     var valueSet = new ValueSet();
                     valueSet.Add(nameof(Command), (int)Command.Set);
@@ -538,14 +556,14 @@ namespace XboxGamingBar
                 {
                     Logger.Error(ex, "Failed to send RestartElevated message to helper.");
                     isRestartingElevated = false;
-                }
-                finally
-                {
-                    await Task.Delay(1500);
+                    elevationFallbackCts?.Cancel();
+                    elevationFallbackCts?.Dispose();
+                    elevationFallbackCts = null;
                     if (clickedButton != null)
                     {
                         clickedButton.IsEnabled = true;
                     }
+                    HideLoadingModal();
                 }
             }
             else
@@ -1417,40 +1435,117 @@ namespace XboxGamingBar
 
         private async void ShowLoadingModal(string title = "Connecting to Helper...", string subtitle = "Initializing hardware sensors & power controls...")
         {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            try
             {
-                if (LoadingModalTitleText != null)
+                modalTimeoutCts?.Cancel();
+                modalTimeoutCts?.Dispose();
+                modalTimeoutCts = new CancellationTokenSource();
+                var token = modalTimeoutCts.Token;
+                _ = Task.Run(async () =>
                 {
-                    LoadingModalTitleText.Text = title;
-                }
-                if (LoadingModalSubtitleText != null)
+                    try
+                    {
+                        await Task.Delay(5000, token);
+                        if (!token.IsCancellationRequested)
+                        {
+                            Logger.Warn("Loading modal safety timeout reached (5s). Dismissing modal so UI remains accessible.");
+                            HideLoadingModal();
+                        }
+                    }
+                    catch (TaskCanceledException) { }
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to start modal timeout timer.");
+            }
+
+            var disp = Dispatcher ?? CoreApplication.MainView?.CoreWindow?.Dispatcher ?? Windows.UI.Xaml.Window.Current?.Dispatcher;
+            if (disp != null)
+            {
+                if (!disp.HasThreadAccess)
                 {
-                    LoadingModalSubtitleText.Text = subtitle;
+                    await disp.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
+                        if (LoadingModalTitleText != null)
+                        {
+                            LoadingModalTitleText.Text = title;
+                        }
+                        if (LoadingModalSubtitleText != null)
+                        {
+                            LoadingModalSubtitleText.Text = subtitle;
+                        }
+                        if (LoadingModalProgressRing != null)
+                        {
+                            LoadingModalProgressRing.IsActive = true;
+                        }
+                        if (LoadingModalOverlay != null)
+                        {
+                            LoadingModalOverlay.Visibility = Visibility.Visible;
+                        }
+                    });
                 }
-                if (LoadingModalProgressRing != null)
+                else
                 {
-                    LoadingModalProgressRing.IsActive = true;
+                    if (LoadingModalTitleText != null)
+                    {
+                        LoadingModalTitleText.Text = title;
+                    }
+                    if (LoadingModalSubtitleText != null)
+                    {
+                        LoadingModalSubtitleText.Text = subtitle;
+                    }
+                    if (LoadingModalProgressRing != null)
+                    {
+                        LoadingModalProgressRing.IsActive = true;
+                    }
+                    if (LoadingModalOverlay != null)
+                    {
+                        LoadingModalOverlay.Visibility = Visibility.Visible;
+                    }
                 }
-                if (LoadingModalOverlay != null)
-                {
-                    LoadingModalOverlay.Visibility = Visibility.Visible;
-                }
-            });
+            }
         }
 
         private async void HideLoadingModal()
         {
-            await Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+            try
             {
-                if (LoadingModalProgressRing != null)
+                modalTimeoutCts?.Cancel();
+                modalTimeoutCts?.Dispose();
+                modalTimeoutCts = null;
+            }
+            catch { }
+
+            var disp = Dispatcher ?? CoreApplication.MainView?.CoreWindow?.Dispatcher ?? Windows.UI.Xaml.Window.Current?.Dispatcher;
+            if (disp != null)
+            {
+                if (!disp.HasThreadAccess)
                 {
-                    LoadingModalProgressRing.IsActive = false;
+                    await disp.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
+                        if (LoadingModalProgressRing != null)
+                        {
+                            LoadingModalProgressRing.IsActive = false;
+                        }
+                        if (LoadingModalOverlay != null)
+                        {
+                            LoadingModalOverlay.Visibility = Visibility.Collapsed;
+                        }
+                    });
                 }
-                if (LoadingModalOverlay != null)
+                else
                 {
-                    LoadingModalOverlay.Visibility = Visibility.Collapsed;
+                    if (LoadingModalProgressRing != null)
+                    {
+                        LoadingModalProgressRing.IsActive = false;
+                    }
+                    if (LoadingModalOverlay != null)
+                    {
+                        LoadingModalOverlay.Visibility = Visibility.Collapsed;
+                    }
                 }
-            });
+            }
         }
 
         private void EnsureWidgetActivity()
@@ -1499,6 +1594,21 @@ namespace XboxGamingBar
                     if (!properties.HasCachedState)
                     {
                         ShowLoadingModal("Connecting to Helper...", "Establishing communication channel...");
+                    }
+
+                    // Reactively signal the running helper process to connect immediately (Task 4.4)
+                    try
+                    {
+                        if (System.Threading.EventWaitHandle.TryOpenExisting(@"Global\CouchGamingBarHelper_ConnectEvent", out var connectEvent))
+                        {
+                            Logger.Info("Signaled running helper via CouchGamingBarHelper_ConnectEvent.");
+                            connectEvent.Set();
+                            connectEvent.Dispose();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn(ex, "Could not signal CouchGamingBarHelper_ConnectEvent.");
                     }
                 }
                 else
@@ -1624,52 +1734,82 @@ namespace XboxGamingBar
         private async void GamingWidget_AppServiceConnected(object sender, AppServiceTriggerDetails _)
         {
             Logger.Info("GamingWidget AppService connected.");
-            isRestartingElevated = false;
-            HideLoadingModal();
-
-            if (widget != null)
+            try
             {
-                EnsureWidgetActivity();
+                elevationFallbackCts?.Cancel();
+                elevationFallbackCts?.Dispose();
+                elevationFallbackCts = null;
+                isRestartingElevated = false;
 
-                if (appTargetTracker == null)
+                var disp = Dispatcher ?? CoreApplication.MainView?.CoreWindow?.Dispatcher ?? Windows.UI.Xaml.Window.Current?.Dispatcher;
+                if (disp != null && !disp.HasThreadAccess)
                 {
-                    appTargetTracker = new XboxGameBarAppTargetTracker(widget);
-                    appTargetTracker.SettingChanged += AppTargetTracker_TargetChanged;
-
-                    if (appTargetTracker.Setting == XboxGameBarAppTargetSetting.Enabled)
+                    await disp.RunAsync(CoreDispatcherPriority.Normal, () =>
                     {
-                        Logger.Info("Created new app target tracker to track current game.");
-                        var initialTarget = appTargetTracker.GetTarget();
-                        if (initialTarget.IsGame)
+                        if (OSDRestartElevatedButton != null) OSDRestartElevatedButton.IsEnabled = true;
+                        if (FPSLimitRestartElevatedButton != null) FPSLimitRestartElevatedButton.IsEnabled = true;
+                        HideLoadingModal();
+                    });
+                }
+                else
+                {
+                    if (OSDRestartElevatedButton != null) OSDRestartElevatedButton.IsEnabled = true;
+                    if (FPSLimitRestartElevatedButton != null) FPSLimitRestartElevatedButton.IsEnabled = true;
+                    HideLoadingModal();
+                }
+
+                if (widget != null)
+                {
+                    EnsureWidgetActivity();
+
+                    if (appTargetTracker == null)
+                    {
+                        appTargetTracker = new XboxGameBarAppTargetTracker(widget);
+                        appTargetTracker.SettingChanged += AppTargetTracker_TargetChanged;
+
+                        if (appTargetTracker.Setting == XboxGameBarAppTargetSetting.Enabled)
                         {
-                            Logger.Info($"Initial tracked game DisplayName={initialTarget.DisplayName} AumId={initialTarget.AumId} TitleId={initialTarget.TitleId} IsFullscreen={initialTarget.IsFullscreen}");
-                            trackedGame.SetValue(new TrackedGame(initialTarget.AumId, initialTarget.DisplayName, StringHelper.CleanStringForSerialization(initialTarget.TitleId), initialTarget.IsFullscreen));
+                            Logger.Info("Created new app target tracker to track current game.");
+                            var initialTarget = appTargetTracker.GetTarget();
+                            if (initialTarget.IsGame)
+                            {
+                                Logger.Info($"Initial tracked game DisplayName={initialTarget.DisplayName} AumId={initialTarget.AumId} TitleId={initialTarget.TitleId} IsFullscreen={initialTarget.IsFullscreen}");
+                                trackedGame.SetValue(new TrackedGame(initialTarget.AumId, initialTarget.DisplayName, StringHelper.CleanStringForSerialization(initialTarget.TitleId), initialTarget.IsFullscreen));
+                            }
+                            else
+                            {
+                                trackedGame.SetValue(new TrackedGame());
+                                Logger.Info("No initial game target found.");
+                            }
+                            appTargetTracker.TargetChanged += AppTargetTracker_TargetChanged;
                         }
                         else
                         {
-                            trackedGame.SetValue(new TrackedGame());
-                            Logger.Info("No initial game target found.");
+                            Logger.Info("Created new app target tracker but not enabled.");
                         }
-                        appTargetTracker.TargetChanged += AppTargetTracker_TargetChanged;
                     }
                     else
                     {
-                        Logger.Info("Created new app target tracker but not enabled.");
+                        Logger.Info("App target tracker already created.");
                     }
                 }
                 else
                 {
-                    Logger.Info("App target tracker already created.");
+                    Logger.Info("No widget found, probably running as an app instead of Xbox Game Bar widget.");
                 }
-            }
-            else
-            {
-                Logger.Info("No widget found, probably running as an app instead of Xbox Game Bar widget.");
-            }
 
-            await properties.Sync();
-            UpdateFPSLimiterElevationUI();
-            UpdateOSDStatusUI();
+                await properties.Sync();
+                UpdateFPSLimiterElevationUI();
+                UpdateOSDStatusUI();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error during GamingWidget_AppServiceConnected.");
+            }
+            finally
+            {
+                HideLoadingModal();
+            }
         }
 
         /// <summary>

@@ -40,7 +40,8 @@ namespace XboxGamingBarHelper
         private static NvidiaManager nvidiaManager;
         private static SettingsManager settingsManager;
         private static List<IManager> Managers;
-        private static AppServiceConnectionStatus appServiceConnectionStatus;
+        private static AppServiceConnectionStatus appServiceConnectionStatus = AppServiceConnectionStatus.AppServiceUnavailable;
+        public static bool IsConnected => appServiceConnectionStatus == AppServiceConnectionStatus.Success;
 
         public static OnScreenDisplayProperty onScreenDisplay;
         public static List<OnScreenDisplayManager> onScreenDisplayProviders;
@@ -50,9 +51,26 @@ namespace XboxGamingBarHelper
         private static HelperProperties properties;
 
         private static System.Threading.Mutex _singleInstanceMutex;
+        private static System.Threading.EventWaitHandle _connectEvent;
+        private static System.Threading.RegisteredWaitHandle _registeredConnectWaitHandle;
 
+        [STAThread]
         static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.UnhandledException += (sender, eventArgs) =>
+            {
+                Logger.Error(eventArgs.ExceptionObject as Exception, $"Unhandled AppDomain Exception (isTerminating={eventArgs.IsTerminating})");
+            };
+            Application.ThreadException += (sender, eventArgs) =>
+            {
+                Logger.Error(eventArgs.Exception, "Unhandled WinForms ThreadException");
+            };
+            TaskScheduler.UnobservedTaskException += (sender, eventArgs) =>
+            {
+                Logger.Error(eventArgs.Exception, "Unobserved Task Exception");
+                eventArgs.SetObserved();
+            };
+
             try
             {
                 User32.SetProcessDpiAwarenessContext(User32.DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
@@ -128,8 +146,28 @@ namespace XboxGamingBarHelper
 
         static void Run(string[] args)
         {
-            _ = MainLoopAsync(args);
+            Logger.Info("Run: Starting MainLoopAsync...");
+            var mainLoopTask = MainLoopAsync(args);
+            Logger.Info("Run: Entering Application.Run()...");
             Application.Run();
+            Logger.Warn("Run: Application.Run() returned!");
+            try
+            {
+                if (!mainLoopTask.IsCompleted)
+                {
+                    Logger.Info("Run: Waiting for MainLoopAsync to observe state...");
+                    mainLoopTask.Wait(3000);
+                }
+                else if (mainLoopTask.IsFaulted)
+                {
+                    Logger.Error(mainLoopTask.Exception, "Run: MainLoopAsync was faulted!");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Run: MainLoopAsync exception on exit.");
+            }
+            Logger.Warn("Run: Process exiting.");
         }
 
         //static async Task Main(string[] args)
@@ -258,20 +296,28 @@ namespace XboxGamingBarHelper
 
                 ApplyCurrentProfile();
 
+                // On-demand telemetry subscription push model (Task 4.3):
+                // Hardware sensors only query when OSD is enabled or widget is foreground and connected
+                hardwareManager.IsDemandActive = () =>
+                    (onScreenDisplay != null && onScreenDisplay.Value > 0) ||
+                    (settingsManager != null && settingsManager.IsForeground.Value && appServiceConnectionStatus == AppServiceConnectionStatus.Success);
+
+                // Reactive connection state machine (Task 4.4):
+                try
+                {
+                    InitializeReactiveConnectEvent();
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "Failed to initialize reactive connect event; proceeding with standard connection.");
+                }
+
                 await ConnectToWidget(false);
 
                 Logger.Info($"Widget connection status: {appServiceConnectionStatus}");
-                DateTime lastReconnectAttempt = DateTime.MinValue;
 
                 while (true)
                 {
-                    if (appServiceConnectionStatus != AppServiceConnectionStatus.Success && connection != null && !string.IsNullOrEmpty(connection?.PackageFamilyName) && (DateTime.UtcNow - lastReconnectAttempt).TotalMilliseconds >= 2000)
-                    {
-                        lastReconnectAttempt = DateTime.UtcNow;
-                        Logger.Info("Try to reconnect to the widget.");
-                        await ConnectToWidget(false);
-                    }
-
                     await Task.Delay(1000);
 
                     foreach (var manager in Managers)
@@ -404,6 +450,7 @@ namespace XboxGamingBarHelper
         private static void RecreateConnection()
         {
             Logger.Info("Re-creating AppServiceConnection object for next connection attempt.");
+            appServiceConnectionStatus = AppServiceConnectionStatus.AppServiceUnavailable;
             try
             {
                 if (connection != null)
@@ -433,6 +480,8 @@ namespace XboxGamingBarHelper
             }
         }
 
+        private static readonly System.Threading.SemaphoreSlim _connectLock = new System.Threading.SemaphoreSlim(1, 1);
+
         private static async Task ConnectToWidget(bool blocking)
         {
             if (connection == null || string.IsNullOrEmpty(connection?.PackageFamilyName))
@@ -442,48 +491,78 @@ namespace XboxGamingBarHelper
                 return;
             }
 
-            if (blocking)
+            if (!await _connectLock.WaitAsync(0))
             {
-                do
-                {
-                    Logger.Info("Start connecting to the widget.");
-                    try
-                    {
-                        appServiceConnectionStatus = await connection.OpenAsync();
-                    }
-                    catch (Exception exception)
-                    {
-                        Logger.Error($"Exception occurred when connecting to the widget: {exception}");
-                        appServiceConnectionStatus = AppServiceConnectionStatus.AppServiceUnavailable;
-                    }
-
-                    if (appServiceConnectionStatus != AppServiceConnectionStatus.Success)
-                    {
-                        Logger.Info("Can't connect to the widget. Recreating connection object and trying again in 1 second...");
-                        RecreateConnection();
-                        await Task.Delay(1000);
-                    }
-                } while (appServiceConnectionStatus != AppServiceConnectionStatus.Success);
-                Logger.Info("Connected to the widget.");
+                Logger.Info("Connection attempt is already in progress, skipping concurrent request.");
+                return;
             }
-            else
+
+            try
             {
-                Logger.Info("Start trying to connect to the widget.");
-                try
+                if (appServiceConnectionStatus == AppServiceConnectionStatus.Success)
                 {
-                    appServiceConnectionStatus = await connection.OpenAsync();
-                }
-                catch (Exception ex)
-                {
-                    Logger.Error(ex, "Exception occurred when trying to connect to the widget.");
-                    appServiceConnectionStatus = AppServiceConnectionStatus.AppServiceUnavailable;
+                    Logger.Info("Widget is already connected.");
+                    return;
                 }
 
-                Logger.Info($"Try to connect to the widget {appServiceConnectionStatus}.");
-                if (appServiceConnectionStatus != AppServiceConnectionStatus.Success)
+                if (blocking)
                 {
-                    RecreateConnection();
+                    do
+                    {
+                        Logger.Info("Start connecting to the widget.");
+                        try
+                        {
+                            appServiceConnectionStatus = await connection.OpenAsync();
+                        }
+                        catch (Exception exception)
+                        {
+                            Logger.Error($"Exception occurred when connecting to the widget: {exception}");
+                            appServiceConnectionStatus = AppServiceConnectionStatus.AppServiceUnavailable;
+                        }
+
+                        if (appServiceConnectionStatus != AppServiceConnectionStatus.Success)
+                        {
+                            Logger.Info("Can't connect to the widget. Recreating connection object and trying again in 1 second...");
+                            RecreateConnection();
+                            await Task.Delay(1000);
+                        }
+                    } while (appServiceConnectionStatus != AppServiceConnectionStatus.Success);
+                    Logger.Info("Connected to the widget.");
                 }
+                else
+                {
+                    // Paced retries: try up to 4 times with 400ms delay to give widget time to activate
+                    int maxRetries = 4;
+                    for (int attempt = 1; attempt <= maxRetries; attempt++)
+                    {
+                        Logger.Info($"Start trying to connect to the widget (attempt {attempt}/{maxRetries}).");
+                        try
+                        {
+                            appServiceConnectionStatus = await connection.OpenAsync();
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex, "Exception occurred when trying to connect to the widget.");
+                            appServiceConnectionStatus = AppServiceConnectionStatus.AppServiceUnavailable;
+                        }
+
+                        Logger.Info($"Try to connect to the widget result: {appServiceConnectionStatus}.");
+                        if (appServiceConnectionStatus == AppServiceConnectionStatus.Success)
+                        {
+                            break;
+                        }
+
+                        RecreateConnection();
+                        if (attempt < maxRetries)
+                        {
+                            await Task.Delay(400);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                _connectLock.Release();
             }
         }
 
@@ -654,6 +733,92 @@ namespace XboxGamingBarHelper
                 System.Security.AccessControl.AccessControlType.Allow));
 
             return System.Threading.MutexAcl.Create(true, @"Global\CouchGamingBarHelper_SingleInstance_Mutex", out createdNew, mutexSecurity);
+        }
+
+        private static void InitializeReactiveConnectEvent()
+        {
+            try
+            {
+                CreateAclEventWaitHandle();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to initialize reactive connect event with ACL, falling back to standard EventWaitHandle.");
+                try
+                {
+                    CreateStandardEventWaitHandle();
+                }
+                catch (Exception fallbackEx)
+                {
+                    Logger.Error(fallbackEx, "Failed to initialize fallback reactive connect event.");
+                }
+            }
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void CreateAclEventWaitHandle()
+        {
+            var appPackageSid = new System.Security.Principal.SecurityIdentifier("S-1-15-2-1"); // ALL APPLICATION PACKAGES
+            var authUsersSid = new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.AuthenticatedUserSid, null);
+            var adminSid = new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.BuiltinAdministratorsSid, null);
+
+            var eventSecurity = new System.Security.AccessControl.EventWaitHandleSecurity();
+            eventSecurity.AddAccessRule(new System.Security.AccessControl.EventWaitHandleAccessRule(
+                appPackageSid,
+                System.Security.AccessControl.EventWaitHandleRights.Synchronize | System.Security.AccessControl.EventWaitHandleRights.Modify,
+                System.Security.AccessControl.AccessControlType.Allow));
+            eventSecurity.AddAccessRule(new System.Security.AccessControl.EventWaitHandleAccessRule(
+                authUsersSid,
+                System.Security.AccessControl.EventWaitHandleRights.Synchronize | System.Security.AccessControl.EventWaitHandleRights.Modify,
+                System.Security.AccessControl.AccessControlType.Allow));
+            eventSecurity.AddAccessRule(new System.Security.AccessControl.EventWaitHandleAccessRule(
+                adminSid,
+                System.Security.AccessControl.EventWaitHandleRights.FullControl,
+                System.Security.AccessControl.AccessControlType.Allow));
+
+            _connectEvent = System.Threading.EventWaitHandleAcl.Create(
+                false,
+                System.Threading.EventResetMode.AutoReset,
+                @"Global\CouchGamingBarHelper_ConnectEvent",
+                out bool createdNew,
+                eventSecurity);
+
+            RegisterWaitCallback();
+            Logger.Info("Initialized reactive connect event wait handle with ACL.");
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static void CreateStandardEventWaitHandle()
+        {
+            _connectEvent = new System.Threading.EventWaitHandle(false, System.Threading.EventResetMode.AutoReset, @"Global\CouchGamingBarHelper_ConnectEvent");
+            RegisterWaitCallback();
+            Logger.Info("Initialized standard reactive connect event wait handle.");
+        }
+
+        private static void RegisterWaitCallback()
+        {
+            _registeredConnectWaitHandle = System.Threading.ThreadPool.RegisterWaitForSingleObject(
+                _connectEvent,
+                async (state, timedOut) =>
+                {
+                    try
+                    {
+                        Logger.Info("Reactive connect event received from widget.");
+                        if (appServiceConnectionStatus == AppServiceConnectionStatus.Success)
+                        {
+                            Logger.Info("Widget requested connection while status was marked Success. Re-creating connection to new widget session.");
+                            RecreateConnection();
+                        }
+                        await ConnectToWidget(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, "Error handling reactive connect event.");
+                    }
+                },
+                null,
+                -1,
+                false);
         }
     }
 }

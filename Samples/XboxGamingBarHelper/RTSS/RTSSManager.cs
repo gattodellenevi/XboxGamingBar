@@ -89,6 +89,7 @@ namespace XboxGamingBarHelper.RTSS
             activeColorFormatter = isHDRActive ? (IColorFormatter)HDRColorFormatter.Instance : SDRColorFormatter.Instance;
             UpdateAutoScale();
             SystemEvents.DisplaySettingsChanged += OnDisplaySettingsChanged;
+            SystemEvents.PowerModeChanged += OnPowerModeChanged;
         }
 
         public static int UserTextSizePercent { get; set; } = 100;
@@ -156,16 +157,29 @@ namespace XboxGamingBarHelper.RTSS
             return $" <C={purpleColor}>|<C> ";
         }
 
+        private void OnPowerModeChanged(object sender, PowerModeChangedEventArgs e)
+        {
+            if (e.Mode == PowerModes.Resume)
+            {
+                Logger.Info("System resumed from sleep, re-applying RTSS settings.");
+                if (RTSSHelper.IsRunning())
+                {
+                    if (limitFPS.Value)
+                    {
+                        RTSSFPSLimiter.SetFPSLimit(fpsLimit.Value);
+                        RTSSFPSLimiter.SetFPSLimitMode(fpsLimitMode.Value);
+                    }
+                    else
+                    {
+                        RTSSFPSLimiter.SetFPSLimit(0);
+                    }
+                }
+            }
+        }
+
         public override void Update()
         {
             base.Update();
-
-            var currentElevationStatus = RTSSHelper.GetRTSSElevationStatus();
-            if (rtssElevation.Value != currentElevationStatus)
-            {
-                Logger.Info($"RTSS elevation status changed from {rtssElevation.Value} to {currentElevationStatus}.");
-                rtssElevation.SetValue(currentElevationStatus, DateTime.UtcNow.Ticks);
-            }
 
             if (!RTSSHelper.IsInstalled(out string installDir))
             {
@@ -185,6 +199,15 @@ namespace XboxGamingBarHelper.RTSS
             if (isRunning && !_lastRTSSRunning)
             {
                 _lastRTSSRunning = true;
+
+                // Event-driven elevation check: only query elevation on state transition
+                var currentElevationStatus = RTSSHelper.GetRTSSElevationStatus();
+                if (rtssElevation.Value != currentElevationStatus)
+                {
+                    Logger.Info($"RTSS elevation status changed from {rtssElevation.Value} to {currentElevationStatus}.");
+                    rtssElevation.SetValue(currentElevationStatus, DateTime.UtcNow.Ticks);
+                }
+
                 if (limitFPS.Value)
                 {
                     Logger.Info($"RTSS process detected as running. Re-applying active FPS limit ({fpsLimit.Value}) and mode ({fpsLimitMode.Value}).");
@@ -199,6 +222,14 @@ namespace XboxGamingBarHelper.RTSS
             }
             else if (!isRunning)
             {
+                if (_lastRTSSRunning)
+                {
+                    var currentElevationStatus = RTSSHelper.GetRTSSElevationStatus();
+                    if (rtssElevation.Value != currentElevationStatus)
+                    {
+                        rtssElevation.SetValue(currentElevationStatus, DateTime.UtcNow.Ticks);
+                    }
+                }
                 _lastRTSSRunning = false;
             }
 
