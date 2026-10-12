@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading.Tasks;
 
@@ -10,14 +11,14 @@ namespace Shared.Data
 
         List<IProperty> ChildProperties { get; }
 
-        //bool TrySetValue<InValueType>(InValueType newValue, long updatedTime);
-
-        //bool TryGetValue<ValueType>(out ValueType value);
-
         bool SetValue(object newValue, long updatedTime);
 
         object GetValue();
 
         Task Sync();
+
+        bool IsBatchUpdating { get; }
+
+        IDisposable BeginBatchUpdate();
     }
 }

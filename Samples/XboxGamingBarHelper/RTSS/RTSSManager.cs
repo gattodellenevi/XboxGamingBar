@@ -191,6 +191,11 @@ namespace XboxGamingBarHelper.RTSS
                     RTSSFPSLimiter.SetFPSLimit(fpsLimit.Value);
                     RTSSFPSLimiter.SetFPSLimitMode(fpsLimitMode.Value);
                 }
+                else
+                {
+                    Logger.Info("RTSS process detected as running with FPS limit disabled. Ensuring RTSS limit is 0.");
+                    RTSSFPSLimiter.SetFPSLimit(0);
+                }
             }
             else if (!isRunning)
             {

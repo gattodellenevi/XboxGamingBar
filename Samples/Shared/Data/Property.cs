@@ -1,6 +1,8 @@
 using NLog;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Shared.Data
@@ -9,7 +11,31 @@ namespace Shared.Data
     {
         protected static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
+        // Preserved as fallback for backward compatibility; prefer BeginBatchUpdate()
         public static bool SuppressNotification { get; set; } = false;
+
+        private int batchUpdateCount = 0;
+
+        public bool IsBatchUpdating => batchUpdateCount > 0 || SuppressNotification;
+
+        public IDisposable BeginBatchUpdate()
+        {
+            Interlocked.Increment(ref batchUpdateCount);
+            return new BatchUpdateToken(() => Interlocked.Decrement(ref batchUpdateCount));
+        }
+
+        private sealed class BatchUpdateToken : IDisposable
+        {
+            private Action onDispose;
+            public BatchUpdateToken(Action onDispose)
+            {
+                this.onDispose = onDispose;
+            }
+            public void Dispose()
+            {
+                Interlocked.Exchange(ref onDispose, null)?.Invoke();
+            }
+        }
 
         private readonly IProperty parentProperty;
         public IProperty ParentProperty

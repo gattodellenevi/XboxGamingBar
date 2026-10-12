@@ -38,7 +38,7 @@ namespace Shared.Data
         // Or Foreground property, only widget knows when it turns into foreground.
         protected virtual bool ShouldSendNotifyMessage()
         {
-            if (SuppressNotification)
+            if (IsBatchUpdating)
             {
                 return false;
             }
@@ -76,6 +76,22 @@ namespace Shared.Data
                 if (response.Message.TryGetValue(nameof(Content), out object responseValue))
                 {
                     Logger.Info($"Notified property {function} changed {responseValue}.");
+
+                    // Unidirectional reconciliation: If the backend responded with confirmed value
+                    if (response.Message.TryGetValue("Success", out object succObj) && succObj is bool success && success)
+                    {
+                        long respTime = System.DateTime.UtcNow.Ticks;
+                        if (response.Message.TryGetValue(nameof(UpdatedTime), out object tObj) && tObj is long tVal)
+                        {
+                            respTime = tVal;
+                        }
+
+                        // Reconcile with confirmed backend value, suppressing echo
+                        using (BeginBatchUpdate())
+                        {
+                            SetValue(responseValue, respTime);
+                        }
+                    }
                 }
                 else
                 {

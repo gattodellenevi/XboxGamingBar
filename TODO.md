@@ -39,25 +39,26 @@
 
 ## 3. State Consistency & Synchronization (Widget <-> Helper)
 
-- [ ] **3.1. Unidirectional Data Flow (Helper as Single Source of Truth)**
+- [x] **3.1. Unidirectional Data Flow (Helper as Single Source of Truth)**
   - **Files:** `Samples/Shared/Data/`, `Samples/XboxGamingBar/Data/WidgetProperties.cs`, `Samples/XboxGamingBarHelper/Core/HelperProperty.cs`
   - **Task:**
     - Helper is the sole authority for persisted settings, active profile state, and hardware capabilities.
     - Widget acts strictly as a presentation and intent layer:
       - Widget sends intent: `Command.Set`, `Function`, `Value`.
-      - Helper validates, commits to `ProfileStore`, and notifies subscribers.
-      - Widget updates UI controls only upon confirmation or snapshot reception.
+      - Helper validates, commits to `ProfileStore`, and notifies subscribers with confirmed value.
+      - Widget reconciles UI controls using confirmed backend response values under a batch update scope to eliminate echo loops.
 
-- [ ] **3.2. Instance-Level Re-Entrancy Tokens**
-  - **Files:** `Samples/Shared/Data/Property.cs`, `Samples/XboxGamingBar/Data/WidgetProperties.cs`
+- [x] **3.2. Instance-Level Re-Entrancy Tokens**
+  - **Files:** `Samples/Shared/Data/Property.cs`, `Samples/Shared/Data/IProperty.cs`, `Samples/Shared/Data/FunctionalProperty.cs`, `Samples/XboxGamingBar/Data/WidgetProperties.cs`
   - **Task:**
-    - Replace the global static `Property.SuppressNotification` flag with instance-level re-entrancy tokens or a `using (property.BeginBatchUpdate())` scope to prevent cross-thread race conditions during batch updates.
+    - Replaced fragile static `Property.SuppressNotification` flag with thread-safe instance-level re-entrancy tokens using `IDisposable BeginBatchUpdate()`.
+    - Prevents cross-thread race conditions and echo loops during snapshot applications and multi-property updates.
 
-- [ ] **3.3. Decouple Hardware Readiness from Saved Settings**
+- [x] **3.3. Decouple Hardware Readiness from Saved Settings**
   - **Files:** `Samples/XboxGamingBarHelper/RTSS/RTSSManager.cs`, `Samples/XboxGamingBarHelper/AMD/AMDManager.cs`
   - **Task:**
-    - Never overwrite or clamp a user's saved profile setting to `0` or default if a tool (RTSS, ADLX) has not finished starting up.
-    - Maintain user intent in the profile while tracking tool readiness as a separate capability flag (`IsRTSSRunning = false`). Apply the saved value once the tool becomes ready.
+    - Decoupled hardware readiness from persisted user intent. Saved user profile settings (FPS limit, RSR, Anti-Lag, etc.) are never overwritten or clamped to `0`/`false` while RTSS or ADLX is offline or initializing.
+    - Saved profile intent is automatically applied once the hardware interface completes initialization.
 
 ---
 

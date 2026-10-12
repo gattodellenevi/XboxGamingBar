@@ -180,8 +180,7 @@ namespace XboxGamingBar.Data
 
         private void ApplySnapshotInternal(StateSnapshotDTO snapshot)
         {
-            Property.SuppressNotification = true;
-            try
+            using (BeginBatchUpdate())
             {
                 // 1. First apply list/options properties (Resolutions, RefreshRates) so ComboBoxes have items populated
                 foreach (var item in snapshot.Properties)
@@ -209,10 +208,6 @@ namespace XboxGamingBar.Data
                         controlProperty.EnableControl(true);
                     }
                 }
-            }
-            finally
-            {
-                Property.SuppressNotification = false;
             }
 
             Logger.Info("Finished applying snapshot properties and enabled controls in batch on UI thread.");

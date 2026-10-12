@@ -37,6 +37,39 @@ namespace Shared.Data
             }
         }
 
+        public IDisposable BeginBatchUpdate()
+        {
+            var tokens = new List<IDisposable>();
+            foreach (var prop in properties.Values)
+            {
+                if (prop != null)
+                {
+                    tokens.Add(prop.BeginBatchUpdate());
+                }
+            }
+            return new BatchUpdateCollectionToken(tokens);
+        }
+
+        private sealed class BatchUpdateCollectionToken : IDisposable
+        {
+            private List<IDisposable> tokens;
+            public BatchUpdateCollectionToken(List<IDisposable> tokens)
+            {
+                this.tokens = tokens;
+            }
+            public void Dispose()
+            {
+                if (tokens != null)
+                {
+                    foreach (var token in tokens)
+                    {
+                        token?.Dispose();
+                    }
+                    tokens = null;
+                }
+            }
+        }
+
         public virtual StateSnapshotDTO CreateStateSnapshot()
         {
             var snapshot = new StateSnapshotDTO();
@@ -128,8 +161,10 @@ namespace Shared.Data
                             updatedTime = timeVal;
                         }
 
-                        property.SetValue(content, updatedTime);
-                        response.Add(nameof(Content), "Set Success");
+                        bool setSuccess = property.SetValue(content, updatedTime);
+                        // Return the actual confirmed and sanitized value from the property to enforce unidirectional state consistency
+                        response = property.AddValueSetContent(response);
+                        response.Add("Success", setSuccess);
                         break;
                     default:
                         Logger.Error($"Can't process command {command}");
