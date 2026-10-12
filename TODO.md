@@ -1,14 +1,111 @@
-# Project Backlog & TODOs
+# Project Backlog & Architectural Refactoring TODOs
 
-## Performance & Optimization
+## 1. Setting Architecture: Clean Interface & Universal Persistence (Global vs. Per-Profile)
 
-- [x] **Optimize Window Enumeration & Process Path Query in Helper**
-  - **File:** `Samples/XboxGamingBarHelper/Windows/User32.cs` (`GetOpenWindows`)
-  - **Goal:** Eliminate heavy `Process.GetProcessById(processId)` allocations and `process.MainModule.FileName` Win32 handle queries running every loop tick.
-  - **Status:** Completed using hybrid in-memory caching (`PID -> CachedProcessInfo`) combined with native Win32 `QueryFullProcessImageName` (`PROCESS_QUERY_LIMITED_INFORMATION`) and periodic cache pruning.
+- [x] **1.1. Descriptor & Property-Bag Architecture (`ISettingDefinition<T>`)**
+  - **Files:** `Samples/Shared/Data/`, `Samples/Shared/Enums/Function.cs`, `Samples/XboxGamingBarHelper/Settings/`
+  - **Status:** **Completed**
+  - **Implemented:**
+    - `ISettingDefinition` and `ISettingDefinition<T>` generic interface with `SettingScope` (`GlobalOnly`, `ProfileOrGlobal`, `Transient`).
+    - `SettingDefinition<T>` with built-in sanitization and type conversion.
+    - Centralized `SettingsRegistry` for clean 1-line definition of global and per-profile settings.
+    - Dynamic dictionary property bag in `GameProfile.cs` with `TryGetSetting<T>()` and `SetSetting<T>()` preserving 100% backward compatibility.
 
-- [x] **Unified Startup Snapshot DTO / Batch State Sync**
-  - **Files:** `Samples/Shared/Data/`, `Samples/XboxGamingBar/Data/WidgetProperties.cs`, `Samples/XboxGamingBarHelper/Program.cs`
-  - **Goal:** Replace the sequential 25+ IPC `properties.Sync()` round-trips over the AppService pipe with a single `GetInitialState` / `StateSnapshotDTO` IPC request on widget connect.
-  - **Details:** The widget sends a single snapshot request on connection, the helper returns a unified struct/JSON containing all current settings, hardware stats, and available resolutions in one payload, and the widget populates all properties in a single batch on the UI thread before entering reactive delta-update mode.
-  - **Status:** Completed using `StateSnapshotDTO` payload transferred via `Command.GetInitialState`, with UI-thread batching and automatic fallback to sequential sync.
+- [x] **1.2. Dynamic ProfileStore & Automatic Inheritance Engine**
+  - **Files:** `Samples/XboxGamingBarHelper/Profile/ProfileStore.cs`, `Samples/XboxGamingBarHelper/Profile/ProfileManager.cs`, `Samples/XboxGamingBarHelper/Settings/SettingsManager.cs`
+  - **Status:** **Completed**
+  - **Implemented:**
+    - `ProfileStore` managing JSON storage (`settings.json`, `global.json`, `profiles/*.json`) with automatic inheritance (game override -> global profile fallback -> setting default).
+    - Transparent migration from legacy `settings.xml` and `profiles/*.xml` with continuous legacy XML fallback writing.
+    - Integrated with `SettingsManager`, `ProfileManager`, and `Program.cs`.
+
+---
+
+## 2. Fast Startup Optimization (Helper & Widget)
+
+- [ ] **2.1. Helper Startup Fast-Path**
+  - **Files:** `Samples/XboxGamingBarHelper/Program.cs`, `Samples/XboxGamingBarHelper/Hardware/HardwareManager.cs`, `Samples/XboxGamingBarHelper/AMD/AMDManager.cs`, `Samples/XboxGamingBarHelper/Windows/User32.cs`
+  - **Tasks:**
+    - [x] **Eliminate `PackageManager.FindPackagesForUser`**: Cached `PackageFamilyName` in `%LOCALAPPDATA%\CouchGamingBarHelper\package_identity.txt` (written by `Register-AutostartTask.ps1` and refreshed by helper) to read directly (0ms) and bypass multi-second package manager scan.
+    - [ ] **Deferred / Lazy Hardware Provider Initialization**: Moving `LibreHardwareProvider` WMI/ACPI probing and native ADLX DLL binding to a background `Task.Run` so the helper can open the AppService connection immediately.
+    - [ ] **Background Display Mode Enumeration**: Move `EnumDisplaySettings` loops in `User32.cs` to a background task and cache results; update only on display change events.
+
+- [ ] **2.2. Widget Startup Fast-Path**
+  - **Files:** `Samples/XboxGamingBar/GamingWidget.xaml`, `Samples/XboxGamingBar/GamingWidget.xaml.cs`
+  - **Tasks:**
+    - **XAML Tab Lazy Loading (`x:DeferLoadStrategy="Lazy"` / `x:Load="false"`)**: Defer inflating non-initial tabs (AMD settings, Display settings, Controls, advanced RTSS options) until navigated to. Slashes initial XAML parse and layout time by 50–70%.
+    - **Optimistic Local Cache Rendering**: Instantly render the widget using cached last-known values from `ApplicationData.Current.LocalSettings` instead of blocking on modal dialogs. Seamlessly reconcile when the `StateSnapshotDTO` arrives over AppService.
+
+---
+
+## 3. State Consistency & Synchronization (Widget <-> Helper)
+
+- [ ] **3.1. Unidirectional Data Flow (Helper as Single Source of Truth)**
+  - **Files:** `Samples/Shared/Data/`, `Samples/XboxGamingBar/Data/WidgetProperties.cs`, `Samples/XboxGamingBarHelper/Core/HelperProperty.cs`
+  - **Task:**
+    - Helper is the sole authority for persisted settings, active profile state, and hardware capabilities.
+    - Widget acts strictly as a presentation and intent layer:
+      - Widget sends intent: `Command.Set`, `Function`, `Value`.
+      - Helper validates, commits to `ProfileStore`, and notifies subscribers.
+      - Widget updates UI controls only upon confirmation or snapshot reception.
+
+- [ ] **3.2. Instance-Level Re-Entrancy Tokens**
+  - **Files:** `Samples/Shared/Data/Property.cs`, `Samples/XboxGamingBar/Data/WidgetProperties.cs`
+  - **Task:**
+    - Replace the global static `Property.SuppressNotification` flag with instance-level re-entrancy tokens or a `using (property.BeginBatchUpdate())` scope to prevent cross-thread race conditions during batch updates.
+
+- [ ] **3.3. Decouple Hardware Readiness from Saved Settings**
+  - **Files:** `Samples/XboxGamingBarHelper/RTSS/RTSSManager.cs`, `Samples/XboxGamingBarHelper/AMD/AMDManager.cs`
+  - **Task:**
+    - Never overwrite or clamp a user's saved profile setting to `0` or default if a tool (RTSS, ADLX) has not finished starting up.
+    - Maintain user intent in the profile while tracking tool readiness as a separate capability flag (`IsRTSSRunning = false`). Apply the saved value once the tool becomes ready.
+
+---
+
+## 4. Replacing Wait/Check Loops with an Event-Driven Architecture
+
+- [ ] **4.1. Event-Driven Active Game & Window Detection**
+  - **Files:** `Samples/XboxGamingBarHelper/Systems/SystemManager.cs`, `Samples/XboxGamingBarHelper/Windows/User32.cs`
+  - **Task:**
+    - Replace the 1,000ms `GetRunningGame()` window scanning loop with native Win32 `SetWinEventHook` listening for `EVENT_SYSTEM_FOREGROUND`.
+    - Evaluate game process profiles only when the foreground window changes (0% idle CPU overhead).
+
+- [ ] **4.2. Native OS Event Handlers for Display & Power**
+  - **Files:** `Samples/XboxGamingBarHelper/Systems/SystemManager.cs`, `Samples/XboxGamingBarHelper/RTSS/RTSSManager.cs`
+  - **Task:**
+    - Rely entirely on `SystemEvents.DisplaySettingsChanged` for display resolution, refresh rate, and HDR mode updates.
+    - Rely on `SystemEvents.PowerModeChanged` to re-apply profiles immediately upon resume without polling.
+
+- [ ] **4.3. On-Demand Telemetry Subscription Model**
+  - **Files:** `Samples/XboxGamingBarHelper/Hardware/HardwareManager.cs`, `Samples/XboxGamingBarHelper/Program.cs`
+  - **Task:**
+    - Turn hardware telemetry into an on-demand subscription push model.
+    - Run hardware sensor timers (1,000ms) only when the widget is in the foreground OR when OnScreenDisplay level > 0.
+    - Completely stop sensor polling loops when both the widget and OSD are idle.
+
+- [ ] **4.4. Reactive Connection & Elevation State Machine**
+  - **Files:** `Samples/XboxGamingBar/GamingWidget.xaml.cs`, `Samples/XboxGamingBarHelper/Program.cs`
+  - **Task:**
+    - Remove the helper's 2,000ms reconnect polling loop; handle disconnections purely via `Connection_ServiceClosed`.
+    - Replace the widget's `Task.Delay(15000)` arbitrary elevation timeout with a reactive state machine listening to `AppServiceConnected`. Unlock UI the exact millisecond the elevated process connects.
+
+---
+
+## 5. UI Modernization & MVVM Separation
+
+- [ ] **5.1. Decouple Monolithic `GamingWidget.xaml.cs` into ViewModels**
+  - **Files:** `Samples/XboxGamingBar/GamingWidget.xaml.cs`, `Samples/XboxGamingBar/ViewModels/`
+  - **Problem:** `GamingWidget.xaml.cs` currently has 2,785 lines mixing navigation, gamepad input, theme changes, judder-free math, and direct UI manipulation.
+  - **Task:**
+    - Break logic into modular ViewModels:
+      - `QuickAccessViewModel`: HUD cards, battery, quick toggles.
+      - `DisplayViewModel`: Resolution, refresh rates, HDR.
+      - `PerformanceViewModel`: RTSS limits, judder-free calculations, OSD levels and text size.
+      - `AMDFeaturesViewModel`: RSR, Anti-Lag, Boost, Chill, AFMF.
+      - `SettingsViewModel`: OSD provider, GPU target, elevation status.
+
+- [ ] **5.2. Compiled `{x:Bind}` Data Binding**
+  - **Files:** `Samples/XboxGamingBar/GamingWidget.xaml`, `Samples/XboxGamingBar/Data/`
+  - **Task:**
+    - Replace manual event wireups (`ToggleSwitch.Toggled += ...`, `Dispatcher.RunAsync(...)`) with compiled `{x:Bind Mode=OneWay}` and `{x:Bind Mode=TwoWay}` bindings.
+    - Eliminate boilerplate wrapper property classes in `Data/` in favor of standard `INotifyPropertyChanged` ViewModel properties.

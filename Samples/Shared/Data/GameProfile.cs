@@ -92,6 +92,53 @@ namespace Shared.Data
         }
 
         [XmlIgnore]
+        private Dictionary<string, object> settings;
+
+        [XmlIgnore]
+        public Dictionary<string, object> Settings
+        {
+            get
+            {
+                if (settings == null)
+                {
+                    settings = new Dictionary<string, object>();
+                    settings[SettingsRegistry.FPSLimit.Key] = fpsLimit;
+                    settings[SettingsRegistry.FPSLimitMode.Key] = fpsLimitMode;
+                    settings[SettingsRegistry.JudderFreeFPS.Key] = judderFreeFPS;
+                }
+                return settings;
+            }
+            set
+            {
+                settings = value;
+            }
+        }
+
+        public bool TryGetSetting<T>(ISettingDefinition<T> def, out T val)
+        {
+            if (Settings != null && Settings.TryGetValue(def.Key, out var rawVal))
+            {
+                val = (T)def.Sanitize(rawVal);
+                return true;
+            }
+            if (def.Function == Enums.Function.FPSLimit) { val = (T)(object)FPSLimit; return true; }
+            if (def.Function == Enums.Function.FPSLimitMode) { val = (T)(object)FPSLimitMode; return true; }
+            if (def.Function == Enums.Function.JudderFreeFPS) { val = (T)(object)JudderFreeFPS; return true; }
+            val = def.DefaultValue;
+            return false;
+        }
+
+        public void SetSetting<T>(ISettingDefinition<T> def, T val)
+        {
+            T sanitized = def.Sanitize(val);
+            Settings[def.Key] = sanitized;
+            if (def.Function == Enums.Function.FPSLimit && sanitized is int fl) fpsLimit = fl;
+            else if (def.Function == Enums.Function.FPSLimitMode && sanitized is int flm) fpsLimitMode = flm;
+            else if (def.Function == Enums.Function.JudderFreeFPS && sanitized is bool jf) judderFreeFPS = jf;
+            Save();
+        }
+
+        [XmlIgnore]
         public string Path;
 
         public bool IsGlobalProfile { get { return string.Compare(GameId.Name, GLOBAL_PROFILE_NAME) == 0; } }
@@ -115,6 +162,10 @@ namespace Shared.Data
             judderFreeFPS = options.JudderFreeFPS;
             Path = options.ProfilePath;
             cache = options.Cache;
+            settings = new Dictionary<string, object>();
+            settings[SettingsRegistry.FPSLimit.Key] = fpsLimit;
+            settings[SettingsRegistry.FPSLimitMode.Key] = fpsLimitMode;
+            settings[SettingsRegistry.JudderFreeFPS.Key] = judderFreeFPS;
         }
 
         public bool IsValid()
@@ -164,14 +215,6 @@ namespace Shared.Data
             {
                 cache[GameId] = this;
             }
-
-            if (string.IsNullOrEmpty(Path))
-            {
-                // Logger.Warn($"Can't save profile {GameId.Name} due to empty path.");
-                return;
-            }
-
-            XmlHelper.ToXMLFile(this, Path);
         }
     }
 }

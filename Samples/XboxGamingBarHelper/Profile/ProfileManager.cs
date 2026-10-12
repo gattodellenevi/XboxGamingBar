@@ -16,87 +16,6 @@ namespace XboxGamingBarHelper.Profile
         private const string PROFILE_FOLDER_NAME = "profiles";
         private const string XML_EXTENSION = ".xml";
 
-        public GameProfile GlobalProfile;
-
-        private readonly Dictionary<GameId, GameProfile> gameProfiles;
-        public IReadOnlyDictionary<GameId, GameProfile> GameProfiles
-        {
-            get { return gameProfiles; }
-        }
-
-        private readonly PerGameProfileProperty perGameProfile;
-        public PerGameProfileProperty PerGameProfile
-        {
-            get { return  perGameProfile; }
-        }
-        
-        private readonly GameProfileProperty currentProfile;
-        public GameProfileProperty CurrentProfile
-        {
-            get { return currentProfile; }
-        }
-
-        public ProfileManager(AppServiceConnection connection) : base(connection)
-        {
-            gameProfiles = new Dictionary<GameId, GameProfile>();
-
-            Logger.Info("Initialize global profile.");
-            // Load global profile.
-            var globalProfilePath = GetGlobalProfilePath();
-            if (!File.Exists(globalProfilePath))
-            {
-                // Create global profile path when it's not previously exist.
-                GlobalProfile = new GameProfile(new GameProfileOptions
-                {
-                    GameName = GameProfile.GLOBAL_PROFILE_NAME,
-                    GamePath = GameProfile.GLOBAL_PROFILE_NAME,
-                    InUse = true,
-
-                    FPSLimit = 0,
-                    FPSLimitMode = 0,
-                    ProfilePath = globalProfilePath,
-                    Cache = gameProfiles,
-                    JudderFreeFPS = true
-                });
-                GlobalProfile.Save();
-            }
-            else
-            {
-                GlobalProfile = XmlHelper.FromXMLFile<GameProfile>(globalProfilePath);
-                GlobalProfile.Path = globalProfilePath;
-            }
-
-            Logger.Info("Create game profiles folder.");
-            // Make sure game profiles folder is created.
-            var gameProfilesFolder = GetGameProfilesFolder();
-            if (!Directory.Exists(gameProfilesFolder))
-            {
-                Directory.CreateDirectory(gameProfilesFolder);
-            }
-
-            Logger.Info("Load game profiles.");
-            // Read all existing game profiles.
-            var xmlFiles = Directory.GetFiles(gameProfilesFolder, $"*{XML_EXTENSION}");
-            foreach (string filePath in xmlFiles)
-            {
-                try
-                {
-                    var gameProfile = XmlHelper.FromXMLFile<GameProfile>(filePath);
-                    gameProfile.Path = filePath;
-                    gameProfile.Cache = gameProfiles;
-                    gameProfiles.Add(gameProfile.GameId, gameProfile);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error reading or deserializing XML file '{filePath}': {ex.Message}.");
-                }
-            }
-
-            Logger.Info("Initialize game profile properties.");
-            perGameProfile = new PerGameProfileProperty(null, this);
-            currentProfile = new GameProfileProperty(GlobalProfile, this);
-        }
-
         public static string GetGameProfilesFolder()
         {
             return Path.Combine(PathHelper.GetLocalFolderPath(), PROFILE_FOLDER_NAME);
@@ -107,35 +26,43 @@ namespace XboxGamingBarHelper.Profile
             return Path.Combine(PathHelper.GetLocalFolderPath(), $"{GameProfile.GLOBAL_PROFILE_NAME}{XML_EXTENSION}");
         }
 
+        private readonly ProfileStore store;
+        public ProfileStore Store => store;
+
+        public GameProfile GlobalProfile => store.GlobalProfile;
+
+        public IReadOnlyDictionary<GameId, GameProfile> GameProfiles => store.GameProfiles;
+
+        private readonly PerGameProfileProperty perGameProfile;
+        public PerGameProfileProperty PerGameProfile
+        {
+            get { return perGameProfile; }
+        }
+        
+        private readonly GameProfileProperty currentProfile;
+        public GameProfileProperty CurrentProfile
+        {
+            get { return currentProfile; }
+        }
+
+        public ProfileManager(AppServiceConnection connection, ProfileStore existingStore = null) : base(connection)
+        {
+            Logger.Info("Initialize ProfileStore engine.");
+            store = existingStore ?? new ProfileStore();
+
+            Logger.Info("Initialize game profile properties.");
+            perGameProfile = new PerGameProfileProperty(null, this);
+            currentProfile = new GameProfileProperty(store.GlobalProfile, this);
+        }
+
         public bool TryGetProfile(GameId gameId, out GameProfile gameProfile)
         {
-            return gameProfiles.TryGetValue(gameId, out gameProfile);
+            return store.TryGetProfile(gameId, out gameProfile);
         }
 
         public GameProfile AddNewProfile(GameId gameId)
         {
-            if (TryGetProfile(gameId, out var gameProfile))
-            {
-                Logger.Warn($"Already have profile for {gameId.Name}.");
-                return gameProfile;
-            }
-
-            var newGameProfilePath = Path.Combine(GetGameProfilesFolder(), $"{Path.GetFileNameWithoutExtension(gameId.Path)}{XML_EXTENSION}");
-            var newGameProfile = new GameProfile(new GameProfileOptions
-            {
-                GameName = gameId.Name,
-                GamePath = gameId.Path,
-                InUse = true,
-
-                FPSLimit = CurrentProfile.FPSLimit,
-                FPSLimitMode = CurrentProfile.FPSLimitMode,
-                ProfilePath = newGameProfilePath,
-                Cache = gameProfiles,
-                JudderFreeFPS = CurrentProfile.JudderFreeFPS
-            });
-            newGameProfile.Save();
-            Logger.Info($"Add new profile for {gameId.Name} at {newGameProfilePath}.");
-            return newGameProfile;
+            return store.AddNewProfile(gameId);
         }
     }
 }

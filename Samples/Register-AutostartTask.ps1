@@ -43,9 +43,11 @@ if ([string]::IsNullOrWhiteSpace($ExePath)) {
 
                 if (Test-Path $candidate1) {
                     $ExePath = $candidate1
+                    $matchedPkg = $pkg
                     break
                 } elseif (Test-Path $candidate2) {
                     $ExePath = $candidate2
+                    $matchedPkg = $pkg
                     break
                 }
             }
@@ -93,6 +95,12 @@ if ($sourceDir -like "*WindowsApps*" -or ($sourceDir -ne $TargetDir)) {
         $localExe = Join-Path $TargetDir "CouchGamingBarHelper.exe"
         if (Test-Path $localExe) {
             $ExePath = $localExe
+        }
+
+        if ($matchedPkg -and $matchedPkg.PackageFamilyName) {
+            $identityFile = Join-Path $TargetDir "package_identity.txt"
+            Set-Content -Path $identityFile -Value $matchedPkg.PackageFamilyName -Force
+            Write-Host "Cached PackageFamilyName to: $identityFile" -ForegroundColor Green
         }
     } catch {
         Write-Warning "Could not copy helper to local folder: $($_.Exception.Message). Falling back to source executable."

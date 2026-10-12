@@ -9,16 +9,18 @@ using XboxGamingBarHelper.OnScreenDisplay;
 using XboxGamingBarHelper.RTSS;
 using XboxGamingBarHelper.Utilities;
 
+using XboxGamingBarHelper.Profile;
+
 namespace XboxGamingBarHelper.Settings
 {
     internal class SettingsManager : Manager
     {
         private static SettingsManager instance;
-        public static SettingsManager CreateInstance(AppServiceConnection connection)
+        public static SettingsManager CreateInstance(AppServiceConnection connection, ProfileStore store = null)
         {
             if (instance == null)
             {
-                instance = new SettingsManager(connection);
+                instance = new SettingsManager(connection, store);
             }
             return instance;
         }
@@ -27,6 +29,9 @@ namespace XboxGamingBarHelper.Settings
         {
             return instance;
         }
+
+        private readonly ProfileStore store;
+        public ProfileStore Store => store;
 
         private readonly OnScreenDisplayProviderProperty onScreenDisplayProvider;
         public OnScreenDisplayProviderProperty OnScreenDisplayProvider
@@ -46,30 +51,14 @@ namespace XboxGamingBarHelper.Settings
             get { return isForeground; }
         }
 
-        private readonly string settingsPath;
-        private Setting setting;
-        public Setting Setting
-        {
-            get { return setting; }
-        }
         private HelperProperty<int, OnScreenDisplayManager> onScreenDisplayPropertySettings;
 
-        protected SettingsManager(AppServiceConnection connection) : base(connection)
+        protected SettingsManager(AppServiceConnection connection, ProfileStore store = null) : base(connection)
         {
-            settingsPath = Path.Combine(PathHelper.GetLocalFolderPath(), "settings.xml");
-            if (File.Exists(settingsPath))
-            {
-                Logger.Info("Loading settings from XML file.");
-                setting = XmlHelper.FromXMLFile<Setting>(settingsPath);
-            }
-            else
-            {
-                Logger.Info("Settings XML file not found, using default settings.");
-                setting = new Setting(0, 0);
-                XmlHelper.ToXMLFile(setting, settingsPath);
-            }
+            this.store = store ?? new ProfileStore();
 
-            onScreenDisplayProvider = new OnScreenDisplayProviderProperty(setting.OnScreenDisplayProvider, this);
+            int initialOsdProvider = this.store.GetEffectiveValue(SettingsRegistry.OnScreenDisplayProvider);
+            onScreenDisplayProvider = new OnScreenDisplayProviderProperty(initialOsdProvider, this);
             onScreenDisplayProvider.PropertyChanged += OnScreenDisplayProviderChanged;
             onScreenDisplayProviderInstalled = new OnScreenDisplayProviderInstalledProperty(this);
             isForeground = new IsForegroundProperty(this);
@@ -89,7 +78,7 @@ namespace XboxGamingBarHelper.Settings
             if (osdTextSizePropertySettings != null)
                 osdTextSizePropertySettings.PropertyChanged -= PerformanceOverlayTextSizeChanged;
             osdTextSizePropertySettings = osdTextSizeProperty;
-            osdTextSizeProperty.SetValue(setting.OnScreenDisplayTextSize > 0 ? setting.OnScreenDisplayTextSize : 100);
+            osdTextSizeProperty.SetValue(store.GetEffectiveValue(SettingsRegistry.OnScreenDisplayTextSize));
             osdTextSizeProperty.PropertyChanged += PerformanceOverlayTextSizeChanged;
         }
 
@@ -99,7 +88,7 @@ namespace XboxGamingBarHelper.Settings
             if (gpuTargetPropertySettings != null)
                 gpuTargetPropertySettings.PropertyChanged -= GpuTargetChanged;
             gpuTargetPropertySettings = gpuTargetProperty;
-            gpuTargetProperty.SetValue(setting.GpuTarget);
+            gpuTargetProperty.SetValue(store.GetEffectiveValue(SettingsRegistry.GpuTarget));
             gpuTargetProperty.PropertyChanged += GpuTargetChanged;
         }
 
@@ -108,17 +97,14 @@ namespace XboxGamingBarHelper.Settings
             if (gpuTargetPropertySettings != null)
             {
                 Logger.Info($"Save setting GPU Target {gpuTargetPropertySettings.Value}.");
-                setting.GpuTarget = gpuTargetPropertySettings.Value;
-                XmlHelper.ToXMLFile(setting, settingsPath);
+                store.SetEffectiveValue(SettingsRegistry.GpuTarget, gpuTargetPropertySettings.Value);
             }
         }
 
         private void OnScreenDisplayProviderChanged(object sender, PropertyChangedEventArgs e)
         {
             Logger.Info($"Save setting On-Screen Display Provider {onScreenDisplayProvider.Value}.");
-
-            setting.OnScreenDisplayProvider = OnScreenDisplayProvider.Value;
-            XmlHelper.ToXMLFile(setting, settingsPath);
+            store.SetEffectiveValue(SettingsRegistry.OnScreenDisplayProvider, onScreenDisplayProvider.Value);
         }
 
         public void PerformanceOverlayLevelChanged(object sender, PropertyChangedEventArgs e)
@@ -131,9 +117,7 @@ namespace XboxGamingBarHelper.Settings
             else
             {
                 Logger.Info($"Save setting On-Screen Display {onScreenDisplayPropertySettings.Value}.");
-
-                setting.OnScreenDisplay = onScreenDisplayPropertySettings.Value;
-                XmlHelper.ToXMLFile(setting, settingsPath);
+                store.SetEffectiveValue(SettingsRegistry.OnScreenDisplay, onScreenDisplayPropertySettings.Value);
             }
         }
 
@@ -142,9 +126,7 @@ namespace XboxGamingBarHelper.Settings
             if (osdTextSizePropertySettings != null)
             {
                 Logger.Info($"Save setting On-Screen Display Text Size {osdTextSizePropertySettings.Value}.");
-
-                setting.OnScreenDisplayTextSize = osdTextSizePropertySettings.Value;
-                XmlHelper.ToXMLFile(setting, settingsPath);
+                store.SetEffectiveValue(SettingsRegistry.OnScreenDisplayTextSize, osdTextSizePropertySettings.Value);
             }
         }
 

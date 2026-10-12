@@ -3,10 +3,12 @@ using Shared.Constants;
 using Shared.Data;
 using Shared.Utilities;
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using XboxGamingBarHelper.Utilities;
 using Windows.ApplicationModel;
 using Windows.ApplicationModel.AppService;
 using System.Windows.Forms;
@@ -149,15 +151,16 @@ namespace XboxGamingBarHelper
                 trayIconManager = new TrayIconManager(connection);
 
                 // Initialize managers.
+                Logger.Info("Initialize Profile Manager.");
+                profileManager = new ProfileManager(connection);
+
                 Logger.Info("Initialize Settings Manager.");
-                settingsManager = SettingsManager.CreateInstance(connection);
+                settingsManager = SettingsManager.CreateInstance(connection, profileManager.Store);
 
                 Logger.Info("Initialize Hardware Manager.");
                 hardwareManager = new HardwareManager(connection);
                 Logger.Info("Initialize RTSS Manager.");
                 rtssManager = new RTSSManager(hardwareManager, connection);
-                Logger.Info("Initialize Profile Manager.");
-                profileManager = new ProfileManager(connection);
                 Logger.Info("Initialize System Manager.");
                 systemManager = new SystemManager(connection, profileManager.GameProfiles);
 
@@ -179,7 +182,9 @@ namespace XboxGamingBarHelper
 
                 Logger.Info("Initialize properties.");
                 onScreenDisplayProviders = new List<OnScreenDisplayManager>() { rtssManager, amdManager };
-                onScreenDisplay = new OnScreenDisplayProperty(settingsManager.Setting.OnScreenDisplay, null, onScreenDisplayProviders[settingsManager.OnScreenDisplayProvider]);
+                int initialOsdLevel = profileManager.Store.GetEffectiveValue(SettingsRegistry.OnScreenDisplay);
+                int initialOsdProvider = profileManager.Store.GetEffectiveValue(SettingsRegistry.OnScreenDisplayProvider);
+                onScreenDisplay = new OnScreenDisplayProperty(initialOsdLevel, null, onScreenDisplayProviders[initialOsdProvider]);
                 settingsManager.SyncOnScreenDisplaySettings(onScreenDisplay);
                 settingsManager.SyncOnScreenDisplayTextSizeSettings(rtssManager.OSDTextSize);
                 settingsManager.SyncGpuTargetSettings(hardwareManager.GpuTarget);
@@ -314,6 +319,40 @@ namespace XboxGamingBarHelper
                 Logger.Warn($"Could not get Package.Current identity (running unpackaged or via Task Scheduler): {ex.Message}");
             }
 
+            string localFolderPath = PathHelper.GetLocalFolderPath();
+            string primaryCachePath = Path.Combine(localFolderPath, "package_identity.txt");
+            string appDirCachePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "package_identity.txt");
+
+            if (string.IsNullOrEmpty(packageFamilyName))
+            {
+                // Fast-path: Check cached package identity before querying heavy PackageManager
+                try
+                {
+                    if (File.Exists(primaryCachePath))
+                    {
+                        var cached = File.ReadAllText(primaryCachePath).Trim();
+                        if (!string.IsNullOrEmpty(cached))
+                        {
+                            packageFamilyName = cached;
+                            Logger.Info($"Obtained PackageFamilyName from local cache file: {packageFamilyName}");
+                        }
+                    }
+                    else if (File.Exists(appDirCachePath))
+                    {
+                        var cached = File.ReadAllText(appDirCachePath).Trim();
+                        if (!string.IsNullOrEmpty(cached))
+                        {
+                            packageFamilyName = cached;
+                            Logger.Info($"Obtained PackageFamilyName from app directory cache file: {packageFamilyName}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "Failed to read cached package identity file.");
+                }
+            }
+
             if (string.IsNullOrEmpty(packageFamilyName))
             {
                 try
@@ -340,6 +379,21 @@ namespace XboxGamingBarHelper
             if (!string.IsNullOrEmpty(packageFamilyName))
             {
                 connection.PackageFamilyName = packageFamilyName;
+
+                // Persist/refresh cache file for subsequent instant boots
+                try
+                {
+                    Directory.CreateDirectory(localFolderPath);
+                    if (!File.Exists(primaryCachePath) || File.ReadAllText(primaryCachePath).Trim() != packageFamilyName)
+                    {
+                        File.WriteAllText(primaryCachePath, packageFamilyName);
+                        Logger.Info($"Cached PackageFamilyName to: {primaryCachePath}");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "Could not persist package identity cache.");
+                }
             }
             else
             {
@@ -465,25 +519,8 @@ namespace XboxGamingBarHelper
         private static void PerGameProfile_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (isApplyingProfile) return;
-            GameProfile gameProfile;
-            if (profileManager.PerGameProfile)
-            {
-                if (!profileManager.TryGetProfile(systemManager.RunningGame.Value.GameId, out gameProfile))
-                {
-                    gameProfile = profileManager.AddNewProfile(systemManager.RunningGame.Value.GameId);
-                }
-                Logger.Info($"Enable per-game profile for {systemManager.RunningGame.Value.GameId}");
-                gameProfile.Use = true;
-            }
-            else
-            {
-                if (profileManager.TryGetProfile(systemManager.RunningGame.Value.GameId, out gameProfile))
-                {
-                    gameProfile.Use = false;
-                }
-                gameProfile = profileManager.GlobalProfile;
-            }
-            profileManager.CurrentProfile.SetValue(gameProfile);
+            profileManager.Store.SetPerGameProfileEnabled(profileManager.PerGameProfile.Value);
+            profileManager.CurrentProfile.SetValue(profileManager.Store.ActiveProfile);
         }
 
         private static void UpdateCurrentProfileFPSLimit()
@@ -492,7 +529,7 @@ namespace XboxGamingBarHelper
             int fallbackLimit = systemManager.RefreshRate.Value > 0 ? systemManager.RefreshRate.Value : 60;
             var newFPSLimit = rtssManager.LimitFPS ? (rtssManager.FPSLimit > 0 ? rtssManager.FPSLimit.Value : fallbackLimit) : 0;
             Logger.Info($"Update current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit to {newFPSLimit}.");
-            profileManager.CurrentProfile.FPSLimit = newFPSLimit;
+            profileManager.Store.SetEffectiveValue(SettingsRegistry.FPSLimit, newFPSLimit);
         }
 
         private static void LimitFPS_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -509,41 +546,37 @@ namespace XboxGamingBarHelper
         {
             if (isApplyingProfile) return;
             Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit Mode from {profileManager.CurrentProfile.FPSLimitMode} to {rtssManager.FPSLimitMode}.");
-            profileManager.CurrentProfile.FPSLimitMode = rtssManager.FPSLimitMode;
+            profileManager.Store.SetEffectiveValue(SettingsRegistry.FPSLimitMode, rtssManager.FPSLimitMode.Value);
         }
 
         private static void JudderFreeFPS_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (isApplyingProfile) return;
             Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s JudderFreeFPS from {profileManager.CurrentProfile.JudderFreeFPS} to {rtssManager.JudderFreeFPS.Value}.");
-            profileManager.CurrentProfile.JudderFreeFPS = rtssManager.JudderFreeFPS.Value;
+            profileManager.Store.SetEffectiveValue(SettingsRegistry.JudderFreeFPS, rtssManager.JudderFreeFPS.Value);
         }
 
         private static void RunningGame_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (systemManager.RunningGame.Value.IsValid())
             {
-                if (profileManager.TryGetProfile(systemManager.RunningGame.Value.GameId, out var runningGameProfile))
+                profileManager.Store.SetActiveGame(systemManager.RunningGame.Value.GameId);
+                if (profileManager.Store.IsPerGameProfileActive)
                 {
-                    if (runningGameProfile.Use)
-                    {
-                        Logger.Info($"Game {systemManager.RunningGame.GameId} has per-game profile in use.");
-                        profileManager.CurrentProfile.SetValue(runningGameProfile);
-                    }
-                    else
-                    {
-                        Logger.Info($"Game {systemManager.RunningGame.GameId} has per-game profile but not in use.");
-                    }
+                    Logger.Info($"Game {systemManager.RunningGame.GameId} has per-game profile in use.");
+                    profileManager.CurrentProfile.SetValue(profileManager.Store.ActiveProfile);
                 }
                 else
                 {
-                    Logger.Info($"Game {systemManager.RunningGame.GameId} doesn't have per-game profile.");
+                    Logger.Info($"Game {systemManager.RunningGame.GameId} using global profile.");
+                    profileManager.CurrentProfile.SetValue(profileManager.Store.GlobalProfile);
                 }
             }
             else
             {
                 Logger.Info($"Stopped playing game, use global profile instead.");
-                profileManager.CurrentProfile.SetValue(profileManager.GlobalProfile);
+                profileManager.Store.SetActiveGame(new GameId());
+                profileManager.CurrentProfile.SetValue(profileManager.Store.GlobalProfile);
             }
         }
 
