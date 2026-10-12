@@ -437,6 +437,9 @@ namespace XboxGamingBar
                 mouseEnhancePointerPrecision
             );
 
+            // Optimistic Local Cache Rendering: Instantly populate UI from last known state
+            properties.TryApplyCachedSnapshot();
+
             this.PreviewKeyDown += GamingWidget_KeyDown;
             InitializeAppVersion();
             InitializeShortcuts();
@@ -1403,7 +1406,10 @@ namespace XboxGamingBar
             }
             else
             {
-                ShowLoadingModal();
+                if (!properties.HasCachedState)
+                {
+                    ShowLoadingModal();
+                }
                 await EnsureHelperConnectionOrLaunchAsync();
             }
             Logger.Info("GamingWidget OnNavigatedTo finished.");
@@ -1490,12 +1496,18 @@ namespace XboxGamingBar
                 if (IsHelperProcessRunning())
                 {
                     Logger.Info("Helper process is already running. Skipping launch and waiting for AppService connection.");
-                    ShowLoadingModal("Connecting to Helper...", "Establishing communication channel...");
+                    if (!properties.HasCachedState)
+                    {
+                        ShowLoadingModal("Connecting to Helper...", "Establishing communication channel...");
+                    }
                 }
                 else
                 {
                     EnsureWidgetActivity();
-                    ShowLoadingModal("Starting CouchGamingBar Helper...", "Initializing hardware sensors & power controls...");
+                    if (!properties.HasCachedState)
+                    {
+                        ShowLoadingModal("Starting CouchGamingBar Helper...", "Initializing hardware sensors & power controls...");
+                    }
                     try
                     {
                         Logger.Info("Helper process is not running. Launching full trust process (helper).");

@@ -25,14 +25,23 @@ namespace XboxGamingBar.Data
             if (UI != null && Owner != null && Value != null)
             {
                 Logger.Info($"Update {Function} slider value {Value}.");
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                void UpdateItems()
                 {
                     UI.Items.Clear();
                     foreach (var value in Value)
                     {
                         UI.Items.Add(value);
                     }
-                });
+                }
+
+                if (Owner.Dispatcher.HasThreadAccess)
+                {
+                    UpdateItems();
+                }
+                else
+                {
+                    await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, UpdateItems);
+                }
             }
         }
 

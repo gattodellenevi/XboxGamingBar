@@ -105,7 +105,7 @@ namespace XboxGamingBar.Data
             if (UI != null && Owner != null)
             {
                 Logger.Info($"Update {Function} slider value {Value}.");
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                void UpdateSlider()
                 {
                     isUpdatingFromBackend = true;
                     try
@@ -116,7 +116,16 @@ namespace XboxGamingBar.Data
                     {
                         isUpdatingFromBackend = false;
                     }
-                });
+                }
+
+                if (Owner.Dispatcher.HasThreadAccess)
+                {
+                    UpdateSlider();
+                }
+                else
+                {
+                    await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, UpdateSlider);
+                }
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿using Shared.Data;
+using Shared.Data;
 using Shared.Enums;
 using System;
 using XboxGamingBarHelper.Core;
@@ -22,7 +22,7 @@ namespace XboxGamingBarHelper.AMD.Properties
         {
             base.NotifyPropertyChanged(propertyName);
 
-            Manager.AMDRadeonSuperResolutionSetting.SetEnabled(Value);
+            Manager.AMDRadeonSuperResolutionSetting?.SetEnabled(Value);
         }
     }
 
@@ -36,14 +36,17 @@ namespace XboxGamingBarHelper.AMD.Properties
         {
             base.NotifyPropertyChanged(propertyName);
 
-            (int min, int max) = Manager.AMDRadeonSuperResolutionSetting.GetSharpnessRange();
-            if (min == 0 && max == 100)
+            if (Manager.AMDRadeonSuperResolutionSetting != null)
             {
-                Manager.AMDRadeonSuperResolutionSetting.SetSharpness(Value);
-            }
-            else
-            {
-                Manager.AMDRadeonSuperResolutionSetting.SetSharpness((int)Math.Round(min + Value / 100.0f * (max - min)));
+                (int min, int max) = Manager.AMDRadeonSuperResolutionSetting.GetSharpnessRange();
+                if (min == 0 && max == 100)
+                {
+                    Manager.AMDRadeonSuperResolutionSetting.SetSharpness(Value);
+                }
+                else
+                {
+                    Manager.AMDRadeonSuperResolutionSetting.SetSharpness((int)Math.Round(min + Value / 100.0f * (max - min)));
+                }
             }
         }
     }

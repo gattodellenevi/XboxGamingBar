@@ -90,7 +90,7 @@ namespace XboxGamingBar.Data
 
             if (UI != null && Owner != null)
             {
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                void UpdateSelection()
                 {
                     isUpdatingFromBackend = true;
                     try
@@ -109,7 +109,16 @@ namespace XboxGamingBar.Data
                     {
                         isUpdatingFromBackend = false;
                     }
-                });
+                }
+
+                if (Owner.Dispatcher.HasThreadAccess)
+                {
+                    UpdateSelection();
+                }
+                else
+                {
+                    await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, UpdateSelection);
+                }
             }
         }
     }

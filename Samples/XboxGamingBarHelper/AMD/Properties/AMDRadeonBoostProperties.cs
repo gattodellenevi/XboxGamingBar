@@ -1,4 +1,4 @@
-﻿using Shared.Enums;
+using Shared.Enums;
 using System;
 using XboxGamingBarHelper.Core;
 
@@ -21,7 +21,7 @@ namespace XboxGamingBarHelper.AMD.Properties
         {
             base.NotifyPropertyChanged(propertyName);
 
-            Manager.AMDRadeonBoostSetting.SetEnabled(Value);
+            Manager.AMDRadeonBoostSetting?.SetEnabled(Value);
         }
     }
 
@@ -35,8 +35,11 @@ namespace XboxGamingBarHelper.AMD.Properties
         {
             base.NotifyPropertyChanged(propertyName);
 
-            (int min, int max) = Manager.AMDRadeonBoostSetting.GetResolutionRange();
-            Manager.AMDRadeonBoostSetting.SetResolution(Value == 0 ? min : max);
+            if (Manager.AMDRadeonBoostSetting != null)
+            {
+                (int min, int max) = Manager.AMDRadeonBoostSetting.GetResolutionRange();
+                Manager.AMDRadeonBoostSetting.SetResolution(Value == 0 ? min : max);
+            }
         }
     }
 }

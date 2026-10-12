@@ -31,7 +31,7 @@ namespace XboxGamingBar.Data
 
             if (UI != null && Owner != null)
             {
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                void UpdateVisibility()
                 {
                     Logger.Debug($"{(Value ? "Show" : "Hide")} {GetUIName(UI)} property changed.");
                     UI.Visibility = Value ? Visibility.Visible : Visibility.Collapsed;
@@ -44,7 +44,16 @@ namespace XboxGamingBar.Data
                             additionalUI.Visibility = Value ? Visibility.Visible : Visibility.Collapsed;
                         }
                     }
-                });
+                }
+
+                if (Owner.Dispatcher.HasThreadAccess)
+                {
+                    UpdateVisibility();
+                }
+                else
+                {
+                    await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, UpdateVisibility);
+                }
             }
         }
 

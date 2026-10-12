@@ -238,18 +238,15 @@ namespace XboxGamingBarHelper.Systems
             helperElevation = new HelperElevationProperty(isElevated, this);
             Logger.Info("Check current running game.");
             runningGame = new RunningGameProperty(this);
-            Logger.Info("Check supported refresh rates.");
-            refreshRates = new RefreshRatesProperty(User32.GetSupportedRefreshRates(), this);
-            Logger.Info("Check current refresh rate.");
-            refreshRate = new RefreshRateProperty(User32.GetCurrentRefreshRate(), this);
+            Logger.Info("Check current refresh rate & resolution (fast path).");
+            var currentRate = User32.GetCurrentRefreshRate();
+            refreshRate = new RefreshRateProperty(currentRate, this);
+            var currentRes = User32.GetCurrentResolution();
+            resolution = new ResolutionProperty(new Resolution(currentRes), this);
 
-            resolution = new ResolutionProperty(new Resolution(User32.GetCurrentResolution()), this);
-            var resolutionList = User32.GetSupportedNativeResolutions().Select(res => new Resolution(res.width, res.height)).ToList();
-            resolutions = new ResolutionsProperty(new Resolutions(resolutionList), this);
-            foreach (var res in resolutions.Value.AvailableResolutions)
-            {
-                Logger.Info($"Supported native resolution: {res.Width}x{res.Height} vs {resolution.Width}x{resolution.Height}");
-            }
+            // Fast initial priming: list containing current mode so properties are immediately valid
+            refreshRates = new RefreshRatesProperty(new List<int> { currentRate > 0 ? currentRate : Shared.Constants.SystemConstants.DEFAULT_REFRESH_RATE }, this);
+            resolutions = new ResolutionsProperty(new Resolutions(new List<Resolution> { new Resolution(currentRes) }), this);
 
             var (initialHdrSupported, initialHdrEnabled) = User32.GetHDRStatus();
             Logger.Info($"Check initial HDR status: Supported={initialHdrSupported}, Enabled={initialHdrEnabled}.");
@@ -262,6 +259,25 @@ namespace XboxGamingBarHelper.Systems
 
             SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
             SystemEvents.DisplaySettingsChanged += SystemEvents_DisplaySettingsChanged;
+
+            // Enumerate full display modes asynchronously in the background so startup is non-blocking
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    var supportedRates = User32.GetSupportedRefreshRates();
+                    refreshRates.SetValue(supportedRates);
+
+                    var resList = User32.GetSupportedNativeResolutions().Select(res => new Resolution(res.width, res.height)).ToList();
+                    resolutions.SetValue(new Resolutions(resList));
+
+                    Logger.Info($"Background display mode enumeration completed: {supportedRates.Count} refresh rates, {resList.Count} resolutions.");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn(ex, "Failed in background display mode enumeration.");
+                }
+            });
         }
 
         private RunningGame GetRunningGame()
@@ -509,7 +525,9 @@ namespace XboxGamingBarHelper.Systems
         {
             Logger.Info("Debounced display update triggered.");
 
-            var supportedRefreshRates = User32.GetSupportedRefreshRates();
+            User32.InvalidateDisplayModesCache();
+
+            var supportedRefreshRates = User32.GetSupportedRefreshRates(true);
             refreshRates.SetValue(supportedRefreshRates);
 
             var currentRefreshRate = User32.GetCurrentRefreshRate();
@@ -517,7 +535,7 @@ namespace XboxGamingBarHelper.Systems
 
             resolution.SetValue(new Resolution(User32.GetCurrentResolution()));
 
-            var resolutionList = User32.GetSupportedNativeResolutions().Select(res => new Resolution(res.width, res.height)).ToList();
+            var resolutionList = User32.GetSupportedNativeResolutions(true).Select(res => new Resolution(res.width, res.height)).ToList();
             resolutions.SetValue(new Resolutions(resolutionList));
 
             var (currentHdrSupported, currentHdrEnabled) = User32.GetHDRStatus();

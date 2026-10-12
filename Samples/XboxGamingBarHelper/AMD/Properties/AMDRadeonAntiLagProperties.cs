@@ -1,4 +1,4 @@
-﻿using Shared.Enums;
+using Shared.Enums;
 using XboxGamingBarHelper.Core;
 
 namespace XboxGamingBarHelper.AMD.Properties
@@ -20,7 +20,7 @@ namespace XboxGamingBarHelper.AMD.Properties
         {
             base.NotifyPropertyChanged(propertyName);
 
-            Manager.AMDRadeonAntiLagSetting.SetEnabled(Value);
+            Manager.AMDRadeonAntiLagSetting?.SetEnabled(Value);
         }
     }
 }

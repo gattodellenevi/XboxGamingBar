@@ -1,4 +1,4 @@
-﻿using Shared.Enums;
+using Shared.Enums;
 using System;
 using XboxGamingBarHelper.Core;
 
@@ -21,7 +21,7 @@ namespace XboxGamingBarHelper.AMD.Properties
         {
             base.NotifyPropertyChanged(propertyName);
 
-            Manager.AMDRadeonChillSetting.SetEnabled(Value);
+            Manager.AMDRadeonChillSetting?.SetEnabled(Value);
         }
     }
 
@@ -35,7 +35,7 @@ namespace XboxGamingBarHelper.AMD.Properties
         {
             base.NotifyPropertyChanged(propertyName);
 
-            Manager.AMDRadeonChillSetting.SetMinFPS(Value);
+            Manager.AMDRadeonChillSetting?.SetMinFPS(Value);
         }
     }
 
@@ -49,7 +49,7 @@ namespace XboxGamingBarHelper.AMD.Properties
         {
             base.NotifyPropertyChanged(propertyName);
 
-            Manager.AMDRadeonChillSetting.SetMaxFPS(Value);
+            Manager.AMDRadeonChillSetting?.SetMaxFPS(Value);
         }
     }
 }

@@ -10,11 +10,15 @@ namespace XboxGamingBarHelper.Hardware
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        private readonly Computer computer;
+        private Computer computer;
         private readonly IVisitor updateVisitor;
         private string cpuName = string.Empty;
         private string motherboardName = string.Empty;
         private int cpuCoreCount = 0;
+        private volatile bool isInitialized = false;
+
+        public bool IsInitialized => isInitialized;
+        public event EventHandler Initialized;
 
         // CPU Sensors
         private ISensor cpuUsageSensor;
@@ -46,33 +50,42 @@ namespace XboxGamingBarHelper.Hardware
 
         public LibreHardwareProvider()
         {
-            motherboardName = GetMotherboardNameFromWmi();
-            Logger.Info($"Detected Motherboard via WMI: \"{motherboardName}\"");
-
-            computer = new Computer
-            {
-                IsCpuEnabled = true,
-                IsGpuEnabled = true,
-                IsMemoryEnabled = true,
-                IsMotherboardEnabled = false,
-                IsControllerEnabled = false,
-                IsNetworkEnabled = false,
-                IsStorageEnabled = false,
-                IsBatteryEnabled = true,
-            };
+            cpuCoreCount = Math.Min(Environment.ProcessorCount, 8);
             updateVisitor = new UpdateVisitor();
-            computer.Open();
 
-            foreach (IHardware hardware in computer.Hardware)
+            System.Threading.Tasks.Task.Run(() => InitializeHardware());
+        }
+
+        private void InitializeHardware()
+        {
+            try
             {
-                var properties = string.Empty;
-                if (hardware.Properties.Count > 0)
+                motherboardName = GetMotherboardNameFromWmi();
+                Logger.Info($"Detected Motherboard via WMI: \"{motherboardName}\"");
+
+                var comp = new Computer
                 {
-                    foreach (var property in hardware.Properties)
+                    IsCpuEnabled = true,
+                    IsGpuEnabled = true,
+                    IsMemoryEnabled = true,
+                    IsMotherboardEnabled = false,
+                    IsControllerEnabled = false,
+                    IsNetworkEnabled = false,
+                    IsStorageEnabled = false,
+                    IsBatteryEnabled = true,
+                };
+                comp.Open();
+
+                foreach (IHardware hardware in comp.Hardware)
+                {
+                    var properties = string.Empty;
+                    if (hardware.Properties.Count > 0)
                     {
-                        properties = properties.Length == 0 ? $"{property.Key}:{property.Value}" : $"{properties}, {property.Key}:{property.Value}";
+                        foreach (var property in hardware.Properties)
+                        {
+                            properties = properties.Length == 0 ? $"{property.Key}:{property.Value}" : $"{properties}, {property.Key}:{property.Value}";
+                        }
                     }
-                }
 
                 Logger.Info($"Found hardware {hardware.HardwareType}: Name={hardware.Name}, Type={hardware.HardwareType}, Id={hardware.Identifier}, Properties={properties}");
 
@@ -187,6 +200,15 @@ namespace XboxGamingBarHelper.Hardware
                     }
                 }
             }
+            computer = comp;
+            isInitialized = true;
+                Logger.Info("LibreHardwareProvider hardware initialization completed in background.");
+                Initialized?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to initialize LibreHardwareProvider in background.");
+            }
         }
 
         private static string GetMotherboardNameFromWmi()
@@ -214,12 +236,20 @@ namespace XboxGamingBarHelper.Hardware
 
         public void Update()
         {
-            computer.Accept(updateVisitor);
+            if (!isInitialized || computer == null) return;
+            try
+            {
+                computer.Accept(updateVisitor);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to update LibreHardwareProvider sensors.");
+            }
         }
 
         public float GetCpuClock()
         {
-            if (cpuCoreClockSensors == null || cpuCoreClockSensors.Length == 0) return -1.0f;
+            if (!isInitialized || cpuCoreClockSensors == null || cpuCoreClockSensors.Length == 0) return -1.0f;
             float totalClock = 0;
             int count = 0;
             for (int i = 0; i < cpuCoreClockSensors.Length; i++)

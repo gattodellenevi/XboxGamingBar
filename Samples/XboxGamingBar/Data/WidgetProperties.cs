@@ -6,13 +6,17 @@ using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.AppService;
 using Windows.ApplicationModel.Core;
+using Windows.Storage;
 using Windows.UI.Core;
 
 namespace XboxGamingBar.Data
 {
     internal class WidgetProperties : FunctionalProperties<WidgetValueSet, WidgetAppServiceResponse, WidgetAppServiceRequest>
     {
+        private const string CACHED_SNAPSHOT_KEY = "CachedStateSnapshot_v1";
         private readonly CoreDispatcher uiDispatcher;
+
+        public bool HasCachedState { get; private set; } = false;
 
         public WidgetProperties(params FunctionalProperty<WidgetValueSet, WidgetAppServiceResponse>[] inProperties) : this(null, inProperties) { }
 
@@ -97,7 +101,63 @@ namespace XboxGamingBar.Data
 
             Logger.Info($"Received StateSnapshotDTO with {snapshot.Properties.Count} properties. Applying batch on UI thread...");
             await ApplySnapshotAsync(snapshot);
+            CacheSnapshot(snapshot);
+            HasCachedState = true;
             return true;
+        }
+
+        public void CacheSnapshot(StateSnapshotDTO snapshot)
+        {
+            if (snapshot == null) return;
+            try
+            {
+                string json = snapshot.ToJson();
+                if (!string.IsNullOrEmpty(json))
+                {
+                    var localSettings = ApplicationData.Current.LocalSettings;
+                    localSettings.Values[CACHED_SNAPSHOT_KEY] = json;
+                    Logger.Info($"Cached StateSnapshotDTO with {snapshot.Properties?.Count ?? 0} properties to LocalSettings.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to cache StateSnapshotDTO to LocalSettings.");
+            }
+        }
+
+        public StateSnapshotDTO LoadCachedSnapshot()
+        {
+            try
+            {
+                var localSettings = ApplicationData.Current.LocalSettings;
+                if (localSettings.Values.TryGetValue(CACHED_SNAPSHOT_KEY, out object cachedObj) && cachedObj is string json && !string.IsNullOrWhiteSpace(json))
+                {
+                    var snapshot = StateSnapshotDTO.FromJson(json);
+                    if (snapshot != null && snapshot.Properties != null && snapshot.Properties.Count > 0)
+                    {
+                        Logger.Info($"Loaded cached StateSnapshotDTO with {snapshot.Properties.Count} properties from LocalSettings.");
+                        return snapshot;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to load cached StateSnapshotDTO from LocalSettings.");
+            }
+            return null;
+        }
+
+        public bool TryApplyCachedSnapshot()
+        {
+            var cached = LoadCachedSnapshot();
+            if (cached != null)
+            {
+                Logger.Info("Applying cached state snapshot for instant UI presentation...");
+                ApplySnapshotInternal(cached);
+                HasCachedState = true;
+                return true;
+            }
+            return false;
         }
 
         public async Task ApplySnapshotAsync(StateSnapshotDTO snapshot)

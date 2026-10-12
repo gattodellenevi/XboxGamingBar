@@ -349,8 +349,29 @@ namespace XboxGamingBarHelper.Windows
             return 0; // failed
         }
 
-        public static List<int> GetSupportedRefreshRates()
+        private static readonly object _displayModesLock = new object();
+        private static List<int> _cachedRefreshRates = null;
+        private static List<(int width, int height)> _cachedNativeResolutions = null;
+
+        public static void InvalidateDisplayModesCache()
         {
+            lock (_displayModesLock)
+            {
+                _cachedRefreshRates = null;
+                _cachedNativeResolutions = null;
+            }
+        }
+
+        public static List<int> GetSupportedRefreshRates(bool forceRefresh = false)
+        {
+            lock (_displayModesLock)
+            {
+                if (!forceRefresh && _cachedRefreshRates != null)
+                {
+                    return new List<int>(_cachedRefreshRates);
+                }
+            }
+
             List<int> refreshRates = new List<int>();
             DEVMODE devMode = new DEVMODE();
             devMode.dmSize = (short)Marshal.SizeOf(typeof(DEVMODE));
@@ -378,6 +399,11 @@ namespace XboxGamingBarHelper.Windows
             foreach (var refreshRate in refreshRates)
             {
                 Logger.Info($"Found refresh rate {refreshRate}");
+            }
+
+            lock (_displayModesLock)
+            {
+                _cachedRefreshRates = new List<int>(refreshRates);
             }
             return refreshRates;
         }
@@ -459,8 +485,16 @@ namespace XboxGamingBarHelper.Windows
             return modes;
         }
 
-        public static List<(int width, int height)> GetSupportedNativeResolutions()
+        public static List<(int width, int height)> GetSupportedNativeResolutions(bool forceRefresh = false)
         {
+            lock (_displayModesLock)
+            {
+                if (!forceRefresh && _cachedNativeResolutions != null)
+                {
+                    return new List<(int width, int height)>(_cachedNativeResolutions);
+                }
+            }
+
             var allModes = GetSupportedResolutions();
             var native = GetNativeResolution();
 
@@ -500,6 +534,10 @@ namespace XboxGamingBarHelper.Windows
             // Sort resolutions descending by pixel count (e.g. 3840x2160, 2560x1440, 1920x1080, 1280x720)
             filtered.Sort((a, b) => (b.width * b.height).CompareTo(a.width * a.height));
 
+            lock (_displayModesLock)
+            {
+                _cachedNativeResolutions = new List<(int width, int height)>(filtered);
+            }
             return filtered;
         }
 

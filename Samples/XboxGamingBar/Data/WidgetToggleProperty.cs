@@ -33,7 +33,7 @@ namespace XboxGamingBar.Data
             if (UI != null && Owner != null)
             {
                 Logger.Info($"Update {Function} value {Value}.");
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                void UpdateToggle()
                 {
                     isUpdatingFromBackend = true;
                     try
@@ -44,7 +44,16 @@ namespace XboxGamingBar.Data
                     {
                         isUpdatingFromBackend = false;
                     }
-                });
+                }
+
+                if (Owner.Dispatcher.HasThreadAccess)
+                {
+                    UpdateToggle();
+                }
+                else
+                {
+                    await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, UpdateToggle);
+                }
             }
         }
     }

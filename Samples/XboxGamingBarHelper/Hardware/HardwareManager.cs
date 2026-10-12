@@ -14,8 +14,8 @@ namespace XboxGamingBarHelper.Hardware
 
     internal class HardwareManager : Manager
     {
-        private readonly CPU cpu;
-        private readonly Device device;
+        private CPU cpu;
+        private Device device;
 
         private readonly IHardwareProvider hardwareProvider;
 
@@ -87,6 +87,28 @@ namespace XboxGamingBarHelper.Hardware
             device = DeviceFactory.Create(mainboardId, cpu);
             Logger.Info($"Initialized Device: {device.Name} (\"{mainboardId}\")");
 
+#if !STORE
+            if (hardwareProvider is LibreHardwareProvider lhp)
+            {
+                lhp.Initialized += (s, e) =>
+                {
+                    try
+                    {
+                        var newCpuId = hardwareProvider.GetCpuName();
+                        var newMainboardId = hardwareProvider.GetMotherboardName();
+                        cpu = CPUFactory.Create(newCpuId);
+                        Logger.Info($"Background initialized CPU: {cpu.Name} (\"{newCpuId}\")");
+                        device = DeviceFactory.Create(newMainboardId, cpu);
+                        Logger.Info($"Background initialized Device: {device.Name} (\"{newMainboardId}\")");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn(ex, "Failed to update CPU and Device on background hardware initialization.");
+                    }
+                };
+            }
+#endif
+
             // Initialize hardware sensors
             CPUClock = new CPUClockSensor();
             CPUUsage = new CPUUsageSensor();
@@ -94,6 +116,7 @@ namespace XboxGamingBarHelper.Hardware
             CPUTemperature = new CPUTemperatureSensor();
 
             int coreCount = hardwareProvider.GetCpuCoreCount();
+            if (coreCount <= 0) coreCount = Math.Min(Environment.ProcessorCount, 8);
             CPUCoreUsages = new CPUCoreUsageSensor[coreCount];
             CPUCoreClocks = new CPUCoreClockSensor[coreCount];
             for (int i = 0; i < coreCount; i++)

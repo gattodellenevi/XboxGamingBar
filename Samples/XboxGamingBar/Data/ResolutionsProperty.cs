@@ -29,7 +29,7 @@ namespace XboxGamingBar.Data
             if (UI != null && Owner != null && Value.AvailableResolutions != null)
             {
                 Logger.Info($"Update {Function} combo box value {Value}.");
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                void UpdateItems()
                 {
                     var previousSelection = UI.SelectedItem;
                     UI.Items.Clear();
@@ -47,7 +47,16 @@ namespace XboxGamingBar.Data
                     {
                         UI.SelectedIndex = matchedIndex;
                     }
-                });
+                }
+
+                if (Owner.Dispatcher.HasThreadAccess)
+                {
+                    UpdateItems();
+                }
+                else
+                {
+                    await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, UpdateItems);
+                }
             }
         }
     }

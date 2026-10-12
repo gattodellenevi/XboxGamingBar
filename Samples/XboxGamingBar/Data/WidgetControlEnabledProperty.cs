@@ -33,10 +33,17 @@ namespace XboxGamingBar.Data
             var result = base.SetValue(newValue, updatedTime);
             if (UI != null && Owner != null)
             {
-                var _ = Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                if (Owner.Dispatcher.HasThreadAccess)
                 {
                     SetControlEnabled(Value);
-                });
+                }
+                else
+                {
+                    var _ = Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                    {
+                        SetControlEnabled(Value);
+                    });
+                }
             }
             return result;
         }
@@ -47,11 +54,20 @@ namespace XboxGamingBar.Data
 
             if (UI != null && Owner != null)
             {
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                void UpdateEnabled()
                 {
                     Logger.Debug($"{(Value ? "Enabled" : "Disabled")} {UI.Name} property changed.");
                     SetControlEnabled(Value);
-                });
+                }
+
+                if (Owner.Dispatcher.HasThreadAccess)
+                {
+                    UpdateEnabled();
+                }
+                else
+                {
+                    await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, UpdateEnabled);
+                }
             }
         }
 

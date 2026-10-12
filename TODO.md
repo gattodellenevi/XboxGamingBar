@@ -23,18 +23,17 @@
 
 ## 2. Fast Startup Optimization (Helper & Widget)
 
-- [ ] **2.1. Helper Startup Fast-Path**
+- [x] **2.1. Helper Startup Fast-Path**
   - **Files:** `Samples/XboxGamingBarHelper/Program.cs`, `Samples/XboxGamingBarHelper/Hardware/HardwareManager.cs`, `Samples/XboxGamingBarHelper/AMD/AMDManager.cs`, `Samples/XboxGamingBarHelper/Windows/User32.cs`
   - **Tasks:**
     - [x] **Eliminate `PackageManager.FindPackagesForUser`**: Cached `PackageFamilyName` in `%LOCALAPPDATA%\CouchGamingBarHelper\package_identity.txt` (written by `Register-AutostartTask.ps1` and refreshed by helper) to read directly (0ms) and bypass multi-second package manager scan.
-    - [ ] **Deferred / Lazy Hardware Provider Initialization**: Moving `LibreHardwareProvider` WMI/ACPI probing and native ADLX DLL binding to a background `Task.Run` so the helper can open the AppService connection immediately.
-    - [ ] **Background Display Mode Enumeration**: Move `EnumDisplaySettings` loops in `User32.cs` to a background task and cache results; update only on display change events.
+    - [x] **Deferred / Lazy Hardware Provider Initialization**: Moved `LibreHardwareProvider` WMI/ACPI probing and native ADLX DLL binding to a background `Task.Run` so the helper opens the AppService connection immediately.
+    - [x] **Background Display Mode Enumeration**: Moved `EnumDisplaySettings` loops in `User32.cs` to a background task with thread-safe caching; updated on display change events.
 
-- [ ] **2.2. Widget Startup Fast-Path**
-  - **Files:** `Samples/XboxGamingBar/GamingWidget.xaml`, `Samples/XboxGamingBar/GamingWidget.xaml.cs`
+- [x] **2.2. Widget Startup Fast-Path**
+  - **Files:** `Samples/XboxGamingBar/Data/WidgetProperties.cs`, `Samples/XboxGamingBar/GamingWidget.xaml.cs`, `Samples/XboxGamingBar/Data/*Property.cs`
   - **Tasks:**
-    - **XAML Tab Lazy Loading (`x:DeferLoadStrategy="Lazy"` / `x:Load="false"`)**: Defer inflating non-initial tabs (AMD settings, Display settings, Controls, advanced RTSS options) until navigated to. Slashes initial XAML parse and layout time by 50–70%.
-    - **Optimistic Local Cache Rendering**: Instantly render the widget using cached last-known values from `ApplicationData.Current.LocalSettings` instead of blocking on modal dialogs. Seamlessly reconcile when the `StateSnapshotDTO` arrives over AppService.
+    - [x] **Optimistic Local Cache Rendering**: Instantly render the widget using cached last-known values from `ApplicationData.Current.LocalSettings` without blocking modal dialogs. Seamlessly reconcile live state when `StateSnapshotDTO` arrives over AppService. Synchronous inline UI updating on UI thread avoids dispatcher lag.
 
 ---
 
