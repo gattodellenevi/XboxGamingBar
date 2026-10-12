@@ -44,6 +44,50 @@ namespace XboxGamingBarHelper.Hardware.Providers
             return false;
         }
 
+        public static (string GpuName, bool IsDiscrete, GpuVendor Vendor) GetActiveGpuInfo(int gpuTarget = 0)
+        {
+            try
+            {
+                var adapters = DxgiHelper.EnumerateAdapters().Where(a => !a.IsSoftware).ToList();
+                if (adapters.Count == 0)
+                {
+                    adapters = DxgiHelper.EnumerateAdapters();
+                }
+
+                if (adapters.Count == 0)
+                {
+                    return ("Generic GPU", false, GpuVendor.Unknown);
+                }
+
+                // Target 1: Force Integrated GPU
+                if (gpuTarget == 1)
+                {
+                    var igpuAdapter = adapters.FirstOrDefault(a => a.Vendor != GpuVendor.Nvidia && a.DedicatedVideoMemoryBytes <= 2L * 1024 * 1024 * 1024)
+                                   ?? adapters.FirstOrDefault(a => a.Vendor == GpuVendor.Amd || a.Vendor == GpuVendor.Intel);
+                    if (igpuAdapter != null)
+                    {
+                        return (igpuAdapter.Description, false, igpuAdapter.Vendor);
+                    }
+                }
+
+                // Target 0 (Default): Discrete GPU or Primary GPU
+                var dgpu = adapters.FirstOrDefault(a => a.Vendor == GpuVendor.Nvidia || a.DedicatedVideoMemoryBytes > 2L * 1024 * 1024 * 1024)
+                        ?? adapters.FirstOrDefault();
+
+                if (dgpu != null)
+                {
+                    bool isDiscrete = dgpu.Vendor == GpuVendor.Nvidia || dgpu.DedicatedVideoMemoryBytes > 2L * 1024 * 1024 * 1024;
+                    return (dgpu.Description, isDiscrete, dgpu.Vendor);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to get active GPU info");
+            }
+
+            return ("GPU", false, GpuVendor.Unknown);
+        }
+
         public static IGpuMetricsProvider Create(int gpuTarget = 0)
         {
             var adapters = DxgiHelper.EnumerateAdapters();

@@ -103,6 +103,7 @@ namespace XboxGamingBar
         private readonly MouseSpeedProperty mouseSpeed;
         private readonly MouseScrollSpeedProperty mouseScrollSpeed;
         private readonly MouseEnhancePointerPrecisionProperty mouseEnhancePointerPrecision;
+        private readonly ActiveGpuProperty activeGpu;
 
         public bool IsElevationMismatch => App.Connection != null &&
                                            rtssElevation != null &&
@@ -163,7 +164,7 @@ namespace XboxGamingBar
             trackedGame = new TrackedGameProperty(new TrackedGame());
             onScreenDisplayProviderInstalled = new OnScreenDisplayProviderInstalledProperty(PerformanceOverlaySlider, this);
             isForeground = new IsForegroundProperty();
-            amdSettingsSupported = new AMDSettingsSupportedProperty(AMDPivotItem, this, AMDPivotItemStackPanel, AMDRadeonSuperResolutionToggle,
+            amdSettingsSupported = new AMDSettingsSupportedProperty(AmdSectionContainer, this, AMDRadeonSuperResolutionToggle,
                 AMDRadeonSuperResolutionText, AMDFluidMotionFrameToggle, AMDFluidMotionFrameText, AMDRadeonAntiLagToggle, AMDRadeonAntiLagText,
                 AMDRadeonBoostToggle, AMDRadeonBoostText, AMDRadeonChillToggle, AMDRadeonChillText);
             amdRadeonSuperResolutionEnabled = new AMDRadeonSuperResolutionEnabledProperty(AMDRadeonSuperResolutionToggle, this);
@@ -188,6 +189,7 @@ namespace XboxGamingBar
             judderFreeFPS = new JudderFreeFPSProperty(JudderFreeFPSToggle, this);
             gpuTarget = new GpuTargetProperty(DiscreteGpuButton, IntegratedGpuButton, this);
             dualGpuSupport = new DualGpuSupportProperty(GpuSelectionCard, GpuSelectionSubtitleText, DiscreteGpuButton, IntegratedGpuButton, this);
+            activeGpu = new ActiveGpuProperty(ActiveGpuNameText, ActiveGpuBadgeText, ActiveGpuBadgeBorder, this);
             var quickGamepadUI = new QuickGamepadUIElements
             {
                 Section = QuickGamepadSection,
@@ -439,6 +441,7 @@ namespace XboxGamingBar
                 gameInputStatus,
                 gpuTarget,
                 dualGpuSupport,
+                activeGpu,
                 controllerBattery,
                 mouseSpeed,
                 mouseScrollSpeed,
@@ -878,6 +881,32 @@ namespace XboxGamingBar
             }
         }
 
+        private async void LaunchAmdAppButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("Launch AMD Adrenalin button clicked.");
+            if (App.Connection != null)
+            {
+                var valueSet = new ValueSet();
+                valueSet.Add(nameof(Command), (int)Command.Set);
+                valueSet.Add(nameof(Function), (int)Function.LaunchAmdApp);
+                valueSet.Add(nameof(Content), true);
+                valueSet.Add(nameof(UpdatedTime), DateTime.UtcNow.Ticks);
+                try
+                {
+                    var response = await App.Connection.SendMessageAsync(valueSet);
+                    Logger.Info($"SendMessageAsync LaunchAmdApp status: {response?.Status}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to send LaunchAmdApp message to helper.");
+                }
+            }
+            else
+            {
+                Logger.Warn("App.Connection is null, helper is not connected.");
+            }
+        }
+
         private void OSDLevelButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag != null && int.TryParse(btn.Tag.ToString(), out int level))
@@ -1293,17 +1322,12 @@ namespace XboxGamingBar
                 new TabNavigationInfo { Item = ShortcutsPivotItem, Title = "SHORTCUTS", ShortName = "Shortcuts", Glyph = "\uE765", AccentBrush = greenBrush },
                 new TabNavigationInfo { Item = CursorPivotItem, Title = "CURSOR", ShortName = "Cursor", Glyph = "\uE962", AccentBrush = greenBrush },
                 new TabNavigationInfo { Item = SystemPivotItem, Title = "SYSTEM", ShortName = "System", Glyph = "\uE770", AccentBrush = greenBrush },
-                new TabNavigationInfo { Item = AMDPivotItem, Title = "AMD RADEON", ShortName = "AMD", Glyph = "\uE945", AccentBrush = rubyBrush },
-                new TabNavigationInfo { Item = NvidiaPivotItem, Title = "NVIDIA", ShortName = "NVIDIA", Glyph = "\uE9D9", AccentBrush = geforceBrush }
+                new TabNavigationInfo { Item = GpuConfigPivotItem, Title = "GPU CONFIG", ShortName = "GPU Config", Glyph = "\uE7F4", AccentBrush = greenBrush }
             };
 
-            if (AMDPivotItem != null)
+            if (GpuConfigPivotItem != null)
             {
-                AMDPivotItem.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (s, e) => UpdateTabNavigationHUD());
-            }
-            if (NvidiaPivotItem != null)
-            {
-                NvidiaPivotItem.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (s, e) => UpdateTabNavigationHUD());
+                GpuConfigPivotItem.RegisterPropertyChangedCallback(UIElement.VisibilityProperty, (s, e) => UpdateTabNavigationHUD());
             }
 
             UpdateTabNavigationHUD();
@@ -1891,6 +1915,7 @@ namespace XboxGamingBar
             hardwareTelemetry?.SetDisconnectedState();
             gameInputStatus?.SetDisconnectedState();
             dualGpuSupport?.SetDisconnectedState();
+            activeGpu?.SetDisconnectedState();
             UpdateFPSLimiterElevationUI();
             UpdateOSDStatusUI();
 

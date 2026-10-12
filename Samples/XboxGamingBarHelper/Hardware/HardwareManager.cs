@@ -25,6 +25,7 @@ namespace XboxGamingBarHelper.Hardware
         public HardwareTelemetryProperty HardwareTelemetry { get; }
         public GpuTargetProperty GpuTarget { get; }
         public DualGpuSupportProperty DualGpuSupport { get; }
+        public ActiveGpuProperty ActiveGpu { get; }
 
         public CPUUsageSensor CPUUsage { get; }
         public CPUClockSensor CPUClock { get; }
@@ -62,6 +63,8 @@ namespace XboxGamingBarHelper.Hardware
             HardwareTelemetry = new HardwareTelemetryProperty(string.Empty, this);
 
             GpuTarget = new GpuTargetProperty(0, this);
+            ActiveGpu = new ActiveGpuProperty(GetActiveGpuInfoString(0), this);
+
             GpuTarget.PropertyChanged += (s, e) =>
             {
                 if (hardwareProvider is WindowsHardwareProvider whp)
@@ -69,6 +72,8 @@ namespace XboxGamingBarHelper.Hardware
                     whp.SetGpuTarget(GpuTarget.Value);
                     HardwareProvider.SetValue(whp.ProviderName);
                 }
+                var gpuInfoStr = GetActiveGpuInfoString(GpuTarget.Value);
+                ActiveGpu.SetValue(gpuInfoStr);
             };
 
             if (XboxGamingBarHelper.Hardware.Providers.GpuMetricsProviderFactory.HasDualGpus(out string dName, out string iName))
@@ -236,5 +241,11 @@ namespace XboxGamingBarHelper.Hardware
         }
 
         private DateTime lastTelemetryTime = DateTime.MinValue;
+
+        private string GetActiveGpuInfoString(int target = 0)
+        {
+            var info = XboxGamingBarHelper.Hardware.Providers.GpuMetricsProviderFactory.GetActiveGpuInfo(target);
+            return $"{info.GpuName}|{(info.IsDiscrete ? "Discrete" : "Integrated")}|{info.Vendor}";
+        }
     }
 }

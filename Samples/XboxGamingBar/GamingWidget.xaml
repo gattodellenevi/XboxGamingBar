@@ -1883,210 +1883,216 @@
                     </ScrollViewer>
                 </PivotItem>
 
-                <!-- AMD SETTINGS TAB (Radeon Ruby Themed) -->
-                <PivotItem x:Name="AMDPivotItem" Visibility="Collapsed">
+                <!-- GPU CONFIG TAB -->
+                <PivotItem x:Name="GpuConfigPivotItem">
                     <PivotItem.Header>
-                        <StackPanel x:Name="AMDPivotItemStackPanel" Orientation="Horizontal" Margin="6,0,6,0" Visibility="Collapsed">
-                            <FontIcon Glyph="&#xE945;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource RadeonRubyBrush}"/>
-                            <TextBlock Text="AMD" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        <StackPanel x:Name="GpuConfigPivotItemStackPanel" Orientation="Horizontal" Margin="6,0,24,0">
+                            <FontIcon Glyph="&#xE7F4;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                            <TextBlock Text="GPU Config" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
                         <StackPanel Margin="0,2,0,16">
 
-                            <!-- SECTION: UPSCALING & FRAME GEN -->
-                            <TextBlock Text="RADEON UPSCALING &amp; FRAMES" Style="{StaticResource SectionHeaderTextStyle}"/>
-
-                            <Border Style="{StaticResource SettingsCardStyle}">
-                                <Border.Resources>
-                                    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#ED1C24"/>
-                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#D01820"/>
-                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#B8141C"/>
-                                    <SolidColorBrush x:Key="SliderTrackValueFill" Color="#ED1C24"/>
-                                    <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#D01820"/>
-                                    <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B8141C"/>
-                                </Border.Resources>
-                                <StackPanel>
-                                    <!-- RSR with Value Badge -->
-                                    <Grid>
-                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <TextBlock x:Name="AMDRadeonSuperResolutionText" Text="Radeon Super Resolution" FontWeight="SemiBold" FontSize="15"
-                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
-                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
-                                                        Visibility="{Binding ElementName=AMDRadeonSuperResolutionToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <TextBlock Text="{Binding ElementName=AMDRadeonSuperResolutionSharpnessSlider, Path=Value, Converter={StaticResource SharpnessPercentStringConverter}}" Style="{StaticResource ValueBadgeTextStyle}"/>
-                                                </Border>
-                                            </StackPanel>
-                                            <TextBlock Text="Spatial upscaling with sharpening filter" Style="{StaticResource SubtitleTextStyle}"/>
-                                        </StackPanel>
-                                        <ToggleSwitch x:Name="AMDRadeonSuperResolutionToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                    </Grid>
-                                    <Slider x:Name="AMDRadeonSuperResolutionSharpnessSlider"
-                                        Minimum="0" Maximum="100"
-                                        TickFrequency="1"
-                                        SnapsTo="Ticks"
-                                        TickPlacement="BottomRight"
-                                        IsEnabled="False"
-                                        Margin="0,6,0,0"
-                                        Visibility="{Binding ElementName=AMDRadeonSuperResolutionToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-
-                                    <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
-
-                                    <!-- AFMF with Value Badge -->
-                                    <Grid>
-                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <TextBlock x:Name="AMDFluidMotionFrameText" Text="AMD Fluid Motion Frame" FontWeight="SemiBold" FontSize="15"
-                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
-                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
-                                                        Visibility="{Binding ElementName=AMDFluidMotionFrameToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <TextBlock Text="ON" Style="{StaticResource ValueBadgeTextStyle}"/>
-                                                </Border>
-                                            </StackPanel>
-                                            <TextBlock Text="Optical flow driver-level frame generation" Style="{StaticResource SubtitleTextStyle}"/>
-                                        </StackPanel>
-                                        <ToggleSwitch x:Name="AMDFluidMotionFrameToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                    </Grid>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- SECTION: LATENCY & DYNAMICS -->
-                            <TextBlock Text="LATENCY &amp; DYNAMICS" Style="{StaticResource SectionHeaderTextStyle}"/>
-
-                            <Border Style="{StaticResource SettingsCardStyle}">
-                                <Border.Resources>
-                                    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#ED1C24"/>
-                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#D01820"/>
-                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#B8141C"/>
-                                    <SolidColorBrush x:Key="SliderTrackValueFill" Color="#ED1C24"/>
-                                    <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#D01820"/>
-                                    <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B8141C"/>
-                                </Border.Resources>
-                                <StackPanel>
-                                    <!-- Anti-Lag with Value Badge -->
-                                    <Grid>
-                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <TextBlock x:Name="AMDRadeonAntiLagText" Text="Radeon Anti-Lag" FontWeight="SemiBold" FontSize="15"
-                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
-                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
-                                                        Visibility="{Binding ElementName=AMDRadeonAntiLagToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <TextBlock Text="ON" Style="{StaticResource ValueBadgeTextStyle}"/>
-                                                </Border>
-                                            </StackPanel>
-                                            <TextBlock Text="Paces CPU work to minimize input latency" Style="{StaticResource SubtitleTextStyle}"/>
-                                        </StackPanel>
-                                        <ToggleSwitch x:Name="AMDRadeonAntiLagToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                    </Grid>
-
-                                    <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
-
-                                    <!-- Boost with Value Badge -->
-                                    <Grid>
-                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                <TextBlock x:Name="AMDRadeonBoostText" Text="Radeon Boost" FontWeight="SemiBold" FontSize="15"
-                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
-                                                <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
-                                                        Visibility="{Binding ElementName=AMDRadeonBoostToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                    <TextBlock Text="{Binding ElementName=AMDRadeonBoostResolutionSlider, Path=Value, Converter={StaticResource RadeonBoostResolutionStringConverter}}" Style="{StaticResource ValueBadgeTextStyle}"/>
-                                                </Border>
-                                            </StackPanel>
-                                            <TextBlock Text="Dynamic resolution during fast camera motion" Style="{StaticResource SubtitleTextStyle}"/>
-                                        </StackPanel>
-                                        <ToggleSwitch x:Name="AMDRadeonBoostToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                    </Grid>
-                                    <Slider x:Name="AMDRadeonBoostResolutionSlider"
-                                        Minimum="0" Maximum="1"
-                                        TickFrequency="1"
-                                        SnapsTo="Ticks"
-                                        TickPlacement="BottomRight"
-                                        IsEnabled="False"
-                                        Margin="0,6,0,0"
-                                        Visibility="{Binding ElementName=AMDRadeonBoostToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- SECTION: RADEON CHILL -->
-                            <TextBlock Text="RADEON CHILL" Style="{StaticResource SectionHeaderTextStyle}"/>
-
-                            <Border Style="{StaticResource SettingsCardStyle}">
-                                <Border.Resources>
-                                    <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#ED1C24"/>
-                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#D01820"/>
-                                    <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#B8141C"/>
-                                    <SolidColorBrush x:Key="SliderTrackValueFill" Color="#ED1C24"/>
-                                    <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#D01820"/>
-                                    <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B8141C"/>
-                                </Border.Resources>
-                                <StackPanel>
-                                    <Grid>
-                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock x:Name="AMDRadeonChillText" Text="Radeon Chill" FontWeight="SemiBold" FontSize="15"
-                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
-                                            <TextBlock Text="Power-saving dynamic FPS regulation" Style="{StaticResource SubtitleTextStyle}"/>
-                                        </StackPanel>
-                                        <ToggleSwitch x:Name="AMDRadeonChillToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
-                                            VerticalAlignment="Center" HorizontalAlignment="Right"/>
-                                    </Grid>
-                                    
-                                    <StackPanel Visibility="{Binding ElementName=AMDRadeonChillToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,8,0,0">
-                                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,4,0,8"/>
-                                        
-                                        <TextBlock x:Name="AMDRadeonChillMinFPSText" Text="{Binding ElementName=AMDRadeonChillMinFPSSlider, Path=Value, Converter={StaticResource RadeonChillMinFPSStringConverter}}"
-                                            HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"/>
-                                        <Slider x:Name="AMDRadeonChillMinFPSSlider"
-                                            Minimum="30" Maximum="300"
-                                            TickFrequency="5"
-                                            SnapsTo="Ticks"
-                                            TickPlacement="BottomRight"
-                                            IsEnabled="False"/>
-                                            
-                                        <TextBlock x:Name="AMDRadeonChillMaxFPSText" Text="{Binding ElementName=AMDRadeonChillMaxFPSSlider, Path=Value, Converter={StaticResource RadeonChillMaxFPSStringConverter}}"
-                                            HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Margin="0,4,0,0"/>
-                                        <Slider x:Name="AMDRadeonChillMaxFPSSlider"
-                                            Minimum="30" Maximum="300"
-                                            TickFrequency="5"
-                                            SnapsTo="Ticks"
-                                            TickPlacement="BottomRight"
-                                            IsEnabled="False"/>
+                            <!-- HERO CARD: ACTIVE GPU -->
+                            <Border Style="{StaticResource SettingsCardStyle}" Margin="10,0,10,12" Padding="14,10,14,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
+                                        <TextBlock x:Name="ActiveGpuNameText" Text="ACTIVE GPU: Detecting..." FontWeight="SemiBold" FontSize="15"
+                                                   TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
                                     </StackPanel>
-                                </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </ScrollViewer>
-                </PivotItem>
-
-                <!-- NVIDIA SETTINGS TAB (GeForce Green Themed) -->
-                <PivotItem x:Name="NvidiaPivotItem">
-                    <PivotItem.Header>
-                        <StackPanel x:Name="NvidiaPivotItemStackPanel" Orientation="Horizontal" Margin="6,0,24,0">
-                            <FontIcon Glyph="&#xE9D9;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource GeForceGreenBrush}"/>
-                            <TextBlock Text="NVIDIA" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </PivotItem.Header>
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" XYFocusKeyboardNavigation="Enabled">
-                        <StackPanel Margin="0,2,0,16">
-
-                            <!-- SECTION: NVIDIA APP -->
-                            <TextBlock Text="NVIDIA SOFTWARE" Style="{StaticResource SectionHeaderTextStyle}"/>
-
-                            <Border Style="{StaticResource SettingsCardStyle}">
-                                <Grid Margin="0,2,0,2">
-                                    <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                        <TextBlock x:Name="NvidiaAppText" Text="NVIDIA App" FontWeight="SemiBold" FontSize="15"
-                                            TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
-                                        <TextBlock Text="Open NVIDIA App / GeForce Experience overlay" Style="{StaticResource SubtitleTextStyle}"/>
-                                    </StackPanel>
-                                    <Button x:Name="LaunchNvidiaAppButton" Content="Open" Width="140" HorizontalAlignment="Right" Click="LaunchNvidiaAppButton_Click"
-                                        Background="#76B900" Foreground="Black" FontWeight="Bold" CornerRadius="6"/>
+                                    <Border x:Name="ActiveGpuBadgeBorder" Grid.Column="1" Style="{StaticResource ValueBadgeStyle}" Padding="8,4,8,4" VerticalAlignment="Center">
+                                        <TextBlock x:Name="ActiveGpuBadgeText" Text="Discrete GPU" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                    </Border>
                                 </Grid>
                             </Border>
+
+                            <!-- SECTION: NVIDIA DRIVER SETTINGS -->
+                            <StackPanel x:Name="NvidiaSectionContainer">
+                                <TextBlock Text="NVIDIA DRIVER SETTINGS" Style="{StaticResource SectionHeaderTextStyle}"/>
+
+                                <!-- Cached Driver Profiles Notice Banner -->
+                                <Border Margin="10,0,10,10" Padding="12,10,12,10" CornerRadius="8"
+                                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Grid.Column="0" Glyph="&#xE946;" FontSize="15" Foreground="{StaticResource GeForceGreenBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Driver profiles are cached on game launch. Changes require restarting the game."
+                                                   FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- NVIDIA App Launcher Card -->
+                                <Border Style="{StaticResource SettingsCardStyle}">
+                                    <Grid Margin="0,2,0,2">
+                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                            <TextBlock x:Name="NvidiaAppText" Text="NVIDIA App" FontWeight="SemiBold" FontSize="15"
+                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                            <TextBlock Text="Launch overlay &amp; configure 3D game profiles" Style="{StaticResource SubtitleTextStyle}"/>
+                                        </StackPanel>
+                                        <Button x:Name="LaunchNvidiaAppButton" Content="Open NVIDIA App" Width="160" HorizontalAlignment="Right" Click="LaunchNvidiaAppButton_Click"
+                                            Background="#76B900" Foreground="Black" FontWeight="Bold" CornerRadius="6"/>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+
+                            <!-- SECTION: AMD RADEON REAL-TIME CONTROLS -->
+                            <StackPanel x:Name="AmdSectionContainer">
+                                <TextBlock Text="AMD RADEON REAL-TIME CONTROLS" Style="{StaticResource SectionHeaderTextStyle}"/>
+
+                                <!-- Live Tuning Notice Banner -->
+                                <Border Margin="10,0,10,10" Padding="12,10,12,10" CornerRadius="8"
+                                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Grid.Column="0" Glyph="&#xE759;" FontSize="15" Foreground="{StaticResource RadeonRubyBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Real-time driver features via AMD ADLX. Changes apply live without restarting the game."
+                                                   FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                                <Border Style="{StaticResource SettingsCardStyle}">
+                                    <Border.Resources>
+                                        <SolidColorBrush x:Key="ToggleSwitchFillOn" Color="#ED1C24"/>
+                                        <SolidColorBrush x:Key="ToggleSwitchFillOnPointerOver" Color="#D01820"/>
+                                        <SolidColorBrush x:Key="ToggleSwitchFillOnPressed" Color="#B8141C"/>
+                                        <SolidColorBrush x:Key="SliderTrackValueFill" Color="#ED1C24"/>
+                                        <SolidColorBrush x:Key="SliderTrackValueFillPointerOver" Color="#D01820"/>
+                                        <SolidColorBrush x:Key="SliderTrackValueFillPressed" Color="#B8141C"/>
+                                    </Border.Resources>
+                                    <StackPanel>
+                                        <!-- AFMF with Value Badge -->
+                                        <Grid>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock x:Name="AMDFluidMotionFrameText" Text="Fluid Motion Frames (AFMF)" FontWeight="SemiBold" FontSize="15"
+                                                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                            Visibility="{Binding ElementName=AMDFluidMotionFrameToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <TextBlock Text="ON" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="Optical flow driver-level frame generation" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <ToggleSwitch x:Name="AMDFluidMotionFrameToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
+                                                VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        </Grid>
+
+                                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
+
+                                        <!-- RSR with Value Badge & Sharpness Slider -->
+                                        <Grid>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock x:Name="AMDRadeonSuperResolutionText" Text="Radeon Super Resolution (RSR)" FontWeight="SemiBold" FontSize="15"
+                                                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                            Visibility="{Binding ElementName=AMDRadeonSuperResolutionToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <TextBlock Text="{Binding ElementName=AMDRadeonSuperResolutionSharpnessSlider, Path=Value, Converter={StaticResource SharpnessPercentStringConverter}}" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="Spatial upscaling with sharpening filter" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <ToggleSwitch x:Name="AMDRadeonSuperResolutionToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
+                                                VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                        <Slider x:Name="AMDRadeonSuperResolutionSharpnessSlider"
+                                            Minimum="0" Maximum="100"
+                                            TickFrequency="1"
+                                            SnapsTo="Ticks"
+                                            TickPlacement="BottomRight"
+                                            IsEnabled="False"
+                                            Margin="0,6,0,0"
+                                            Visibility="{Binding ElementName=AMDRadeonSuperResolutionToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+                                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
+
+                                        <!-- Anti-Lag with Value Badge -->
+                                        <Grid>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                    <TextBlock x:Name="AMDRadeonAntiLagText" Text="Radeon Anti-Lag" FontWeight="SemiBold" FontSize="15"
+                                                        TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Margin="8,0,0,0"
+                                                            Visibility="{Binding ElementName=AMDRadeonAntiLagToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                        <TextBlock Text="ON" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <TextBlock Text="Paces CPU work to minimize input latency" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <ToggleSwitch x:Name="AMDRadeonAntiLagToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
+                                                VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        </Grid>
+
+                                        <!-- Hidden Boost controls preserved for property controllers -->
+                                        <StackPanel Visibility="Collapsed">
+                                            <TextBlock x:Name="AMDRadeonBoostText" Text="Radeon Boost"/>
+                                            <ToggleSwitch x:Name="AMDRadeonBoostToggle"/>
+                                            <Slider x:Name="AMDRadeonBoostResolutionSlider"/>
+                                        </StackPanel>
+
+                                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
+
+                                        <!-- Radeon Chill -->
+                                        <Grid>
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <TextBlock x:Name="AMDRadeonChillText" Text="Radeon Chill" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <TextBlock Text="Power-saving dynamic FPS regulation" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <ToggleSwitch x:Name="AMDRadeonChillToggle" IsEnabled="False" OffContent="Disabled" OnContent="Enabled"
+                                                VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                        </Grid>
+                                        
+                                        <StackPanel Visibility="{Binding ElementName=AMDRadeonChillToggle, Path=IsOn, Converter={StaticResource BooleanToVisibilityConverter}}" Margin="0,8,0,0">
+                                            <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,4,0,8"/>
+                                            
+                                            <TextBlock x:Name="AMDRadeonChillMinFPSText" Text="{Binding ElementName=AMDRadeonChillMinFPSSlider, Path=Value, Converter={StaticResource RadeonChillMinFPSStringConverter}}"
+                                                HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"/>
+                                            <Slider x:Name="AMDRadeonChillMinFPSSlider"
+                                                Minimum="30" Maximum="300"
+                                                TickFrequency="5"
+                                                SnapsTo="Ticks"
+                                                TickPlacement="BottomRight"
+                                                IsEnabled="False"/>
+                                                
+                                            <TextBlock x:Name="AMDRadeonChillMaxFPSText" Text="{Binding ElementName=AMDRadeonChillMaxFPSSlider, Path=Value, Converter={StaticResource RadeonChillMaxFPSStringConverter}}"
+                                                HorizontalAlignment="Left" VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Margin="0,4,0,0"/>
+                                            <Slider x:Name="AMDRadeonChillMaxFPSSlider"
+                                                Minimum="30" Maximum="300"
+                                                TickFrequency="5"
+                                                SnapsTo="Ticks"
+                                                TickPlacement="BottomRight"
+                                                IsEnabled="False"/>
+                                        </StackPanel>
+
+                                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,12,0,12"/>
+
+                                        <!-- Launch AMD Adrenalin Row -->
+                                        <Grid Margin="0,2,0,2">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <TextBlock Text="AMD Software: Adrenalin" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <TextBlock Text="Open full driver control panel &amp; tuning utility" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <Button x:Name="LaunchAmdAppButton" Content="Open Adrenalin" Width="160" HorizontalAlignment="Right" Click="LaunchAmdAppButton_Click"
+                                                Background="#ED1C24" Foreground="White" FontWeight="Bold" CornerRadius="6"/>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
                 </PivotItem>

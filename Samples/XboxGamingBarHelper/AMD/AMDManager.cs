@@ -277,8 +277,85 @@ namespace XboxGamingBarHelper.AMD
             amdRadeonChillEnabled = new AMDRadeonChillEnabledProperty(false, this);
             amdRadeonChillMinFPS = new AMDRadeonChillMinFPSProperty(30, this);
             amdRadeonChillMaxFPS = new AMDRadeonChillMaxFPSProperty(60, this);
+            launchAmdApp = new LaunchAmdAppProperty(false, this);
 
             System.Threading.Tasks.Task.Run(() => InitializeADLXBackground());
+        }
+
+        private readonly LaunchAmdAppProperty launchAmdApp;
+        public LaunchAmdAppProperty LaunchAmdApp
+        {
+            get { return launchAmdApp; }
+        }
+
+        public void StartAmdApp()
+        {
+            Logger.Info("Attempting to launch AMD Software: Adrenalin Edition...");
+            if (Shared.Utilities.AMDHelper.IsInstalled(out string amdInstallDir))
+            {
+                var executablePath = Path.Combine(amdInstallDir, $"{Shared.Utilities.AMDHelper.AMD_SOFTWARE_ADRENALINE_EDITION_FILE_NAME}.exe");
+                if (File.Exists(executablePath))
+                {
+                    try
+                    {
+                        Logger.Info($"Found AMD executable at: {executablePath}. Launching...");
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = executablePath,
+                            UseShellExecute = true
+                        });
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, $"Failed to launch AMD executable at {executablePath}");
+                    }
+                }
+            }
+
+            string[] possiblePaths = new string[]
+            {
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"AMD\CNext\CNext\RadeonSoftware.exe"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms), @"AMD Software\AMD Software.lnk"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms), @"AMD Software.lnk"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), @"AMD Software\AMD Software.lnk"),
+                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), @"AMD Software.lnk")
+            };
+
+            foreach (var path in possiblePaths)
+            {
+                if (File.Exists(path))
+                {
+                    try
+                    {
+                        Logger.Info($"Found AMD shortcut/executable at: {path}. Launching...");
+                        Process.Start(new ProcessStartInfo
+                        {
+                            FileName = path,
+                            UseShellExecute = true
+                        });
+                        return;
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error(ex, $"Failed to launch AMD software at {path}");
+                    }
+                }
+            }
+
+            try
+            {
+                Logger.Info("No local AMD software found. Opening official AMD Adrenalin download page in web browser...");
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = "https://www.amd.com/en/products/software/adrenalin.html",
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to open AMD website URL.");
+            }
         }
 
         private void InitializeADLXBackground()

@@ -57,6 +57,8 @@ namespace Shared.Enums
         VirtualKeyboard,
         HDR,
         HDRSupported,
+        LaunchAmdApp,
+        ActiveGpu,
 
         AppExit = 100
     }
