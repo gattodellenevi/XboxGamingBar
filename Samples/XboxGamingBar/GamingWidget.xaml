@@ -33,6 +33,14 @@
         <SolidColorBrush x:Key="GeForceGreenBrush" Color="#76B900"/>
         <SolidColorBrush x:Key="XboxGreenBrush" Color="#107C41"/>
 
+        <!-- Tab Navigation Distinct Accent Colors -->
+        <SolidColorBrush x:Key="TabQuickAccessBrush" Color="#00D26A"/>
+        <SolidColorBrush x:Key="TabPerformanceBrush" Color="#FF8C00"/>
+        <SolidColorBrush x:Key="TabShortcutsBrush" Color="#A855F7"/>
+        <SolidColorBrush x:Key="TabCursorBrush" Color="#00E5FF"/>
+        <SolidColorBrush x:Key="TabSystemBrush" Color="#2979FF"/>
+        <SolidColorBrush x:Key="TabGpuConfigBrush" Color="#FF1744"/>
+
         <!-- Reusable Card Container Style -->
         <Style x:Key="SettingsCardStyle" TargetType="Border">
             <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
@@ -291,42 +299,61 @@
             </Border>
         </Grid>
 
-        <!-- Running Game Info (Hero Card) -->
+        <!-- Running Game Info (Modern Console Hero Card) -->
         <Border Grid.Row="0" Margin="10,10,10,6" CornerRadius="10" 
                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" 
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
                 BorderThickness="1" Padding="12,10,12,10">
             <Grid x:Name="GameInfoGrid">
                 <Grid.ColumnDefinitions>
+                    <!-- Game Icon Squircle -->
                     <ColumnDefinition Width="Auto"/>
+                    <!-- Game Name & Status Tag & Subtitle -->
                     <ColumnDefinition Width="*"/>
+                    <!-- Controller Battery Pill -->
                     <ColumnDefinition Width="Auto"/>
+                    <!-- Segmented Profile Capsule -->
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 
-                <!-- Gamepad Icon Badge -->
-                <Border Grid.Column="0" Width="36" Height="36" CornerRadius="8" 
+                <!-- Modern Gamepad Squircle Badge -->
+                <Border x:Name="HeroGameIconBadge" Grid.Column="0" Width="40" Height="40" CornerRadius="10" 
                         Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1.2"
                         Margin="0,0,12,0" VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xE7FC;" FontSize="18" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                    <FontIcon x:Name="HeroGameIcon" Glyph="&#xE7FC;" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" 
                               Foreground="{StaticResource XboxGreenBrush}"/>
                 </Border>
 
-                <!-- Game Name & Subtitle with Status Dot -->
-                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Ellipse Width="7" Height="7" Fill="{StaticResource XboxGreenBrush}" Margin="0,0,6,0" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="RunningGameText" Text="{x:Bind ViewModel.RunningGameName, Mode=OneWay}" FontWeight="SemiBold" FontSize="16"
-                            TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                <!-- Game Name, Status Badge & Contextual Subtitle -->
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,10,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,2">
+                        <TextBlock x:Name="RunningGameText" Text="{x:Bind ViewModel.RunningGameName, Mode=OneWay}" 
+                                   FontWeight="Bold" FontSize="15"
+                                   TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                                   VerticalAlignment="Center"/>
+                        
+                        <!-- Live Status Micro-Badge [● RUNNING] / [○ STANDBY] -->
+                        <Border x:Name="HeroGameStatusBadge" Margin="8,0,0,0" Padding="5,1,6,1" CornerRadius="4"
+                                Background="#20107C41" BorderBrush="{StaticResource XboxGreenBrush}" BorderThickness="1"
+                                VerticalAlignment="Center">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="4">
+                                <Ellipse x:Name="HeroGameStatusDot" Width="6" Height="6" Fill="{StaticResource XboxGreenBrush}" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="HeroGameStatusBadgeText" Text="STANDBY" FontSize="9" FontWeight="Bold" 
+                                           Foreground="{StaticResource XboxGreenBrush}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
-                    <TextBlock Text="Active profile configuration" FontSize="11" 
-                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                    
+                    <TextBlock x:Name="HeroGameSubtitleText" Text="Global profile defaults applied" FontSize="11" 
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
                 </StackPanel>
 
-                <!-- Controller Battery Badge (Shown when controller is connected) -->
+                <!-- Controller Battery Pill Badge -->
                 <Button x:Name="ControllerBatteryBadge" Grid.Column="2" 
-                        Margin="0,0,8,0" Padding="8,3,8,3"
-                        Height="28" CornerRadius="6"
+                        Margin="0,0,8,0" Padding="8,4,8,4"
+                        Height="32" CornerRadius="8"
                         Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
                         VerticalAlignment="Center"
@@ -365,10 +392,53 @@
                     </StackPanel>
                 </Button>
 
-                <!-- Profile Switch -->
-                <ToggleSwitch x:Name="PerGameProfileToggle" Grid.Column="3" IsEnabled="False" 
-                              OffContent="Global" OnContent="Per-game"
-                              VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                <!-- Modern Segmented Profile Capsule [ Global | 🎮 Per-Game ] -->
+                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Underlying ToggleSwitch preserved for backend bindings -->
+                    <ToggleSwitch x:Name="PerGameProfileToggle" Visibility="Collapsed" IsEnabled="False"
+                                  OffContent="Global" OnContent="Per-game"/>
+
+                    <!-- Visual Segmented Capsule -->
+                    <Border CornerRadius="8" Padding="2"
+                            Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                            VerticalAlignment="Center">
+                        <Grid XYFocusKeyboardNavigation="Enabled">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Global Segment -->
+                            <Button x:Name="ProfileGlobalButton" Grid.Column="0"
+                                    Height="28" Padding="10,0,10,0" CornerRadius="6"
+                                    Background="{StaticResource XboxGreenBrush}"
+                                    BorderThickness="0"
+                                    XYFocusRight="{x:Bind ProfilePerGameButton}"
+                                    Click="ProfileGlobalButton_Click"
+                                    ToolTipService.ToolTip="Apply Global Settings to all games">
+                                <TextBlock x:Name="ProfileGlobalText" Text="Global" FontSize="11" FontWeight="Bold" Foreground="White"/>
+                            </Button>
+
+                            <!-- Per-Game Segment -->
+                            <Button x:Name="ProfilePerGameButton" Grid.Column="1"
+                                    Height="28" Padding="10,0,10,0" CornerRadius="6"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    IsEnabled="False" Opacity="0.45"
+                                    XYFocusLeft="{x:Bind ProfileGlobalButton}"
+                                    Click="ProfilePerGameButton_Click"
+                                    ToolTipService.ToolTip="Create and use a dedicated profile for the active game">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <FontIcon x:Name="ProfilePerGameIcon" Glyph="&#xE7FC;" FontSize="11" Margin="0,0,4,0" 
+                                              Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="ProfilePerGameText" Text="Per-Game" FontSize="11" FontWeight="SemiBold" 
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Border>
+                </StackPanel>
             </Grid>
         </Border>
 
@@ -378,97 +448,156 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Option C: 10-Foot Living Room HUD with Pager Dots and LT/RT Triggers -->
-            <Border Grid.Row="0" Margin="10,0,10,2" CornerRadius="10"
+            <!-- 10-Foot Living Room Tab Navigation Strip (Proposal B: Color-Coded Outlined Badges) -->
+            <Border x:Name="TabNavigationHeaderCard" Grid.Row="0" Margin="10,0,10,2" CornerRadius="10"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1" Padding="8,6,8,4"
+                    BorderThickness="1" Padding="4,4,4,4"
                     XYFocusKeyboardNavigation="Enabled"
                     Canvas.ZIndex="2"
                     PointerWheelChanged="NavTabHUD_PointerWheelChanged">
-                <StackPanel>
-                    <!-- Top Row: [LT] [Ghost Prev] [ACTIVE HERO TAB] [Ghost Next] [RT] -->
-                    <Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <!-- Left Bumper (LB) -->
+                        <ColumnDefinition Width="Auto"/>
+                        <!-- 6 Tab Badges -->
+                        <ColumnDefinition Width="*"/>
+                        <!-- Right Bumper (RB) -->
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left Trigger Button (LT) -->
+                    <Button x:Name="NavTriggerLeftButton" Grid.Column="0"
+                            Width="32" Height="38" CornerRadius="6" Padding="0"
+                            Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1.2"
+                            VerticalAlignment="Center" HorizontalAlignment="Left" Margin="2,0,4,0"
+                            ToolTipService.ToolTip="Previous Tab (Left Trigger - LT)"
+                            Click="NavTriggerLeftButton_Click">
+                        <TextBlock Text="LT" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+                    </Button>
+
+                    <!-- Tab Badges Row (Equal 6 Columns) -->
+                    <Grid Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Stretch">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Left Trigger Pill (LT) -->
-                        <Button x:Name="NavTriggerLeftButton" Grid.Column="0"
-                                Width="34" Height="28" CornerRadius="6" Padding="0"
-                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1.2"
-                                VerticalAlignment="Center" HorizontalAlignment="Left"
-                                ToolTipService.ToolTip="Previous Tab (Left Trigger)"
-                                Click="NavTriggerLeftButton_Click">
-                            <TextBlock Text="LT" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+                        <!-- Tab 1: Quick Access (Xbox Emerald) -->
+                        <Button x:Name="NavTabButton_QuickAccess" Grid.Column="0"
+                                Background="Transparent" BorderThickness="0" Padding="0" Margin="1,0,1,0"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                Click="NavTabButton_Click" Tag="0">
+                            <Border x:Name="NavTabBorder_QuickAccess" CornerRadius="8" Padding="2,4,2,3"
+                                    HorizontalAlignment="Stretch" BorderThickness="1.5">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <FontIcon x:Name="NavTabIcon_QuickAccess" Glyph="&#xEC7A;" FontSize="17"
+                                              Foreground="{StaticResource TabQuickAccessBrush}" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                    <TextBlock x:Name="NavTabLabel_QuickAccess" Text="Quick Access" FontSize="10" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                </StackPanel>
+                            </Border>
                         </Button>
 
-                        <!-- Previous Ghost Tab Button -->
-                        <Button x:Name="NavPrevTabGhostButton" Grid.Column="1"
-                                Background="Transparent" BorderThickness="0" Padding="4,4,4,4"
-                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Click="NavPrevTabGhostButton_Click">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Opacity="0.55">
-                                <FontIcon x:Name="NavPrevTabIcon" Glyph="&#xEC7A;" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
-                                <TextBlock x:Name="NavPrevTabText" Text="Quick" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis" MaxWidth="90"/>
-                            </StackPanel>
+                        <!-- Tab 2: Performance (Flame Orange) -->
+                        <Button x:Name="NavTabButton_Performance" Grid.Column="1"
+                                Background="Transparent" BorderThickness="0" Padding="0" Margin="1,0,1,0"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                Click="NavTabButton_Click" Tag="1">
+                            <Border x:Name="NavTabBorder_Performance" CornerRadius="8" Padding="2,4,2,3"
+                                    HorizontalAlignment="Stretch" BorderThickness="1.5">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <FontIcon x:Name="NavTabIcon_Performance" Glyph="&#xE9D2;" FontSize="17"
+                                              Foreground="{StaticResource TabPerformanceBrush}" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                    <TextBlock x:Name="NavTabLabel_Performance" Text="Performance" FontSize="10" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                </StackPanel>
+                            </Border>
                         </Button>
 
-                        <!-- Center Active Hero Tab Badge -->
-                        <Border x:Name="NavActiveHeroBadge" Grid.Column="2"
-                                Background="{StaticResource XboxGreenBrush}" CornerRadius="8"
-                                Padding="14,5,14,5" VerticalAlignment="Center" HorizontalAlignment="Center">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                <FontIcon x:Name="NavActiveHeroIcon" Glyph="&#xEC7A;" FontSize="14" Margin="0,0,7,0" VerticalAlignment="Center" Foreground="White"/>
-                                <TextBlock x:Name="NavActiveHeroText" Text="QUICK ACCESS" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" Foreground="White"
-                                           CharacterSpacing="40"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- Next Ghost Tab Button -->
-                        <Button x:Name="NavNextTabGhostButton" Grid.Column="3"
-                                Background="Transparent" BorderThickness="0" Padding="4,4,4,4"
-                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Click="NavNextTabGhostButton_Click">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Opacity="0.55">
-                                <FontIcon x:Name="NavNextTabIcon" Glyph="&#xE9D2;" FontSize="12" Margin="0,0,5,0" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
-                                <TextBlock x:Name="NavNextTabText" Text="Perf" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"
-                                           TextTrimming="CharacterEllipsis" MaxWidth="90"/>
-                            </StackPanel>
+                        <!-- Tab 3: Shortcuts (Electric Violet) -->
+                        <Button x:Name="NavTabButton_Shortcuts" Grid.Column="2"
+                                Background="Transparent" BorderThickness="0" Padding="0" Margin="1,0,1,0"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                Click="NavTabButton_Click" Tag="2">
+                            <Border x:Name="NavTabBorder_Shortcuts" CornerRadius="8" Padding="2,4,2,3"
+                                    HorizontalAlignment="Stretch" BorderThickness="1.5">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <FontIcon x:Name="NavTabIcon_Shortcuts" Glyph="&#xE765;" FontSize="17"
+                                              Foreground="{StaticResource TabShortcutsBrush}" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                    <TextBlock x:Name="NavTabLabel_Shortcuts" Text="Shortcuts" FontSize="10" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                </StackPanel>
+                            </Border>
                         </Button>
 
-                        <!-- Right Trigger Pill (RT) -->
-                        <Button x:Name="NavTriggerRightButton" Grid.Column="4"
-                                Width="34" Height="28" CornerRadius="6" Padding="0"
-                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1.2"
-                                VerticalAlignment="Center" HorizontalAlignment="Right"
-                                ToolTipService.ToolTip="Next Tab (Right Trigger)"
-                                Click="NavTriggerRightButton_Click">
-                            <TextBlock Text="RT" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+                        <!-- Tab 4: Cursor (Precision Cyan) -->
+                        <Button x:Name="NavTabButton_Cursor" Grid.Column="3"
+                                Background="Transparent" BorderThickness="0" Padding="0" Margin="1,0,1,0"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                Click="NavTabButton_Click" Tag="3">
+                            <Border x:Name="NavTabBorder_Cursor" CornerRadius="8" Padding="2,4,2,3"
+                                    HorizontalAlignment="Stretch" BorderThickness="1.5">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <FontIcon x:Name="NavTabIcon_Cursor" Glyph="&#xE962;" FontSize="17"
+                                              Foreground="{StaticResource TabCursorBrush}" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                    <TextBlock x:Name="NavTabLabel_Cursor" Text="Cursor" FontSize="10" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                </StackPanel>
+                            </Border>
+                        </Button>
+
+                        <!-- Tab 5: System (Azure Windows Blue) -->
+                        <Button x:Name="NavTabButton_System" Grid.Column="4"
+                                Background="Transparent" BorderThickness="0" Padding="0" Margin="1,0,1,0"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                Click="NavTabButton_Click" Tag="4">
+                            <Border x:Name="NavTabBorder_System" CornerRadius="8" Padding="2,4,2,3"
+                                    HorizontalAlignment="Stretch" BorderThickness="1.5">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <FontIcon x:Name="NavTabIcon_System" Glyph="&#xE770;" FontSize="17"
+                                              Foreground="{StaticResource TabSystemBrush}" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                    <TextBlock x:Name="NavTabLabel_System" Text="System" FontSize="10" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                </StackPanel>
+                            </Border>
+                        </Button>
+
+                        <!-- Tab 6: GPU Config (Radeon Ruby) -->
+                        <Button x:Name="NavTabButton_GpuConfig" Grid.Column="5"
+                                Background="Transparent" BorderThickness="0" Padding="0" Margin="1,0,1,0"
+                                HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                Click="NavTabButton_Click" Tag="5">
+                            <Border x:Name="NavTabBorder_GpuConfig" CornerRadius="8" Padding="2,4,2,3"
+                                    HorizontalAlignment="Stretch" BorderThickness="1.5">
+                                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                    <FontIcon x:Name="NavTabIcon_GpuConfig" Glyph="&#xE7F4;" FontSize="17"
+                                              Foreground="{StaticResource TabGpuConfigBrush}" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                                    <TextBlock x:Name="NavTabLabel_GpuConfig" Text="GPU Config" FontSize="10" FontWeight="SemiBold"
+                                               HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                </StackPanel>
+                            </Border>
                         </Button>
                     </Grid>
 
-                    <!-- Bottom Row: Interactive Pager Dots + Numeric Counter Badge -->
-                    <Grid Margin="0,3,0,0">
-                        <!-- Centered Pager Dots -->
-                        <StackPanel x:Name="NavPagerDotsPanel" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
-                        <!-- Numeric Counter Badge (Right Aligned) -->
-                        <Border x:Name="NavTabCounterBorder" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                Style="{StaticResource ValueBadgeStyle}" Padding="6,1,6,1">
-                            <TextBlock x:Name="NavTabCounterText" Text="1 of 5" Style="{StaticResource ValueBadgeTextStyle}"/>
-                        </Border>
-                    </Grid>
-                </StackPanel>
+                    <!-- Right Trigger Button (RT) -->
+                    <Button x:Name="NavTriggerRightButton" Grid.Column="2"
+                            Width="32" Height="38" CornerRadius="6" Padding="0"
+                            Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1.2"
+                            VerticalAlignment="Center" HorizontalAlignment="Right" Margin="4,0,2,0"
+                            ToolTipService.ToolTip="Next Tab (Right Trigger - RT)"
+                            Click="NavTriggerRightButton_Click">
+                        <TextBlock Text="RT" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseHighBrush}"/>
+                    </Button>
+                </Grid>
             </Border>
 
             <Pivot x:Name="MainPivot" Grid.Row="1" Margin="0,-46,0,0" IsHeaderItemsCarouselEnabled="False" XYFocusKeyboardNavigation="Enabled" UseSystemFocusVisuals="True"
@@ -477,7 +606,7 @@
                 <PivotItem x:Name="QuickAccessPivotItem">
                     <PivotItem.Header>
                         <StackPanel Orientation="Horizontal" Margin="24,0,6,0">
-                            <FontIcon Glyph="&#xEC7A;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                            <FontIcon Glyph="&#xEC7A;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource TabQuickAccessBrush}"/>
                             <TextBlock Text="Quick Access" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
@@ -995,7 +1124,7 @@
                 <PivotItem x:Name="PerformancePivotItem">
                     <PivotItem.Header>
                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
-                            <FontIcon Glyph="&#xE9D2;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                            <FontIcon Glyph="&#xE9D2;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource TabPerformanceBrush}"/>
                             <TextBlock Text="Performance" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
@@ -1424,7 +1553,7 @@
                 <PivotItem x:Name="ShortcutsPivotItem">
                     <PivotItem.Header>
                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
-                            <FontIcon Glyph="&#xE765;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                            <FontIcon Glyph="&#xE765;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource TabShortcutsBrush}"/>
                             <TextBlock Text="Shortcuts" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
@@ -1562,7 +1691,7 @@
                 <PivotItem x:Name="CursorPivotItem">
                     <PivotItem.Header>
                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
-                            <FontIcon Glyph="&#xE962;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                            <FontIcon Glyph="&#xE962;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource TabCursorBrush}"/>
                             <TextBlock Text="Cursor" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
@@ -1744,7 +1873,7 @@
                 <PivotItem x:Name="SystemPivotItem">
                     <PivotItem.Header>
                         <StackPanel Orientation="Horizontal" Margin="6,0,6,0">
-                            <FontIcon Glyph="&#xE770;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center"/>
+                            <FontIcon Glyph="&#xE770;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource TabSystemBrush}"/>
                             <TextBlock Text="System" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>
@@ -1887,7 +2016,7 @@
                 <PivotItem x:Name="GpuConfigPivotItem">
                     <PivotItem.Header>
                         <StackPanel x:Name="GpuConfigPivotItemStackPanel" Orientation="Horizontal" Margin="6,0,24,0">
-                            <FontIcon Glyph="&#xE7F4;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource XboxGreenBrush}"/>
+                            <FontIcon Glyph="&#xE7F4;" Margin="0,0,8,0" FontSize="15" VerticalAlignment="Center" Foreground="{StaticResource TabGpuConfigBrush}"/>
                             <TextBlock Text="GPU Config" FontWeight="SemiBold" VerticalAlignment="Center"/>
                         </StackPanel>
                     </PivotItem.Header>

@@ -452,6 +452,21 @@ namespace XboxGamingBar
             properties.TryApplyCachedSnapshot();
             InitializeViewModelBindings();
 
+            PerGameProfileToggle.Toggled += (s, e) =>
+            {
+                UpdateProfileSegmentedUI();
+                UpdateHeroSubtitle();
+            };
+            PerGameProfileToggle.IsEnabledChanged += (s, e) =>
+            {
+                UpdateProfileSegmentedUI();
+                UpdateHeroSubtitle();
+            };
+            RunningGameText.RegisterPropertyChangedCallback(TextBlock.TextProperty, (s, e) =>
+            {
+                UpdateHeroGameUI();
+            });
+
             this.PreviewKeyDown += GamingWidget_KeyDown;
             InitializeAppVersion();
             InitializeShortcuts();
@@ -461,6 +476,9 @@ namespace XboxGamingBar
             UpdateQuickDisplayInfo();
             UpdateQuickRTSSStatus();
             UpdateQuickHDRButtonUI(hdr != null && hdr.Value, hdrSupported != null && hdrSupported.Value);
+            UpdateHeroGameUI();
+            UpdateProfileSegmentedUI();
+            UpdateHeroSubtitle();
         }
 
         private async Task LaunchExternalUriAsync(string uriString)
@@ -824,6 +842,7 @@ namespace XboxGamingBar
                 }
             }
 
+            // Tab navigation strictly via triggers (LT/RT) - never bumpers (LB/RB), which Game Bar uses for widget switching
             if (e.Key == VirtualKey.GamepadLeftTrigger || e.Key == VirtualKey.PageUp)
             {
                 NavigatePivot(-1);
@@ -959,6 +978,207 @@ namespace XboxGamingBar
                 }
             }
         }
+
+        #region Modern Hero Bar & Profile Selector
+
+        private void ProfileGlobalButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (PerGameProfileToggle != null && PerGameProfileToggle.IsOn)
+            {
+                PerGameProfileToggle.IsOn = false;
+            }
+            UpdateProfileSegmentedUI();
+            UpdateHeroSubtitle();
+        }
+
+        private void ProfilePerGameButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (PerGameProfileToggle != null && PerGameProfileToggle.IsEnabled && !PerGameProfileToggle.IsOn)
+            {
+                PerGameProfileToggle.IsOn = true;
+            }
+            UpdateProfileSegmentedUI();
+            UpdateHeroSubtitle();
+        }
+
+        private void UpdateHeroGameUI()
+        {
+            if (Dispatcher != null && !Dispatcher.HasThreadAccess)
+            {
+                var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateHeroGameUI());
+                return;
+            }
+
+            bool isGameRunning = (runningGame != null && runningGame.Value.IsValid()) ||
+                                 (RunningGameText != null &&
+                                  !string.IsNullOrWhiteSpace(RunningGameText.Text) &&
+                                  !RunningGameText.Text.Equals("No Game Detected", StringComparison.OrdinalIgnoreCase) &&
+                                  !RunningGameText.Text.Equals("No game detected", StringComparison.OrdinalIgnoreCase));
+
+            var xboxGreenBrush = Resources.ContainsKey("XboxGreenBrush")
+                ? (Brush)Resources["XboxGreenBrush"]
+                : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65));
+            var cardStrokeBrush = Resources.ContainsKey("CardStrokeColorDefaultBrush")
+                ? (Brush)Resources["CardStrokeColorDefaultBrush"]
+                : new SolidColorBrush(Windows.UI.Color.FromArgb(30, 255, 255, 255));
+            var mediumBrush = Resources.ContainsKey("SystemControlForegroundBaseMediumBrush")
+                ? (Brush)Resources["SystemControlForegroundBaseMediumBrush"]
+                : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 170, 170, 170));
+
+            if (isGameRunning)
+            {
+                if (HeroGameIcon != null) HeroGameIcon.Foreground = xboxGreenBrush;
+                if (HeroGameIconBadge != null) HeroGameIconBadge.BorderBrush = xboxGreenBrush;
+
+                if (HeroGameStatusBadge != null)
+                {
+                    HeroGameStatusBadge.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(32, 16, 124, 65));
+                    HeroGameStatusBadge.BorderBrush = xboxGreenBrush;
+                }
+                if (HeroGameStatusDot != null) HeroGameStatusDot.Fill = xboxGreenBrush;
+                if (HeroGameStatusBadgeText != null)
+                {
+                    HeroGameStatusBadgeText.Text = "RUNNING";
+                    HeroGameStatusBadgeText.Foreground = xboxGreenBrush;
+                }
+            }
+            else
+            {
+                if (HeroGameIcon != null) HeroGameIcon.Foreground = mediumBrush;
+                if (HeroGameIconBadge != null) HeroGameIconBadge.BorderBrush = cardStrokeBrush;
+
+                if (HeroGameStatusBadge != null)
+                {
+                    HeroGameStatusBadge.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(20, 255, 255, 255));
+                    HeroGameStatusBadge.BorderBrush = cardStrokeBrush;
+                }
+                if (HeroGameStatusDot != null) HeroGameStatusDot.Fill = mediumBrush;
+                if (HeroGameStatusBadgeText != null)
+                {
+                    HeroGameStatusBadgeText.Text = "STANDBY";
+                    HeroGameStatusBadgeText.Foreground = mediumBrush;
+                }
+            }
+
+            UpdateHeroSubtitle();
+            UpdateProfileSegmentedUI();
+        }
+
+        private void UpdateHeroSubtitle()
+        {
+            if (Dispatcher != null && !Dispatcher.HasThreadAccess)
+            {
+                var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateHeroSubtitle());
+                return;
+            }
+
+            if (HeroGameSubtitleText == null) return;
+
+            bool isGameRunning = (runningGame != null && runningGame.Value.IsValid()) ||
+                                 (RunningGameText != null &&
+                                  !string.IsNullOrWhiteSpace(RunningGameText.Text) &&
+                                  !RunningGameText.Text.Equals("No Game Detected", StringComparison.OrdinalIgnoreCase) &&
+                                  !RunningGameText.Text.Equals("No game detected", StringComparison.OrdinalIgnoreCase));
+            bool isPerGameOn = PerGameProfileToggle != null && PerGameProfileToggle.IsOn;
+
+            if (isGameRunning)
+            {
+                HeroGameSubtitleText.Text = isPerGameOn
+                    ? "Custom 3D game profile active"
+                    : "Global profile applied to running game";
+            }
+            else
+            {
+                HeroGameSubtitleText.Text = "Global profile defaults applied";
+            }
+        }
+
+        private void UpdateProfileSegmentedUI()
+        {
+            if (Dispatcher != null && !Dispatcher.HasThreadAccess)
+            {
+                var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => UpdateProfileSegmentedUI());
+                return;
+            }
+
+            if (ProfileGlobalButton == null || ProfilePerGameButton == null) return;
+
+            bool isGameRunning = (runningGame != null && runningGame.Value.IsValid()) ||
+                                 (RunningGameText != null &&
+                                  !string.IsNullOrWhiteSpace(RunningGameText.Text) &&
+                                  !RunningGameText.Text.Equals("No Game Detected", StringComparison.OrdinalIgnoreCase) &&
+                                  !RunningGameText.Text.Equals("No game detected", StringComparison.OrdinalIgnoreCase));
+            bool isPerGameOn = PerGameProfileToggle != null && PerGameProfileToggle.IsOn;
+
+            var xboxGreenBrush = Resources.ContainsKey("XboxGreenBrush")
+                ? (Brush)Resources["XboxGreenBrush"]
+                : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65));
+            var transparentBrush = new SolidColorBrush(Windows.UI.Colors.Transparent);
+            var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
+            var mediumBrush = Resources.ContainsKey("SystemControlForegroundBaseMediumBrush")
+                ? (Brush)Resources["SystemControlForegroundBaseMediumBrush"]
+                : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 170, 170, 170));
+
+            // Global Segment
+            if (!isPerGameOn)
+            {
+                ProfileGlobalButton.Background = xboxGreenBrush;
+                if (ProfileGlobalText != null)
+                {
+                    ProfileGlobalText.Foreground = whiteBrush;
+                    ProfileGlobalText.FontWeight = Windows.UI.Text.FontWeights.Bold;
+                }
+            }
+            else
+            {
+                ProfileGlobalButton.Background = transparentBrush;
+                if (ProfileGlobalText != null)
+                {
+                    ProfileGlobalText.Foreground = mediumBrush;
+                    ProfileGlobalText.FontWeight = Windows.UI.Text.FontWeights.SemiBold;
+                }
+            }
+
+            // Per-Game Segment
+            if (!isGameRunning)
+            {
+                ProfilePerGameButton.IsEnabled = false;
+                ProfilePerGameButton.Opacity = 0.45;
+                ProfilePerGameButton.Background = transparentBrush;
+                if (ProfilePerGameIcon != null) ProfilePerGameIcon.Foreground = mediumBrush;
+                if (ProfilePerGameText != null)
+                {
+                    ProfilePerGameText.Foreground = mediumBrush;
+                    ProfilePerGameText.FontWeight = Windows.UI.Text.FontWeights.SemiBold;
+                }
+            }
+            else if (isPerGameOn)
+            {
+                ProfilePerGameButton.IsEnabled = true;
+                ProfilePerGameButton.Opacity = 1.0;
+                ProfilePerGameButton.Background = xboxGreenBrush;
+                if (ProfilePerGameIcon != null) ProfilePerGameIcon.Foreground = whiteBrush;
+                if (ProfilePerGameText != null)
+                {
+                    ProfilePerGameText.Foreground = whiteBrush;
+                    ProfilePerGameText.FontWeight = Windows.UI.Text.FontWeights.Bold;
+                }
+            }
+            else
+            {
+                ProfilePerGameButton.IsEnabled = true;
+                ProfilePerGameButton.Opacity = 1.0;
+                ProfilePerGameButton.Background = transparentBrush;
+                if (ProfilePerGameIcon != null) ProfilePerGameIcon.Foreground = mediumBrush;
+                if (ProfilePerGameText != null)
+                {
+                    ProfilePerGameText.Foreground = mediumBrush;
+                    ProfilePerGameText.FontWeight = Windows.UI.Text.FontWeights.SemiBold;
+                }
+            }
+        }
+
+        #endregion
 
         #region Couch Essentials Quick Toggles
 
@@ -1274,6 +1494,7 @@ namespace XboxGamingBar
                 {
                     ViewModel.RunningGameName = runningGame.Value.IsValid() ? runningGame.Value.GameId.Name : "No game detected";
                     ViewModel.IsGameRunning = runningGame.Value.IsValid();
+                    UpdateHeroGameUI();
                 };
             }
             if (perGameProfile != null)
@@ -1282,6 +1503,8 @@ namespace XboxGamingBar
                 perGameProfile.PropertyChanged += (s, e) =>
                 {
                     ViewModel.IsPerGameProfile = perGameProfile.Value;
+                    UpdateProfileSegmentedUI();
+                    UpdateHeroSubtitle();
                 };
             }
 
@@ -1305,24 +1528,111 @@ namespace XboxGamingBar
             public string ShortName { get; set; }
             public string Glyph { get; set; }
             public SolidColorBrush AccentBrush { get; set; }
+            public Windows.UI.Color AccentColor { get; set; }
+            public Button TabButton { get; set; }
+            public Border BadgeBorder { get; set; }
+            public FontIcon IconElement { get; set; }
+            public TextBlock LabelElement { get; set; }
         }
 
         private List<TabNavigationInfo> tabInfos;
 
         private void InitializeTabNavigation()
         {
-            var greenBrush = Resources.ContainsKey("XboxGreenBrush") ? (SolidColorBrush)Resources["XboxGreenBrush"] : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 16, 124, 65));
-            var rubyBrush = Resources.ContainsKey("RadeonRubyBrush") ? (SolidColorBrush)Resources["RadeonRubyBrush"] : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 237, 28, 36));
-            var geforceBrush = Resources.ContainsKey("GeForceGreenBrush") ? (SolidColorBrush)Resources["GeForceGreenBrush"] : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 118, 185, 0));
+            var quickAccessColor = Windows.UI.Color.FromArgb(255, 0, 210, 106);    // #00D26A Emerald Green
+            var performanceColor = Windows.UI.Color.FromArgb(255, 255, 140, 0);   // #FF8C00 Flame Orange
+            var shortcutsColor = Windows.UI.Color.FromArgb(255, 168, 85, 247);    // #A855F7 Electric Violet
+            var cursorColor = Windows.UI.Color.FromArgb(255, 0, 229, 255);       // #00E5FF Precision Cyan
+            var systemColor = Windows.UI.Color.FromArgb(255, 41, 121, 255);      // #2979FF Azure Blue
+            var gpuConfigColor = Windows.UI.Color.FromArgb(255, 255, 23, 68);     // #FF1744 Radeon Ruby / Crimson
+
+            var quickAccessBrush = Resources.ContainsKey("TabQuickAccessBrush") ? (SolidColorBrush)Resources["TabQuickAccessBrush"] : new SolidColorBrush(quickAccessColor);
+            var performanceBrush = Resources.ContainsKey("TabPerformanceBrush") ? (SolidColorBrush)Resources["TabPerformanceBrush"] : new SolidColorBrush(performanceColor);
+            var shortcutsBrush = Resources.ContainsKey("TabShortcutsBrush") ? (SolidColorBrush)Resources["TabShortcutsBrush"] : new SolidColorBrush(shortcutsColor);
+            var cursorBrush = Resources.ContainsKey("TabCursorBrush") ? (SolidColorBrush)Resources["TabCursorBrush"] : new SolidColorBrush(cursorColor);
+            var systemBrush = Resources.ContainsKey("TabSystemBrush") ? (SolidColorBrush)Resources["TabSystemBrush"] : new SolidColorBrush(systemColor);
+            var gpuConfigBrush = Resources.ContainsKey("TabGpuConfigBrush") ? (SolidColorBrush)Resources["TabGpuConfigBrush"] : new SolidColorBrush(gpuConfigColor);
 
             tabInfos = new List<TabNavigationInfo>
             {
-                new TabNavigationInfo { Item = QuickAccessPivotItem, Title = "QUICK ACCESS", ShortName = "Quick", Glyph = "\uEC7A", AccentBrush = greenBrush },
-                new TabNavigationInfo { Item = PerformancePivotItem, Title = "PERFORMANCE", ShortName = "Perf", Glyph = "\uE9D2", AccentBrush = greenBrush },
-                new TabNavigationInfo { Item = ShortcutsPivotItem, Title = "SHORTCUTS", ShortName = "Shortcuts", Glyph = "\uE765", AccentBrush = greenBrush },
-                new TabNavigationInfo { Item = CursorPivotItem, Title = "CURSOR", ShortName = "Cursor", Glyph = "\uE962", AccentBrush = greenBrush },
-                new TabNavigationInfo { Item = SystemPivotItem, Title = "SYSTEM", ShortName = "System", Glyph = "\uE770", AccentBrush = greenBrush },
-                new TabNavigationInfo { Item = GpuConfigPivotItem, Title = "GPU CONFIG", ShortName = "GPU Config", Glyph = "\uE7F4", AccentBrush = greenBrush }
+                new TabNavigationInfo
+                {
+                    Item = QuickAccessPivotItem,
+                    Title = "QUICK ACCESS",
+                    ShortName = "Quick Access",
+                    Glyph = "\uEC7A",
+                    AccentBrush = quickAccessBrush,
+                    AccentColor = quickAccessColor,
+                    TabButton = NavTabButton_QuickAccess,
+                    BadgeBorder = NavTabBorder_QuickAccess,
+                    IconElement = NavTabIcon_QuickAccess,
+                    LabelElement = NavTabLabel_QuickAccess
+                },
+                new TabNavigationInfo
+                {
+                    Item = PerformancePivotItem,
+                    Title = "PERFORMANCE",
+                    ShortName = "Performance",
+                    Glyph = "\uE9D2",
+                    AccentBrush = performanceBrush,
+                    AccentColor = performanceColor,
+                    TabButton = NavTabButton_Performance,
+                    BadgeBorder = NavTabBorder_Performance,
+                    IconElement = NavTabIcon_Performance,
+                    LabelElement = NavTabLabel_Performance
+                },
+                new TabNavigationInfo
+                {
+                    Item = ShortcutsPivotItem,
+                    Title = "SHORTCUTS",
+                    ShortName = "Shortcuts",
+                    Glyph = "\uE765",
+                    AccentBrush = shortcutsBrush,
+                    AccentColor = shortcutsColor,
+                    TabButton = NavTabButton_Shortcuts,
+                    BadgeBorder = NavTabBorder_Shortcuts,
+                    IconElement = NavTabIcon_Shortcuts,
+                    LabelElement = NavTabLabel_Shortcuts
+                },
+                new TabNavigationInfo
+                {
+                    Item = CursorPivotItem,
+                    Title = "CURSOR",
+                    ShortName = "Cursor",
+                    Glyph = "\uE962",
+                    AccentBrush = cursorBrush,
+                    AccentColor = cursorColor,
+                    TabButton = NavTabButton_Cursor,
+                    BadgeBorder = NavTabBorder_Cursor,
+                    IconElement = NavTabIcon_Cursor,
+                    LabelElement = NavTabLabel_Cursor
+                },
+                new TabNavigationInfo
+                {
+                    Item = SystemPivotItem,
+                    Title = "SYSTEM",
+                    ShortName = "System",
+                    Glyph = "\uE770",
+                    AccentBrush = systemBrush,
+                    AccentColor = systemColor,
+                    TabButton = NavTabButton_System,
+                    BadgeBorder = NavTabBorder_System,
+                    IconElement = NavTabIcon_System,
+                    LabelElement = NavTabLabel_System
+                },
+                new TabNavigationInfo
+                {
+                    Item = GpuConfigPivotItem,
+                    Title = "GPU CONFIG",
+                    ShortName = "GPU Config",
+                    Glyph = "\uE7F4",
+                    AccentBrush = gpuConfigBrush,
+                    AccentColor = gpuConfigColor,
+                    TabButton = NavTabButton_GpuConfig,
+                    BadgeBorder = NavTabBorder_GpuConfig,
+                    IconElement = NavTabIcon_GpuConfig,
+                    LabelElement = NavTabLabel_GpuConfig
+                }
             };
 
             if (GpuConfigPivotItem != null)
@@ -1342,79 +1652,54 @@ namespace XboxGamingBar
         {
             if (tabInfos == null || MainPivot == null) return;
 
-            var visibleTabs = tabInfos.Where(t => t.Item != null && t.Item.Visibility == Visibility.Visible).ToList();
-            if (visibleTabs.Count == 0) return;
+            var mediumBrush = Resources.ContainsKey("SystemControlForegroundBaseMediumBrush")
+                ? (Brush)Resources["SystemControlForegroundBaseMediumBrush"]
+                : new SolidColorBrush(Windows.UI.Color.FromArgb(255, 170, 170, 170));
 
-            int activeIndex = visibleTabs.FindIndex(t => t.Item == MainPivot.SelectedItem);
-            if (activeIndex == -1) activeIndex = 0;
+            var transparentBrush = new SolidColorBrush(Windows.UI.Colors.Transparent);
+            var whiteBrush = new SolidColorBrush(Windows.UI.Colors.White);
 
-            var current = visibleTabs[activeIndex];
-            int prevIndex = (activeIndex - 1 + visibleTabs.Count) % visibleTabs.Count;
-            int nextIndex = (activeIndex + 1) % visibleTabs.Count;
-
-            var prev = visibleTabs[prevIndex];
-            var next = visibleTabs[nextIndex];
-
-            if (NavActiveHeroText != null) NavActiveHeroText.Text = current.Title;
-            if (NavActiveHeroIcon != null) NavActiveHeroIcon.Glyph = current.Glyph;
-            if (NavActiveHeroBadge != null && current.AccentBrush != null) NavActiveHeroBadge.Background = current.AccentBrush;
-
-            if (NavPrevTabText != null) NavPrevTabText.Text = prev.ShortName;
-            if (NavPrevTabIcon != null) NavPrevTabIcon.Glyph = prev.Glyph;
-
-            if (NavNextTabText != null) NavNextTabText.Text = next.ShortName;
-            if (NavNextTabIcon != null) NavNextTabIcon.Glyph = next.Glyph;
-
-            if (NavTabCounterText != null) NavTabCounterText.Text = $"{activeIndex + 1} of {visibleTabs.Count}";
-
-            if (NavPagerDotsPanel != null)
+            foreach (var tab in tabInfos)
             {
-                NavPagerDotsPanel.Children.Clear();
-                for (int i = 0; i < visibleTabs.Count; i++)
+                if (tab.TabButton == null || tab.BadgeBorder == null || tab.IconElement == null || tab.LabelElement == null)
+                    continue;
+
+                // Sync button visibility with PivotItem
+                tab.TabButton.Visibility = (tab.Item != null) ? tab.Item.Visibility : Visibility.Visible;
+
+                bool isActive = (tab.Item == MainPivot.SelectedItem);
+                if (isActive)
                 {
-                    int targetPos = i;
-                    var dotButton = new Button
-                    {
-                        Background = new SolidColorBrush(Windows.UI.Colors.Transparent),
-                        BorderThickness = new Thickness(0),
-                        Padding = new Thickness(0),
-                        Margin = new Thickness(2, 0, 2, 0),
-                        Width = 16,
-                        Height = 12,
-                        IsTabStop = false
-                    };
+                    // Active badge style: colored border, subtle glow tint, full opacity icon, white bold label
+                    tab.BadgeBorder.BorderBrush = tab.AccentBrush;
+                    tab.BadgeBorder.BorderThickness = new Thickness(1.5);
+                    tab.BadgeBorder.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(38, tab.AccentColor.R, tab.AccentColor.G, tab.AccentColor.B));
+                    tab.IconElement.Foreground = tab.AccentBrush;
+                    tab.IconElement.Opacity = 1.0;
+                    tab.LabelElement.Foreground = whiteBrush;
+                    tab.LabelElement.FontWeight = Windows.UI.Text.FontWeights.Bold;
+                }
+                else
+                {
+                    // Inactive badge style: transparent border & background, distinct colored icon, muted label
+                    tab.BadgeBorder.BorderBrush = transparentBrush;
+                    tab.BadgeBorder.BorderThickness = new Thickness(1.5);
+                    tab.BadgeBorder.Background = transparentBrush;
+                    tab.IconElement.Foreground = tab.AccentBrush;
+                    tab.IconElement.Opacity = 0.85;
+                    tab.LabelElement.Foreground = mediumBrush;
+                    tab.LabelElement.FontWeight = Windows.UI.Text.FontWeights.SemiBold;
+                }
+            }
+        }
 
-                    var dotBorder = new Border
-                    {
-                        CornerRadius = new CornerRadius(10),
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        VerticalAlignment = VerticalAlignment.Center
-                    };
-
-                    if (i == activeIndex)
-                    {
-                        dotBorder.Width = 10;
-                        dotBorder.Height = 10;
-                        dotBorder.Background = current.AccentBrush ?? (SolidColorBrush)Resources["XboxGreenBrush"];
-                        dotBorder.BorderBrush = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 52, 211, 153));
-                        dotBorder.BorderThickness = new Thickness(1.5);
-                    }
-                    else
-                    {
-                        dotBorder.Width = 7;
-                        dotBorder.Height = 7;
-                        dotBorder.Background = new SolidColorBrush(Windows.UI.Color.FromArgb(255, 75, 85, 99));
-                    }
-
-                    dotButton.Content = dotBorder;
-                    dotButton.Click += (s, e) =>
-                    {
-                        if (targetPos >= 0 && targetPos < visibleTabs.Count)
-                        {
-                            MainPivot.SelectedItem = visibleTabs[targetPos].Item;
-                        }
-                    };
-                    NavPagerDotsPanel.Children.Add(dotButton);
+        private void NavTabButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string tagStr && int.TryParse(tagStr, out int tabIndex))
+            {
+                if (tabInfos != null && tabIndex >= 0 && tabIndex < tabInfos.Count)
+                {
+                    MainPivot.SelectedItem = tabInfos[tabIndex].Item;
                 }
             }
         }
@@ -1425,16 +1710,6 @@ namespace XboxGamingBar
         }
 
         private void NavTriggerRightButton_Click(object sender, RoutedEventArgs e)
-        {
-            NavigatePivot(1);
-        }
-
-        private void NavPrevTabGhostButton_Click(object sender, RoutedEventArgs e)
-        {
-            NavigatePivot(-1);
-        }
-
-        private void NavNextTabGhostButton_Click(object sender, RoutedEventArgs e)
         {
             NavigatePivot(1);
         }
@@ -1506,6 +1781,7 @@ namespace XboxGamingBar
             else
             {
                 Logger.Info("XboxGameBarWidget not available, probably running as an app instead of widget.");
+                SetBackgroundColor();
             }
 
             Logger.Info($"App.Connection:{(App.Connection == null ? "NULL" : "NOT_NULL")} FullTrustAppContract:{(ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0) ? "PRESENT" : "NOT_PRESENT")}");
@@ -1987,8 +2263,20 @@ namespace XboxGamingBar
 
         private void SetBackgroundColor()
         {
-            this.RequestedTheme = widget.RequestedTheme;
-            var themeBrush = (widget.RequestedTheme == ElementTheme.Dark) ? widgetDarkThemeBrush : widgetLightThemeBrush;
+            ElementTheme currentTheme;
+            if (widget != null)
+            {
+                currentTheme = widget.RequestedTheme;
+            }
+            else
+            {
+                currentTheme = (Application.Current.RequestedTheme == ApplicationTheme.Light)
+                    ? ElementTheme.Light
+                    : ElementTheme.Dark;
+            }
+
+            this.RequestedTheme = currentTheme;
+            var themeBrush = (currentTheme == ElementTheme.Dark) ? widgetDarkThemeBrush : widgetLightThemeBrush;
             RootGrid.Background = themeBrush;
             if (LoadingModalOverlay != null)
             {

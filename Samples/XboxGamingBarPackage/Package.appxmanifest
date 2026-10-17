@@ -45,6 +45,11 @@
         <uap:Extension Category="windows.appService">
           <uap:AppService Name="XboxGamingBarService" />
         </uap:Extension>
+        <uap:Extension Category="windows.protocol">
+          <uap:Protocol Name="couchgamingbar">
+            <uap:DisplayName>Couch Gaming Bar</uap:DisplayName>
+          </uap:Protocol>
+        </uap:Extension>
         <desktop:Extension Category="windows.fullTrustProcess" Executable="CouchGamingBarHelper\CouchGamingBarHelper.exe" />
         <uap3:Extension Category="windows.appExtension">
           <uap3:AppExtension Name="microsoft.gameBarUIExtension"

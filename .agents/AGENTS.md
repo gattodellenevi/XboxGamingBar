@@ -49,7 +49,8 @@
   * Group headers use `SectionHeaderTextStyle` (`FontSize="11"`, `FontWeight="Bold"`, `CharacterSpacing="50"`).
   * Control subtitles use `SubtitleTextStyle` (`FontSize="12"`, `SystemControlForegroundBaseMediumBrush`).
   * Hero game card at the top hosts `RunningGameText` and `PerGameProfileToggle` in a `CornerRadius="10"` container with controller icon badge (`&#xE7FC;`).
-  * Tab bumper tags (`LT`/`RT`) use rounded pill borders (`CornerRadius="6"`).
+  * Tab trigger tags (`LT`/`RT`) use rounded pill borders (`CornerRadius="6"`).
+* **Tab Trigger Navigation Only (Never Bumpers/Shoulders)**: Never use Gamepad Left/Right Shoulder buttons (`LB`/`RB`) for tab navigation or display `LB`/`RB` pill badges in the widget header. In Xbox Game Bar, `LB` and `RB` are strictly reserved by the OS shell for switching between active Game Bar widgets. Tab navigation inside CouchGamingBar must strictly rely on Left/Right Triggers (`LT`/`RT`) and keyboard `PageUp`/`PageDown`.
 * **Code-Behind & Binding Integrity**:
   * Always preserve all exact `x:Name` properties (e.g. `AMDRadeonSuperResolutionText`, `FPSLimitSlider`, `JudderFreeFPSToggle`, etc.) as they are directly referenced by widget property classes in `Data/` and event subscriptions.
   * **Dynamic 2D XY Navigation**: Rely on container-level `XYFocusKeyboardNavigation="Enabled"` for vertical stack navigation rather than hardcoded vertical `XYFocusUp`/`XYFocusDown` links that break when sub-controls collapse. Preserve horizontal navigation (`XYFocusLeft`/`XYFocusRight`) on segmented button rows.

@@ -48,6 +48,13 @@ WHAT THE INSTALLER DOES:
   - Configures Windows Task Scheduler to autostart the helper at logon
     with full elevation and system tray icon support.
 
+HOW TO USE:
+  - With Xbox Game Bar:
+      Press Win+G or the controller Xbox Guide button to open CouchGamingBar.
+  - Without Xbox Game Bar (Standalone App):
+      Open "Couch Gaming Bar" from the Windows Start Menu, or double-click
+      the CouchGamingBar icon in the Windows system tray.
+
 NOTE:
   All package assets and helper scripts are located in the "Support"
   folder. You do not need to open the Support folder or run anything

@@ -6,6 +6,8 @@ using Windows.ApplicationModel;
 using Windows.ApplicationModel.Activation;
 using Windows.ApplicationModel.AppService;
 using Windows.ApplicationModel.Background;
+using Windows.Foundation;
+using Windows.UI.ViewManagement;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
 using Windows.UI.Xaml.Navigation;
@@ -170,6 +172,12 @@ namespace XboxGamingBar
                 {
                     widgetArgs = args as XboxGameBarWidgetActivatedEventArgs;
                 }
+                else if (scheme.Equals("couchgamingbar", StringComparison.OrdinalIgnoreCase))
+                {
+                    Logger.Info("Activated via couchgamingbar: protocol. Launching standalone app.");
+                    LaunchStandaloneApp();
+                    return;
+                }
             }
             if (widgetArgs != null)
             {
@@ -230,6 +238,11 @@ namespace XboxGamingBar
                     // You can perform whatever behavior you need based on the URI payload.
                 }
             }
+            else
+            {
+                Logger.Info($"Non-widget activation kind: {args.Kind}. Launching standalone app.");
+                LaunchStandaloneApp();
+            }
         }
 
         private void GamingWidgetWindow_Closed(object sender, Windows.UI.Core.CoreWindowEventArgs e)
@@ -249,44 +262,84 @@ namespace XboxGamingBar
         }
 
         /// <summary>
-        /// Invoked when the application is launched normally by the end user.  Other entry points
-        /// will be used such as when the application is launched to open a specific file.
+        /// Invoked when the application is launched normally by the end user (e.g. from Start Menu or desktop shortcut).
         /// </summary>
         /// <param name="e">Details about the launch request and process.</param>
         protected override void OnLaunched(LaunchActivatedEventArgs e)
         {
             Logger.Info($"App launched. PreviousExecutionState: {e.PreviousExecutionState}, PrelaunchActivated: {e.PrelaunchActivated}, Arguments: {e.Arguments}");
+            if (e.PrelaunchActivated == false)
+            {
+                LaunchStandaloneApp();
+            }
+        }
+
+        private void LaunchStandaloneApp()
+        {
             Frame rootFrame = Window.Current.Content as Frame;
 
-            // Do not repeat app initialization when the Window already has content,
-            // just ensure that the window is active
             if (rootFrame == null)
             {
-                // Create a Frame to act as the navigation context and navigate to the first page
                 rootFrame = new Frame();
-
                 rootFrame.NavigationFailed += OnNavigationFailed;
-
-                if (e.PreviousExecutionState == ApplicationExecutionState.Terminated)
-                {
-                    //TODO: Load state from previously suspended application
-                }
-
-                // Place the frame in the current Window
                 Window.Current.Content = rootFrame;
             }
 
-            if (e.PrelaunchActivated == false)
+            if (gamingWidget == null || rootFrame.Content == null)
             {
-                if (rootFrame.Content == null)
+                rootFrame.Navigate(typeof(GamingWidget), null);
+                gamingWidget = rootFrame.Content as GamingWidget;
+                Window.Current.Closed += GamingWidgetWindow_Closed;
+            }
+
+            ConfigureStandaloneWindow();
+            Window.Current.Activate();
+        }
+
+        private void ConfigureStandaloneWindow()
+        {
+            try
+            {
+                var appView = ApplicationView.GetForCurrentView();
+                appView.Title = "Couch Gaming Bar";
+
+                var preferredSize = new Size(500, 670);
+                ApplicationView.PreferredLaunchViewSize = preferredSize;
+                ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
+                appView.SetPreferredMinSize(new Size(500, 670));
+                appView.TryResizeView(preferredSize);
+
+                var titleBar = appView.TitleBar;
+                if (titleBar != null)
                 {
-                    // When the navigation stack isn't restored navigate to the first page,
-                    // configuring the new page by passing required information as a navigation
-                    // parameter
-                    rootFrame.Navigate(typeof(GamingWidget), e.Arguments);
+                    bool isLight = Application.Current.RequestedTheme == ApplicationTheme.Light;
+
+                    var bgColor = isLight ? Windows.UI.Color.FromArgb(255, 243, 243, 243) : Windows.UI.Color.FromArgb(255, 37, 40, 44);
+                    var inactiveColor = isLight ? Windows.UI.Color.FromArgb(255, 230, 230, 230) : Windows.UI.Color.FromArgb(255, 45, 48, 52);
+                    var fgColor = isLight ? Windows.UI.Colors.Black : Windows.UI.Colors.White;
+                    var inactiveFgColor = isLight ? Windows.UI.Colors.Gray : Windows.UI.Color.FromArgb(255, 170, 170, 170);
+                    var hoverColor = isLight ? Windows.UI.Color.FromArgb(255, 220, 220, 220) : Windows.UI.Color.FromArgb(255, 55, 60, 65);
+                    var pressedColor = isLight ? Windows.UI.Color.FromArgb(255, 200, 200, 200) : Windows.UI.Color.FromArgb(255, 70, 75, 80);
+
+                    titleBar.BackgroundColor = bgColor;
+                    titleBar.InactiveBackgroundColor = inactiveColor;
+                    titleBar.ForegroundColor = fgColor;
+                    titleBar.InactiveForegroundColor = inactiveFgColor;
+
+                    // Use opaque background colors for buttons to prevent DWM from rendering transparent as a solid white box
+                    titleBar.ButtonBackgroundColor = bgColor;
+                    titleBar.ButtonInactiveBackgroundColor = inactiveColor;
+                    titleBar.ButtonForegroundColor = fgColor;
+                    titleBar.ButtonInactiveForegroundColor = inactiveFgColor;
+                    titleBar.ButtonHoverBackgroundColor = hoverColor;
+                    titleBar.ButtonHoverForegroundColor = fgColor;
+                    titleBar.ButtonPressedBackgroundColor = pressedColor;
+                    titleBar.ButtonPressedForegroundColor = fgColor;
                 }
-                // Ensure the current window is active
-                Window.Current.Activate();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to configure standalone window styling.");
             }
         }
 
