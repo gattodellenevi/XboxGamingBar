@@ -279,8 +279,11 @@ namespace XboxGamingBarHelper.AMD
             amdRadeonChillMaxFPS = new AMDRadeonChillMaxFPSProperty(60, this);
             launchAmdApp = new LaunchAmdAppProperty(false, this);
 
-            System.Threading.Tasks.Task.Run(() => InitializeADLXBackground());
+            InitializationTask = System.Threading.Tasks.Task.Run(() => InitializeADLXBackground());
         }
+
+        public System.Threading.Tasks.Task InitializationTask { get; private set; }
+        public bool IsInitialized { get; private set; } = false;
 
         private readonly LaunchAmdAppProperty launchAmdApp;
         public LaunchAmdAppProperty LaunchAmdApp
@@ -480,133 +483,163 @@ namespace XboxGamingBarHelper.AMD
                 {
                     adlx3DSettingsServices = new IADLX3DSettingsServices2(threeDPtr, false);
 
-                    Logger.Info("Get Radeon Super Resolution.");
-                    var threeDRadeonSuperResolutionPointer = ADLX.new_threeDRadeonSuperResolutionP_Ptr();
-                    adlx3DSettingsServices.GetRadeonSuperResolution(threeDRadeonSuperResolutionPointer);
-                    var threeDRadeonSuperResolution = ADLX.threeDRadeonSuperResolutionP_Ptr_value(threeDRadeonSuperResolutionPointer);
-                    if (threeDRadeonSuperResolution != null)
+                    var batchTokens = new List<IDisposable>();
+                    if (!Program.HasServedInitialSnapshot)
                     {
-                        amdRadeonSuperResolutionSetting = new AMDRadeonSuperResolutionSetting(threeDRadeonSuperResolution);
-                        bool rsrSupported = amdRadeonSuperResolutionSetting.IsSupported();
-                        amdRadeonSuperResolutionSupported.SetValue(rsrSupported);
-                        if (rsrSupported)
-                        {
-                            if (amdRadeonSuperResolutionEnabled.Value)
-                            {
-                                amdRadeonSuperResolutionSetting.SetEnabled(true);
-                                if (amdRadeonSuperResolutionSharpness.Value > 0)
-                                    amdRadeonSuperResolutionSetting.SetSharpness(amdRadeonSuperResolutionSharpness.Value);
-                            }
-                            else
-                            {
-                                amdRadeonSuperResolutionEnabled.SetValue(amdRadeonSuperResolutionSetting.IsEnabled());
-                                amdRadeonSuperResolutionSharpness.SetValue(amdRadeonSuperResolutionSetting.GetSharpness());
-                            }
-                        }
+                        batchTokens.Add(amdSettingsSupported.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonSuperResolutionSupported.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonSuperResolutionEnabled.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonSuperResolutionSharpness.BeginBatchUpdate());
+                        batchTokens.Add(amdFluidMotionFrameSupported.BeginBatchUpdate());
+                        batchTokens.Add(amdFluidMotionFrameEnabled.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonAntiLagSupported.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonAntiLagEnabled.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonBoostSupported.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonBoostEnabled.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonBoostResolution.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonChillSupported.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonChillEnabled.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonChillMinFPS.BeginBatchUpdate());
+                        batchTokens.Add(amdRadeonChillMaxFPS.BeginBatchUpdate());
                     }
 
-                    Logger.Info("Get AMD Fluid Motion Frame.");
-                    var threeDFluidMotionFramePointer = ADLX.new_threeDAMDFluidMotionFramesP_Ptr();
-                    adlx3DSettingsServices.GetAMDFluidMotionFrames(threeDFluidMotionFramePointer);
-                    var threeDFluidMotionFrame = ADLX.threeDAMDFluidMotionFramesP_Ptr_value(threeDFluidMotionFramePointer);
-                    if (threeDFluidMotionFrame != null)
+                    try
                     {
-                        amdFluidMotionFrameSetting = new AMDFluidMotionFrameSetting(threeDFluidMotionFrame);
-                        bool afmfSupported = amdFluidMotionFrameSetting.IsSupported();
-                        amdFluidMotionFrameSupported.SetValue(afmfSupported);
-                        if (afmfSupported)
+                        Logger.Info("Get Radeon Super Resolution.");
+                        var threeDRadeonSuperResolutionPointer = ADLX.new_threeDRadeonSuperResolutionP_Ptr();
+                        adlx3DSettingsServices.GetRadeonSuperResolution(threeDRadeonSuperResolutionPointer);
+                        var threeDRadeonSuperResolution = ADLX.threeDRadeonSuperResolutionP_Ptr_value(threeDRadeonSuperResolutionPointer);
+                        if (threeDRadeonSuperResolution != null)
                         {
-                            if (amdFluidMotionFrameEnabled.Value)
-                                amdFluidMotionFrameSetting.SetEnabled(true);
-                            else
-                                amdFluidMotionFrameEnabled.SetValue(amdFluidMotionFrameSetting.IsEnabled());
-                        }
-                    }
-
-                    Logger.Info("Get AMD Anti-Lag.");
-                    var threeDAntiLagPointer = ADLX.new_threeDAntiLagP_Ptr();
-                    adlx3DSettingsServices.GetAntiLag(targetGpu, threeDAntiLagPointer);
-                    var threeDAntiLag = ADLX.threeDAntiLagP_Ptr_value(threeDAntiLagPointer);
-                    if (threeDAntiLag != null)
-                    {
-                        amdRadeonAntiLagSetting = new AMDRadeonAntiLagSetting(threeDAntiLag);
-                        bool antiLagSupported = amdRadeonAntiLagSetting.IsSupported();
-                        amdRadeonAntiLagSupported.SetValue(antiLagSupported);
-                        if (antiLagSupported)
-                        {
-                            if (amdRadeonAntiLagEnabled.Value)
-                                amdRadeonAntiLagSetting.SetEnabled(true);
-                            else
-                                amdRadeonAntiLagEnabled.SetValue(amdRadeonAntiLagSetting.IsEnabled());
-                        }
-                    }
-
-                    Logger.Info("Get AMD Radeon Boost.");
-                    var threeDRadeonBoostPointer = ADLX.new_threeDBoostP_Ptr();
-                    adlx3DSettingsServices.GetBoost(targetGpu, threeDRadeonBoostPointer);
-                    var threeDRadeonBoost = ADLX.threeDBoostP_Ptr_value(threeDRadeonBoostPointer);
-                    if (threeDRadeonBoost != null)
-                    {
-                        amdRadeonBoostSetting = new AMDRadeonBoostSetting(threeDRadeonBoost);
-                        bool boostSupported = amdRadeonBoostSetting.IsSupported();
-                        amdRadeonBoostSupported.SetValue(boostSupported);
-                        if (boostSupported)
-                        {
-                            if (amdRadeonBoostEnabled.Value)
-                                amdRadeonBoostSetting.SetEnabled(true);
-                            else
+                            amdRadeonSuperResolutionSetting = new AMDRadeonSuperResolutionSetting(threeDRadeonSuperResolution);
+                            bool rsrSupported = amdRadeonSuperResolutionSetting.IsSupported();
+                            amdRadeonSuperResolutionSupported.SetValue(rsrSupported);
+                            if (rsrSupported)
                             {
-                                amdRadeonBoostEnabled.SetValue(amdRadeonBoostSetting.IsEnabled());
-                                var amdRadeonBoostResolutionRange = amdRadeonBoostSetting.GetResolutionRange();
-                                amdRadeonBoostResolution.SetValue(amdRadeonBoostSetting.GetResolution() == amdRadeonBoostResolutionRange.Item1 ? 0 : 1);
+                                if (amdRadeonSuperResolutionEnabled.Value)
+                                {
+                                    amdRadeonSuperResolutionSetting.SetEnabled(true);
+                                    if (amdRadeonSuperResolutionSharpness.Value > 0)
+                                        amdRadeonSuperResolutionSetting.SetSharpness(amdRadeonSuperResolutionSharpness.Value);
+                                }
+                                else
+                                {
+                                    amdRadeonSuperResolutionEnabled.SetValue(amdRadeonSuperResolutionSetting.IsEnabled());
+                                    amdRadeonSuperResolutionSharpness.SetValue(amdRadeonSuperResolutionSetting.GetSharpness());
+                                }
                             }
                         }
-                    }
 
-                    Logger.Info("Get AMD Radeon Chill.");
-                    var threeDRadeonChillPointer = ADLX.new_threeDChillP_Ptr();
-                    adlx3DSettingsServices.GetChill(targetGpu, threeDRadeonChillPointer);
-                    var threeDRadeonChill = ADLX.threeDChillP_Ptr_value(threeDRadeonChillPointer);
-                    if (threeDRadeonChill != null)
-                    {
-                        amdRadeonChillSetting = new AMDRadeonChillSetting(threeDRadeonChill);
-                        bool chillSupported = amdRadeonChillSetting.IsSupported();
-                        amdRadeonChillSupported.SetValue(chillSupported);
-                        if (chillSupported)
+                        Logger.Info("Get AMD Fluid Motion Frame.");
+                        var threeDFluidMotionFramePointer = ADLX.new_threeDAMDFluidMotionFramesP_Ptr();
+                        adlx3DSettingsServices.GetAMDFluidMotionFrames(threeDFluidMotionFramePointer);
+                        var threeDFluidMotionFrame = ADLX.threeDAMDFluidMotionFramesP_Ptr_value(threeDFluidMotionFramePointer);
+                        if (threeDFluidMotionFrame != null)
                         {
-                            if (amdRadeonChillEnabled.Value)
+                            amdFluidMotionFrameSetting = new AMDFluidMotionFrameSetting(threeDFluidMotionFrame);
+                            bool afmfSupported = amdFluidMotionFrameSetting.IsSupported();
+                            amdFluidMotionFrameSupported.SetValue(afmfSupported);
+                            if (afmfSupported)
                             {
-                                amdRadeonChillSetting.SetEnabled(true);
-                                if (amdRadeonChillMinFPS.Value > 0)
-                                    amdRadeonChillSetting.SetMinFPS(amdRadeonChillMinFPS.Value);
-                                if (amdRadeonChillMaxFPS.Value > 0)
-                                    amdRadeonChillSetting.SetMaxFPS(amdRadeonChillMaxFPS.Value);
-                            }
-                            else
-                            {
-                                amdRadeonChillEnabled.SetValue(amdRadeonChillSetting.IsEnabled());
-                                amdRadeonChillMinFPS.SetValue(amdRadeonChillSetting.GetMinFPS());
-                                amdRadeonChillMaxFPS.SetValue(amdRadeonChillSetting.GetMaxFPS());
+                                if (amdFluidMotionFrameEnabled.Value)
+                                    amdFluidMotionFrameSetting.SetEnabled(true);
+                                else
+                                    amdFluidMotionFrameEnabled.SetValue(amdFluidMotionFrameSetting.IsEnabled());
                             }
                         }
+
+                        Logger.Info("Get AMD Anti-Lag.");
+                        var threeDAntiLagPointer = ADLX.new_threeDAntiLagP_Ptr();
+                        adlx3DSettingsServices.GetAntiLag(targetGpu, threeDAntiLagPointer);
+                        var threeDAntiLag = ADLX.threeDAntiLagP_Ptr_value(threeDAntiLagPointer);
+                        if (threeDAntiLag != null)
+                        {
+                            amdRadeonAntiLagSetting = new AMDRadeonAntiLagSetting(threeDAntiLag);
+                            bool antiLagSupported = amdRadeonAntiLagSetting.IsSupported();
+                            amdRadeonAntiLagSupported.SetValue(antiLagSupported);
+                            if (antiLagSupported)
+                            {
+                                if (amdRadeonAntiLagEnabled.Value)
+                                    amdRadeonAntiLagSetting.SetEnabled(true);
+                                else
+                                    amdRadeonAntiLagEnabled.SetValue(amdRadeonAntiLagSetting.IsEnabled());
+                            }
+                        }
+
+                        Logger.Info("Get AMD Radeon Boost.");
+                        var threeDRadeonBoostPointer = ADLX.new_threeDBoostP_Ptr();
+                        adlx3DSettingsServices.GetBoost(targetGpu, threeDRadeonBoostPointer);
+                        var threeDRadeonBoost = ADLX.threeDBoostP_Ptr_value(threeDRadeonBoostPointer);
+                        if (threeDRadeonBoost != null)
+                        {
+                            amdRadeonBoostSetting = new AMDRadeonBoostSetting(threeDRadeonBoost);
+                            bool boostSupported = amdRadeonBoostSetting.IsSupported();
+                            amdRadeonBoostSupported.SetValue(boostSupported);
+                            if (boostSupported)
+                            {
+                                if (amdRadeonBoostEnabled.Value)
+                                    amdRadeonBoostSetting.SetEnabled(true);
+                                else
+                                {
+                                    amdRadeonBoostEnabled.SetValue(amdRadeonBoostSetting.IsEnabled());
+                                    var amdRadeonBoostResolutionRange = amdRadeonBoostSetting.GetResolutionRange();
+                                    amdRadeonBoostResolution.SetValue(amdRadeonBoostSetting.GetResolution() == amdRadeonBoostResolutionRange.Item1 ? 0 : 1);
+                                }
+                            }
+                        }
+
+                        Logger.Info("Get AMD Radeon Chill.");
+                        var threeDRadeonChillPointer = ADLX.new_threeDChillP_Ptr();
+                        adlx3DSettingsServices.GetChill(targetGpu, threeDRadeonChillPointer);
+                        var threeDRadeonChill = ADLX.threeDChillP_Ptr_value(threeDRadeonChillPointer);
+                        if (threeDRadeonChill != null)
+                        {
+                            amdRadeonChillSetting = new AMDRadeonChillSetting(threeDRadeonChill);
+                            bool chillSupported = amdRadeonChillSetting.IsSupported();
+                            amdRadeonChillSupported.SetValue(chillSupported);
+                            if (chillSupported)
+                            {
+                                if (amdRadeonChillEnabled.Value)
+                                {
+                                    amdRadeonChillSetting.SetEnabled(true);
+                                    if (amdRadeonChillMinFPS.Value > 0)
+                                        amdRadeonChillSetting.SetMinFPS(amdRadeonChillMinFPS.Value);
+                                    if (amdRadeonChillMaxFPS.Value > 0)
+                                        amdRadeonChillSetting.SetMaxFPS(amdRadeonChillMaxFPS.Value);
+                                }
+                                else
+                                {
+                                    amdRadeonChillEnabled.SetValue(amdRadeonChillSetting.IsEnabled());
+                                    amdRadeonChillMinFPS.SetValue(amdRadeonChillSetting.GetMinFPS());
+                                    amdRadeonChillMaxFPS.SetValue(amdRadeonChillSetting.GetMaxFPS());
+                                }
+                            }
+                        }
+
+                        amdFluidMotionFrameEnabled.PropertyChanged += AmdFluidMotionFrameEnabled;
+                        amdRadeonAntiLagEnabled.PropertyChanged += AmdRadeonAntiLagEnabled;
+                        amdRadeonBoostEnabled.PropertyChanged += AmdRadeonBoostEnabled;
+                        amdRadeonChillEnabled.PropertyChanged += AmdRadeonChillEnabled;
+
+                        var threeDSettingsChangedHandlingPointer = ADLX.new_threeDSettingsChangedHandlingP_Ptr();
+                        adlx3DSettingsServices.Get3DSettingsChangedHandling(threeDSettingsChangedHandlingPointer);
+                        var threeDSettingsChangedHandling = ADLX.threeDSettingsChangedHandlingP_Ptr_value(threeDSettingsChangedHandlingPointer);
+                        if (threeDSettingsChangedHandling != null)
+                        {
+                            amd3DSettingsChangedListener = new AMD3DSettingsChangedListener(this);
+                            threeDSettingsChangedHandling.Add3DSettingsEventListener(amd3DSettingsChangedListener);
+                        }
+
+                        amdSettingsSupported.SetValue(true);
+                        Logger.Info("AMD Manager ADLX initialized successfully in background.");
                     }
-
-                    amdFluidMotionFrameEnabled.PropertyChanged += AmdFluidMotionFrameEnabled;
-                    amdRadeonAntiLagEnabled.PropertyChanged += AmdRadeonAntiLagEnabled;
-                    amdRadeonBoostEnabled.PropertyChanged += AmdRadeonBoostEnabled;
-                    amdRadeonChillEnabled.PropertyChanged += AmdRadeonChillEnabled;
-
-                    var threeDSettingsChangedHandlingPointer = ADLX.new_threeDSettingsChangedHandlingP_Ptr();
-                    adlx3DSettingsServices.Get3DSettingsChangedHandling(threeDSettingsChangedHandlingPointer);
-                    var threeDSettingsChangedHandling = ADLX.threeDSettingsChangedHandlingP_Ptr_value(threeDSettingsChangedHandlingPointer);
-                    if (threeDSettingsChangedHandling != null)
+                    finally
                     {
-                        amd3DSettingsChangedListener = new AMD3DSettingsChangedListener(this);
-                        threeDSettingsChangedHandling.Add3DSettingsEventListener(amd3DSettingsChangedListener);
+                        foreach (var token in batchTokens)
+                        {
+                            token?.Dispose();
+                        }
                     }
-
-                    amdSettingsSupported.SetValue(true);
-                    Logger.Info("AMD Manager ADLX initialized successfully in background.");
                 }
                 else
                 {
@@ -616,6 +649,10 @@ namespace XboxGamingBarHelper.AMD
             catch (Exception ex)
             {
                 Logger.Error(ex, "Failed to initialize AMD Manager ADLX in background.");
+            }
+            finally
+            {
+                IsInitialized = true;
             }
         }
 

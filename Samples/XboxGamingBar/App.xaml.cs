@@ -21,6 +21,7 @@ namespace XboxGamingBar
     sealed partial class App : Application
     {
         public static BackgroundTaskDeferral AppServiceDeferral = null;
+        private static IBackgroundTaskInstance AppServiceTaskInstance = null;
         public static AppServiceConnection Connection = null;
         public static event EventHandler AppServiceDisconnected;
         public static event EventHandler<AppServiceTriggerDetails> AppServiceConnected;
@@ -76,74 +77,101 @@ namespace XboxGamingBar
                 // only accept connections from callers in the same package or unpackaged fulltrust helper
                 if (string.IsNullOrEmpty(details.CallerPackageFamilyName) || details.CallerPackageFamilyName == Package.Current.Id.FamilyName)
                 {
+                    // Clean up any superseded connection/task instance so it cannot time out ~30s later and cancel the active connection
+                    if (AppServiceTaskInstance != null)
+                    {
+                        try { AppServiceTaskInstance.Canceled -= OnTaskCanceled; } catch { }
+                        AppServiceTaskInstance = null;
+                    }
+                    if (Connection != null)
+                    {
+                        try { Connection.RequestReceived -= Connection_RequestReceived; } catch { }
+                    }
+                    if (AppServiceDeferral != null)
+                    {
+                        try { AppServiceDeferral.Complete(); } catch { }
+                        AppServiceDeferral = null;
+                    }
+
                     // connection established from the fulltrust process
+                    AppServiceTaskInstance = args.TaskInstance;
                     AppServiceDeferral = args.TaskInstance.GetDeferral();
                     args.TaskInstance.Canceled += OnTaskCanceled;
 
                     Connection = details.AppServiceConnection;
-                    AppServiceConnected?.Invoke(this, details);
                     Connection.RequestReceived += Connection_RequestReceived;
+                    AppServiceConnected?.Invoke(this, details);
                 }
             }
         }
 
         private async void Connection_RequestReceived(AppServiceConnection sender, AppServiceRequestReceivedEventArgs args)
         {
-            //Logger.Info("App service request received");
-
-            if (args.Request.Message.ContainsKey("Function") && (int)args.Request.Message["Function"] == (int)Function.AppExit)
+            var requestDeferral = args.GetDeferral();
+            try
             {
-                Logger.Info("AppExit requested by helper.");
-                
-                if (gamingWidget != null)
+                if (args.Request.Message.ContainsKey("Function") && (int)args.Request.Message["Function"] == (int)Function.AppExit)
                 {
-                    if (gamingWidget.WidgetActivity != null)
+                    Logger.Info("AppExit requested by helper.");
+                    
+                    if (gamingWidget != null)
                     {
-                        try
+                        if (gamingWidget.WidgetActivity != null)
                         {
-                            gamingWidget.WidgetActivity.Complete();
+                            try
+                            {
+                                gamingWidget.WidgetActivity.Complete();
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Error($"Exception completing widget activity on AppExit: {ex}");
+                            }
                         }
-                        catch (Exception ex)
+
+                        _ = gamingWidget.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
                         {
-                            Logger.Error($"Exception completing widget activity on AppExit: {ex}");
-                        }
+                            gamingXboxGameBarWidget?.Close();
+                        });
+                    }
+                    else
+                    {
+                        Logger.Info("gamingWidget is null on AppExit.");
                     }
 
-                    _ = gamingWidget.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                    if (gamingWidgetSettings != null)
                     {
-                        gamingXboxGameBarWidget?.Close();
-                    });
+                        _ = gamingWidgetSettings.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
+                        {
+                            gamingSettingsXboxGameBarWidget?.Close();
+                        });
+                    }
+                    else
+                    {
+                        Logger.Info("gamingWidgetSettings is null on AppExit.");
+                    }
+
+                    AppServiceDeferral?.Complete();
+                    Windows.ApplicationModel.Core.CoreApplication.Exit();
+                    return;
                 }
-                else
+
+                if (gamingWidget != null)
                 {
-                    Logger.Info("gamingWidget is null on AppExit.");
+                    await gamingWidget.RequestReceived(sender, args);
                 }
 
                 if (gamingWidgetSettings != null)
                 {
-                    _ = gamingWidgetSettings.Dispatcher.RunAsync(Windows.UI.Core.CoreDispatcherPriority.Normal, () =>
-                    {
-                        gamingSettingsXboxGameBarWidget?.Close();
-                    });
+                    await gamingWidgetSettings.RequestReceived(sender, args);
                 }
-                else
-                {
-                    Logger.Info("gamingWidgetSettings is null on AppExit.");
-                }
-
-                AppServiceDeferral?.Complete();
-                Windows.ApplicationModel.Core.CoreApplication.Exit();
-                return;
             }
-
-            if (gamingWidget != null)
+            catch (Exception ex)
             {
-                await gamingWidget.RequestReceived(sender, args);
+                Logger.Error(ex, "Error in App.Connection_RequestReceived.");
             }
-
-            if (gamingWidgetSettings != null)
+            finally
             {
-                await gamingWidgetSettings.RequestReceived(sender, args);
+                requestDeferral.Complete();
             }
         }
 
@@ -152,8 +180,20 @@ namespace XboxGamingBar
         /// </summary>
         private void OnTaskCanceled(IBackgroundTaskInstance sender, BackgroundTaskCancellationReason reason)
         {
+            if ( sender != null )
+            {
+                try { sender.Canceled -= OnTaskCanceled; } catch { }
+            }
+
+            if (AppServiceTaskInstance != null && !ReferenceEquals(sender, AppServiceTaskInstance))
+            {
+                Logger.Info($"Ignoring OnTaskCanceled ({reason}) from superseded background task instance.");
+                return;
+            }
+
             Logger.Info($"App task canceled because {reason}");
-            AppServiceDeferral?.Complete();
+            AppServiceTaskInstance = null;
+            try { AppServiceDeferral?.Complete(); } catch { }
             AppServiceDeferral = null;
             Connection = null;
             AppServiceDisconnected?.Invoke(this, new BackgroundTaskCancellationEventArgs(reason));

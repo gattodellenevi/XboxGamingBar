@@ -209,6 +209,9 @@ namespace XboxGamingBarHelper.Systems
             }
         }
 
+        public System.Threading.Tasks.Task DisplayEnumerationTask { get; private set; }
+        public bool IsDisplayEnumerated { get; private set; } = false;
+
         public SystemManager(AppServiceConnection connection, IReadOnlyDictionary<GameId, GameProfile> profiles) : base(connection)
         {
             Logger.Info("Create process windows.");
@@ -267,21 +270,37 @@ namespace XboxGamingBarHelper.Systems
             SystemEvents.DisplaySettingsChanged += SystemEvents_DisplaySettingsChanged;
 
             // Enumerate full display modes asynchronously in the background so startup is non-blocking
-            System.Threading.Tasks.Task.Run(() =>
+            DisplayEnumerationTask = System.Threading.Tasks.Task.Run(() =>
             {
                 try
                 {
                     var supportedRates = User32.GetSupportedRefreshRates();
-                    refreshRates.SetValue(supportedRates);
-
                     var resList = User32.GetSupportedNativeResolutions().Select(res => new Resolution(res.width, res.height)).ToList();
-                    resolutions.SetValue(new Resolutions(resList));
+
+                    if (!Program.HasServedInitialSnapshot)
+                    {
+                        using (refreshRates.BeginBatchUpdate())
+                        using (resolutions.BeginBatchUpdate())
+                        {
+                            refreshRates.SetValue(supportedRates);
+                            resolutions.SetValue(new Resolutions(resList));
+                        }
+                    }
+                    else
+                    {
+                        refreshRates.SetValue(supportedRates);
+                        resolutions.SetValue(new Resolutions(resList));
+                    }
 
                     Logger.Info($"Background display mode enumeration completed: {supportedRates.Count} refresh rates, {resList.Count} resolutions.");
                 }
                 catch (Exception ex)
                 {
                     Logger.Warn(ex, "Failed in background display mode enumeration.");
+                }
+                finally
+                {
+                    IsDisplayEnumerated = true;
                 }
             });
 

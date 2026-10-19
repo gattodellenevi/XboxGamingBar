@@ -175,13 +175,11 @@ namespace Shared.Data
 
         public static bool operator ==(GameProfile g1, GameProfile g2)
         {
-            if (ReferenceEquals(g1, g2))
-                return true;
-
-            if (ReferenceEquals(g1, null) || ReferenceEquals(g2, null))
-                return false;
-
-            return g1.GameId == g2.GameId;
+            return g1.GameId == g2.GameId &&
+                   g1.use == g2.use &&
+                   g1.fpsLimit == g2.fpsLimit &&
+                   g1.fpsLimitMode == g2.fpsLimitMode &&
+                   g1.judderFreeFPS == g2.judderFreeFPS;
         }
 
         public static bool operator !=(GameProfile p1, GameProfile p2)

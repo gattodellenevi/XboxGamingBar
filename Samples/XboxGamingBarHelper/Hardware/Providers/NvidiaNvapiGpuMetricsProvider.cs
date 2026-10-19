@@ -281,14 +281,14 @@ namespace XboxGamingBarHelper.Hardware.Providers
                 }
 
                 // Query baseline TDP for accurate wattage calculation (% TDP -> Watts)
-                baseTdpWatts = QueryBaselineTdpFromNvml();
-                if (baseTdpWatts <= 0.0f)
+                baseTdpWatts = EstimateBaselineTdpFromName(gpuFullName);
+                if (baseTdpWatts > 0.0f)
                 {
-                    baseTdpWatts = EstimateBaselineTdpFromName(gpuFullName);
-                    if (baseTdpWatts > 0.0f)
-                    {
-                        Logger.Info($"NVAPI: Estimated baseline TDP from GPU model name ('{gpuFullName}'): {baseTdpWatts:F0} W");
-                    }
+                    Logger.Info($"NVAPI: Estimated baseline TDP from GPU model name ('{gpuFullName}'): {baseTdpWatts:F0} W");
+                }
+                else
+                {
+                    baseTdpWatts = QueryBaselineTdpFromNvml();
                 }
 
                 // NvAPI_GPU_GetMemoryInfoEx (0xC0599498)

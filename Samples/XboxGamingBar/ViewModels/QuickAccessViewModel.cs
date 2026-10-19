@@ -251,11 +251,20 @@ namespace XboxGamingBar.ViewModels
 
             if (isConnected && isMismatch)
             {
-                IsFpsLimitButtonEnabled = false;
-                FpsLimitSubtitle = "Admin elevation required";
-                FpsLimitBadgeText = "ADMIN";
-                IsFpsLimitActive = false;
+                IsFpsLimitButtonEnabled = true;
                 IsFpsLimitMismatch = true;
+                if (!isLimitOn)
+                {
+                    FpsLimitSubtitle = $"Disabled: {fpsValue} FPS (Elevate to modify)";
+                    FpsLimitBadgeText = "OFF • 🔒";
+                    IsFpsLimitActive = false;
+                }
+                else
+                {
+                    FpsLimitSubtitle = $"Active: {fpsValue} FPS (Elevate to modify)";
+                    FpsLimitBadgeText = $"{fpsValue} FPS • 🔒";
+                    IsFpsLimitActive = true;
+                }
                 return;
             }
 

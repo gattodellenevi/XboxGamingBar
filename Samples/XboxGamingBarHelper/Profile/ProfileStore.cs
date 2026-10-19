@@ -80,7 +80,12 @@ namespace XboxGamingBarHelper.Profile
                     {
                         foreach (var kvp in dict)
                         {
-                            globalSettings[kvp.Key] = kvp.Value;
+                            object unwrapped = UnwrapJsonElement(kvp.Value);
+                            if (SettingsRegistry.TryGet(kvp.Key, out var def))
+                            {
+                                unwrapped = def.Sanitize(unwrapped);
+                            }
+                            globalSettings[kvp.Key] = unwrapped;
                         }
                         loaded = true;
                         Logger.Info($"Loaded global settings from JSON: {settingsJsonPath}");
@@ -301,6 +306,33 @@ namespace XboxGamingBarHelper.Profile
 
         #region Setting Access & Resolution
 
+        internal static object UnwrapJsonElement(object value)
+        {
+            if (value is JsonElement element)
+            {
+                switch (element.ValueKind)
+                {
+                    case JsonValueKind.True:
+                        return true;
+                    case JsonValueKind.False:
+                        return false;
+                    case JsonValueKind.Number:
+                        if (element.TryGetInt32(out int intVal)) return intVal;
+                        if (element.TryGetInt64(out long longVal)) return longVal;
+                        if (element.TryGetDouble(out double doubleVal)) return doubleVal;
+                        return 0;
+                    case JsonValueKind.String:
+                        return element.GetString() ?? string.Empty;
+                    case JsonValueKind.Null:
+                    case JsonValueKind.Undefined:
+                        return null;
+                    default:
+                        return element.GetRawText();
+                }
+            }
+            return value;
+        }
+
         public T GetEffectiveValue<T>(ISettingDefinition<T> def)
         {
             if (def == null) throw new ArgumentNullException(nameof(def));
@@ -309,7 +341,7 @@ namespace XboxGamingBarHelper.Profile
             {
                 if (globalSettings.TryGetValue(def.Key, out var rawVal))
                 {
-                    return (T)def.Sanitize(rawVal);
+                    return (T)def.Sanitize(UnwrapJsonElement(rawVal));
                 }
                 return def.DefaultValue;
             }
@@ -358,6 +390,10 @@ namespace XboxGamingBarHelper.Profile
                 else
                 {
                     globalProfile.SetSetting(def, sanitized);
+                    if (!isPerGameProfileActive)
+                    {
+                        activeProfile = globalProfile;
+                    }
                     SaveGlobalProfile();
                 }
             }
@@ -488,8 +524,25 @@ namespace XboxGamingBarHelper.Profile
             {
                 foreach (var kvp in Settings)
                 {
-                    profile.Settings[kvp.Key] = kvp.Value;
+                    object unwrapped = ProfileStore.UnwrapJsonElement(kvp.Value);
+                    if (SettingsRegistry.TryGet(kvp.Key, out var def))
+                    {
+                        unwrapped = def.Sanitize(unwrapped);
+                    }
+                    profile.Settings[kvp.Key] = unwrapped;
                 }
+            }
+            if (profile.Settings.TryGetValue(SettingsRegistry.FPSLimit.Key, out var flObj) && flObj is int fl)
+            {
+                profile.FPSLimit = fl;
+            }
+            if (profile.Settings.TryGetValue(SettingsRegistry.FPSLimitMode.Key, out var flmObj) && flmObj is int flm)
+            {
+                profile.FPSLimitMode = flm;
+            }
+            if (profile.Settings.TryGetValue(SettingsRegistry.JudderFreeFPS.Key, out var jfObj) && jfObj is bool jf)
+            {
+                profile.JudderFreeFPS = jf;
             }
             return profile;
         }

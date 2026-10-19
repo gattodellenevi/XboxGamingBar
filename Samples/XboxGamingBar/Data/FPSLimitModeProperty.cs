@@ -22,6 +22,29 @@ namespace XboxGamingBar.Data
             }
         }
 
+        protected override void SetControlEnabled(bool isEnabled)
+        {
+            if (Owner is GamingWidget widget && !widget.IsRTSSRunning)
+            {
+                base.SetControlEnabled(false);
+                return;
+            }
+            if (Owner is GamingWidget widget2 && widget2.IsElevationMismatch)
+            {
+                return;
+            }
+            base.SetControlEnabled(isEnabled);
+        }
+
+        protected override bool ShouldSendNotifyMessage()
+        {
+            if (Owner is GamingWidget widget && widget.IsElevationMismatch)
+            {
+                return false;
+            }
+            return base.ShouldSendNotifyMessage();
+        }
+
         private void ComboBox_DropDownClosed(object sender, object e)
         {
             if (isUpdatingFromBackend) return;

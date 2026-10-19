@@ -173,7 +173,9 @@
     <Copy Condition="Exists('$(_MsixPublishDir)') and Exists('$(_TargetHelperDir)')"
           SourceFiles="@(_MsixPublishFiles)"
           DestinationFiles="@(_MsixPublishFiles->'$(_TargetHelperDir)\%(RecursiveDir)%(Filename)%(Extension)')"
-          SkipUnchangedFiles="true" />
+          SkipUnchangedFiles="true"
+          ContinueOnError="WarnAndContinue"
+          Retries="1" />
     <Exec Condition="!Exists('$(_MsixPublishDir)') and Exists('$(_TargetHelperDir)')"
           Command="dotnet publish &quot;$(MSBuildProjectDirectory)\..\XboxGamingBarHelper\CouchGamingBarHelper.csproj&quot; -c $(Configuration) -p:Platform=$(Platform) -r win-$(Platform) --self-contained true --output &quot;$(_TargetHelperDir)&quot;" />
   </Target>

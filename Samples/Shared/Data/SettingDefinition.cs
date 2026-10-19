@@ -42,6 +42,11 @@ namespace Shared.Data
 
             try
             {
+                if (!(value is IConvertible) && !(value is string))
+                {
+                    value = value.ToString();
+                }
+
                 if (typeof(T).IsEnum)
                 {
                     if (value is int intVal)

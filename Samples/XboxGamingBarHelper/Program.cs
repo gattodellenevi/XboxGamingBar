@@ -49,6 +49,8 @@ namespace XboxGamingBarHelper
 
         // Properties
         private static HelperProperties properties;
+        public static volatile bool HasServedInitialSnapshot = false;
+        public static bool IsAmdInitialized => amdManager != null && amdManager.IsInitialized;
 
         private static System.Threading.Mutex _singleInstanceMutex;
         private static System.Threading.EventWaitHandle _connectEvent;
@@ -226,6 +228,7 @@ namespace XboxGamingBarHelper
                 settingsManager.SyncOnScreenDisplaySettings(onScreenDisplay);
                 settingsManager.SyncOnScreenDisplayTextSizeSettings(rtssManager.OSDTextSize);
                 settingsManager.SyncGpuTargetSettings(hardwareManager.GpuTarget);
+                settingsManager.Update();
                 //onScreenDisplay = new OnScreenDisplayProperty(0, null, amdManager);
 
                 // Initialize properties.
@@ -485,8 +488,43 @@ namespace XboxGamingBarHelper
         }
 
         private static readonly System.Threading.SemaphoreSlim _connectLock = new System.Threading.SemaphoreSlim(1, 1);
+        private static DateTime _lastConnectedTimeUtc = DateTime.MinValue;
 
-        private static async Task ConnectToWidget(bool blocking)
+        public static async Task PrepareInitialStateAsync()
+        {
+            try
+            {
+                settingsManager?.IsForeground?.SetValue(true);
+                settingsManager?.Update();
+
+                var readinessTasks = new List<Task>();
+                if (amdManager?.InitializationTask != null && !amdManager.InitializationTask.IsCompleted)
+                {
+                    readinessTasks.Add(amdManager.InitializationTask);
+                }
+                if (systemManager?.DisplayEnumerationTask != null && !systemManager.DisplayEnumerationTask.IsCompleted)
+                {
+                    readinessTasks.Add(systemManager.DisplayEnumerationTask);
+                }
+
+                if (readinessTasks.Count > 0)
+                {
+                    Logger.Info($"Waiting up to 1500ms for {readinessTasks.Count} background subsystem initialization task(s) before snapshot...");
+                    await Task.WhenAny(Task.WhenAll(readinessTasks), Task.Delay(1500));
+                }
+
+                if (hardwareManager != null && string.IsNullOrEmpty(hardwareManager.HardwareTelemetry?.Value))
+                {
+                    hardwareManager.Update();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Exception while preparing initial state snapshot.");
+            }
+        }
+
+        private static async Task ConnectToWidget(bool blocking, bool forceReconnectOnEvent = false)
         {
             if (connection == null || string.IsNullOrEmpty(connection?.PackageFamilyName))
             {
@@ -505,8 +543,15 @@ namespace XboxGamingBarHelper
             {
                 if (appServiceConnectionStatus == AppServiceConnectionStatus.Success)
                 {
-                    Logger.Info("Widget is already connected.");
-                    return;
+                    double elapsedMs = (DateTime.UtcNow - _lastConnectedTimeUtc).TotalMilliseconds;
+                    if (!forceReconnectOnEvent || elapsedMs < 1500)
+                    {
+                        Logger.Info($"Widget is already connected (elapsed={elapsedMs:F0}ms). Skipping duplicate connect request.");
+                        return;
+                    }
+
+                    Logger.Info($"Widget requested connection for new session (elapsed={elapsedMs:F0}ms). Recreating connection inside lock.");
+                    RecreateConnection();
                 }
 
                 if (blocking)
@@ -531,6 +576,8 @@ namespace XboxGamingBarHelper
                             await Task.Delay(1000);
                         }
                     } while (appServiceConnectionStatus != AppServiceConnectionStatus.Success);
+                    _lastConnectedTimeUtc = DateTime.UtcNow;
+                    settingsManager?.IsForeground?.SetValue(true);
                     Logger.Info("Connected to the widget.");
                 }
                 else
@@ -553,6 +600,8 @@ namespace XboxGamingBarHelper
                         Logger.Info($"Try to connect to the widget result: {appServiceConnectionStatus}.");
                         if (appServiceConnectionStatus == AppServiceConnectionStatus.Success)
                         {
+                            _lastConnectedTimeUtc = DateTime.UtcNow;
+                            settingsManager?.IsForeground?.SetValue(true);
                             break;
                         }
 
@@ -580,22 +629,23 @@ namespace XboxGamingBarHelper
 
         private static void ApplyCurrentProfile()
         {
-            if (profileManager.CurrentProfile.Use || profileManager.CurrentProfile.IsGlobalProfile)
+            var profile = profileManager.Store.ActiveProfile;
+            if (profile.Use || profile.IsGlobalProfile)
             {
-                Logger.Info($"Applying profile {profileManager.CurrentProfile.GameId.Name}: FPSLimit={profileManager.CurrentProfile.FPSLimit}, FPSLimitMode={profileManager.CurrentProfile.FPSLimitMode}, JudderFreeFPS={profileManager.CurrentProfile.JudderFreeFPS}");
+                Logger.Info($"Applying profile {profile.GameId.Name}: FPSLimit={profile.FPSLimit}, FPSLimitMode={profile.FPSLimitMode}, JudderFreeFPS={profile.JudderFreeFPS}");
                 isApplyingProfile = true;
 
-                rtssManager.FPSLimitMode.SetValue(profileManager.CurrentProfile.FPSLimitMode);
-                rtssManager.JudderFreeFPS.SetValue(profileManager.CurrentProfile.JudderFreeFPS);
+                rtssManager.FPSLimitMode.SetValue(profile.FPSLimitMode);
+                rtssManager.JudderFreeFPS.SetValue(profile.JudderFreeFPS);
                 int fallbackLimit = systemManager.RefreshRate.Value > 0 ? systemManager.RefreshRate.Value : 60;
-                rtssManager.FPSLimit.SetValue(profileManager.CurrentProfile.FPSLimit > 0 ? profileManager.CurrentProfile.FPSLimit : fallbackLimit);
-                rtssManager.LimitFPS.SetValue(profileManager.CurrentProfile.FPSLimit > 0);
-                profileManager.PerGameProfile.SetValue(profileManager.CurrentProfile.Use);
+                rtssManager.FPSLimit.SetValue(profile.FPSLimit > 0 ? profile.FPSLimit : fallbackLimit);
+                rtssManager.LimitFPS.SetValue(profile.FPSLimit > 0);
+                profileManager.PerGameProfile.SetValue(profile.Use);
                 isApplyingProfile = false;
             }
             else
             {
-                Logger.Info($"Profile {profileManager.CurrentProfile.GameId.Name} is not used.");
+                Logger.Info($"Profile {profile.GameId.Name} is not used.");
             }
         }
 
@@ -611,8 +661,9 @@ namespace XboxGamingBarHelper
             if (isApplyingProfile) return;
             int fallbackLimit = systemManager.RefreshRate.Value > 0 ? systemManager.RefreshRate.Value : 60;
             var newFPSLimit = rtssManager.LimitFPS ? (rtssManager.FPSLimit > 0 ? rtssManager.FPSLimit.Value : fallbackLimit) : 0;
-            Logger.Info($"Update current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit to {newFPSLimit}.");
+            Logger.Info($"Update current profile {profileManager.Store.ActiveProfile.GameId.Name}'s FPS Limit to {newFPSLimit}.");
             profileManager.Store.SetEffectiveValue(SettingsRegistry.FPSLimit, newFPSLimit);
+            profileManager.CurrentProfile.FPSLimit = newFPSLimit;
         }
 
         private static void LimitFPS_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -628,15 +679,17 @@ namespace XboxGamingBarHelper
         private static void FPSLimitMode_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (isApplyingProfile) return;
-            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s FPS Limit Mode from {profileManager.CurrentProfile.FPSLimitMode} to {rtssManager.FPSLimitMode}.");
+            Logger.Info($"Set current profile {profileManager.Store.ActiveProfile.GameId.Name}'s FPS Limit Mode from {profileManager.Store.ActiveProfile.FPSLimitMode} to {rtssManager.FPSLimitMode}.");
             profileManager.Store.SetEffectiveValue(SettingsRegistry.FPSLimitMode, rtssManager.FPSLimitMode.Value);
+            profileManager.CurrentProfile.FPSLimitMode = rtssManager.FPSLimitMode.Value;
         }
 
         private static void JudderFreeFPS_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (isApplyingProfile) return;
-            Logger.Info($"Set current profile {profileManager.CurrentProfile.GameId.Name}'s JudderFreeFPS from {profileManager.CurrentProfile.JudderFreeFPS} to {rtssManager.JudderFreeFPS.Value}.");
+            Logger.Info($"Set current profile {profileManager.Store.ActiveProfile.GameId.Name}'s JudderFreeFPS from {profileManager.Store.ActiveProfile.JudderFreeFPS} to {rtssManager.JudderFreeFPS.Value}.");
             profileManager.Store.SetEffectiveValue(SettingsRegistry.JudderFreeFPS, rtssManager.JudderFreeFPS.Value);
+            profileManager.CurrentProfile.JudderFreeFPS = rtssManager.JudderFreeFPS.Value;
         }
 
         private static void RunningGame_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -668,8 +721,20 @@ namespace XboxGamingBarHelper
         /// </summary>
         private static async void Connection_RequestReceived(AppServiceConnection sender, AppServiceRequestReceivedEventArgs args)
         {
-            Logger.Info($"Helper received message {args.Request.Message.ToDebugString()} from widget.");
-            await properties.OnRequestReceived(new HelperAppServiceRequest(args.Request));
+            var requestDeferral = args.GetDeferral();
+            try
+            {
+                Logger.Info($"Helper received message {args.Request.Message.ToDebugString()} from widget.");
+                await properties.OnRequestReceived(new HelperAppServiceRequest(args.Request));
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Error in Helper Connection_RequestReceived.");
+            }
+            finally
+            {
+                requestDeferral.Complete();
+            }
         }
 
         /// <summary>
@@ -808,12 +873,7 @@ namespace XboxGamingBarHelper
                     try
                     {
                         Logger.Info("Reactive connect event received from widget.");
-                        if (appServiceConnectionStatus == AppServiceConnectionStatus.Success)
-                        {
-                            Logger.Info("Widget requested connection while status was marked Success. Re-creating connection to new widget session.");
-                            RecreateConnection();
-                        }
-                        await ConnectToWidget(false);
+                        await ConnectToWidget(false, forceReconnectOnEvent: true);
                     }
                     catch (Exception ex)
                     {

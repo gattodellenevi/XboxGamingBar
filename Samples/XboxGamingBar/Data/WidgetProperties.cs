@@ -16,6 +16,7 @@ namespace XboxGamingBar.Data
     {
         private const string CACHED_SNAPSHOT_KEY = "CachedStateSnapshot_v1";
         private readonly CoreDispatcher uiDispatcher;
+        private readonly System.Threading.SemaphoreSlim _syncLock = new System.Threading.SemaphoreSlim(1, 1);
 
         public bool HasCachedState { get; private set; } = false;
 
@@ -24,6 +25,40 @@ namespace XboxGamingBar.Data
         public WidgetProperties(CoreDispatcher inDispatcher, params FunctionalProperty<WidgetValueSet, WidgetAppServiceResponse>[] inProperties) : base(inProperties)
         {
             uiDispatcher = inDispatcher;
+            foreach (var prop in properties.Values)
+            {
+                if (prop != null &&
+                    prop.Function != Function.HardwareTelemetry &&
+                    prop.Function != Function.ControllerBattery &&
+                    prop.Function != Function.Foreground &&
+                    prop.Function != Function.TrackedGame)
+                {
+                    prop.PropertyChanged += (s, e) =>
+                    {
+                        if (!prop.IsBatchUpdating)
+                        {
+                            SaveCurrentStateToCache();
+                        }
+                    };
+                }
+            }
+        }
+
+        public void SaveCurrentStateToCache()
+        {
+            try
+            {
+                var snapshot = CreateStateSnapshot();
+                if (snapshot != null && snapshot.Properties != null && snapshot.Properties.Count > 0)
+                {
+                    CacheSnapshot(snapshot);
+                    HasCachedState = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to save current state to cache.");
+            }
         }
 
         protected override Task<SharedAppServiceResponseStatus> SendResponse(WidgetAppServiceRequest request, WidgetValueSet response)
@@ -40,23 +75,39 @@ namespace XboxGamingBar.Data
 
         public async Task Sync()
         {
-            bool snapshotSuccess = false;
-            try
+            if (!await _syncLock.WaitAsync(0))
             {
-                snapshotSuccess = await SyncSnapshotAsync();
-            }
-            catch (Exception ex)
-            {
-                Logger.Error(ex, "Exception during snapshot sync; falling back to sequential sync.");
+                Logger.Info("WidgetProperties.Sync is already in progress; awaiting active sync.");
+                await _syncLock.WaitAsync();
+                _syncLock.Release();
+                return;
             }
 
-            if (!snapshotSuccess)
+            try
             {
-                Logger.Warn("Snapshot sync did not succeed; falling back to sequential property sync.");
-                foreach (var property in properties)
+                bool snapshotSuccess = false;
+                try
                 {
-                    await property.Value.Sync();
+                    snapshotSuccess = await SyncSnapshotAsync();
                 }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Exception during snapshot sync; falling back to batch property sync.");
+                }
+
+                if (!snapshotSuccess && App.Connection != null)
+                {
+                    Logger.Warn("Snapshot sync did not succeed; falling back to parallel property sync.");
+                    using (BeginBatchUpdate())
+                    {
+                        var syncTasks = properties.Values.Select(p => p.Sync()).ToArray();
+                        await Task.WhenAll(syncTasks);
+                    }
+                }
+            }
+            finally
+            {
+                _syncLock.Release();
             }
         }
 
@@ -101,7 +152,7 @@ namespace XboxGamingBar.Data
             }
 
             Logger.Info($"Received StateSnapshotDTO with {snapshot.Properties.Count} properties. Applying batch on UI thread...");
-            await ApplySnapshotAsync(snapshot);
+            await ApplySnapshotAsync(snapshot, isCachedSnapshot: false);
             CacheSnapshot(snapshot);
             HasCachedState = true;
             return true;
@@ -208,14 +259,14 @@ namespace XboxGamingBar.Data
             if (cached != null)
             {
                 Logger.Info("Applying cached state snapshot for instant UI presentation...");
-                ApplySnapshotInternal(cached);
+                ApplySnapshotInternal(cached, isCachedSnapshot: true);
                 HasCachedState = true;
                 return true;
             }
             return false;
         }
 
-        public async Task ApplySnapshotAsync(StateSnapshotDTO snapshot)
+        public async Task ApplySnapshotAsync(StateSnapshotDTO snapshot, bool isCachedSnapshot = false)
         {
             if (snapshot == null || snapshot.Properties == null) return;
 
@@ -224,17 +275,19 @@ namespace XboxGamingBar.Data
             {
                 await dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                 {
-                    ApplySnapshotInternal(snapshot);
+                    ApplySnapshotInternal(snapshot, isCachedSnapshot);
                 });
             }
             else
             {
-                ApplySnapshotInternal(snapshot);
+                ApplySnapshotInternal(snapshot, isCachedSnapshot);
             }
         }
 
-        private void ApplySnapshotInternal(StateSnapshotDTO snapshot)
+        private void ApplySnapshotInternal(StateSnapshotDTO snapshot, bool isCachedSnapshot = false)
         {
+            long snapshotTimestamp = isCachedSnapshot ? 1L : DateTime.UtcNow.Ticks;
+
             using (BeginBatchUpdate())
             {
                 // 1. First apply list/options properties (Resolutions, RefreshRates) so ComboBoxes have items populated
@@ -242,7 +295,7 @@ namespace XboxGamingBar.Data
                 {
                     if (item.Function == Function.Resolutions || item.Function == Function.RefreshRates)
                     {
-                        ApplySingleProperty(item);
+                        ApplySingleProperty(item, snapshotTimestamp, isCachedSnapshot);
                     }
                 }
 
@@ -251,7 +304,7 @@ namespace XboxGamingBar.Data
                 {
                     if (item.Function != Function.Resolutions && item.Function != Function.RefreshRates)
                     {
-                        ApplySingleProperty(item);
+                        ApplySingleProperty(item, snapshotTimestamp, isCachedSnapshot);
                     }
                 }
 
@@ -268,7 +321,7 @@ namespace XboxGamingBar.Data
             Logger.Info("Finished applying snapshot properties and enabled controls in batch on UI thread.");
         }
 
-        private void ApplySingleProperty(PropertySnapshotDTO item)
+        private void ApplySingleProperty(PropertySnapshotDTO item, long snapshotTimestamp, bool isCachedSnapshot)
         {
             if (properties.TryGetValue(item.Function, out var property))
             {
@@ -277,7 +330,8 @@ namespace XboxGamingBar.Data
                     try
                     {
                         var clrValue = item.GetClrValue();
-                        property.SetValue(clrValue, item.UpdatedTime);
+                        long effectiveTime = isCachedSnapshot ? 1L : Math.Max(item.UpdatedTime, snapshotTimestamp);
+                        property.SetValue(clrValue, effectiveTime);
                     }
                     catch (Exception ex)
                     {

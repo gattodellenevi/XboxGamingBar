@@ -15,6 +15,7 @@ namespace XboxGamingBar.Data
 
         protected override void NotifyPropertyChanged(string propertyName = "")
         {
+            bool wasBatchUpdating = IsBatchUpdating;
             try
             {
                 var dispatcher = CoreApplication.MainView?.CoreWindow?.Dispatcher;
@@ -22,7 +23,17 @@ namespace XboxGamingBar.Data
                 {
                     _ = dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                     {
-                        base.NotifyPropertyChanged(propertyName);
+                        if (wasBatchUpdating)
+                        {
+                            using (BeginBatchUpdate())
+                            {
+                                base.NotifyPropertyChanged(propertyName);
+                            }
+                        }
+                        else
+                        {
+                            base.NotifyPropertyChanged(propertyName);
+                        }
                     });
                     return;
                 }
@@ -32,6 +43,26 @@ namespace XboxGamingBar.Data
             }
 
             base.NotifyPropertyChanged(propertyName);
+        }
+
+        public async Task PushCurrentValueToHelperAsync()
+        {
+            if (App.Connection == null) return;
+
+            try
+            {
+                var request = new WidgetValueSet
+                {
+                    { nameof(Command), (int)Command.Set },
+                    { nameof(Function), (int)function },
+                };
+                request = AddValueSetContent(request);
+                await SendMessageAsync(request);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, $"Failed to push current value of {function} to helper.");
+            }
         }
 
         protected override Task<WidgetAppServiceResponse> SendMessageAsync(WidgetValueSet request)

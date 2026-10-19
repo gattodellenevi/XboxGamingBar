@@ -95,6 +95,11 @@ namespace Shared.Data
             return snapshot;
         }
 
+        protected virtual Task OnBeforeGetInitialStateAsync()
+        {
+            return Task.CompletedTask;
+        }
+
         public async Task OnRequestReceived(TSharedAppServiceRequest request)
         {
             try
@@ -116,6 +121,7 @@ namespace Shared.Data
                 if (command == Command.GetInitialState)
                 {
                     Logger.Info("Handling GetInitialState request: building StateSnapshotDTO...");
+                    await OnBeforeGetInitialStateAsync();
                     var snapshot = CreateStateSnapshot();
                     var snapshotJson = snapshot.ToJson();
                     var snapshotResponse = new TSharedValueSet();
@@ -161,7 +167,11 @@ namespace Shared.Data
                             updatedTime = timeVal;
                         }
 
-                        bool setSuccess = property.SetValue(content, updatedTime);
+                        bool setSuccess;
+                        using (property.BeginBatchUpdate())
+                        {
+                            setSuccess = property.SetValue(content, updatedTime);
+                        }
                         // Return the actual confirmed and sanitized value from the property to enforce unidirectional state consistency
                         response = property.AddValueSetContent(response);
                         response.Add("Success", setSuccess);

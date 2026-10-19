@@ -140,14 +140,19 @@ namespace Shared.Data
             Logger.Info($"Waiting for sending message Get {function}.");
             var response = await sentMessage;
             Logger.Info($"Finished wait for sending message Get {function}.");
-            if (response != null)
+            if (response != null && response.Message != null)
             {
                 if (response.Message.TryGetValue(nameof(Content), out object responseValue))
                 {
                     if (response.Message.TryGetValue(nameof(UpdatedTime), out object updatedTimeValue))
                     {
                         var updatedTime = (long)updatedTimeValue;
-                        if (SetValue(responseValue, updatedTime))
+                        bool syncApplied;
+                        using (BeginBatchUpdate())
+                        {
+                            syncApplied = SetValue(responseValue, updatedTime);
+                        }
+                        if (syncApplied)
                         {
                             Logger.Info($"Sync {function} value {responseValue} successfully.");
                         }

@@ -19,11 +19,6 @@ namespace XboxGamingBar.Data
 
         public override async Task Sync()
         {
-            if (UI != null && Owner != null)
-            {
-                await Owner.Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () => SetControlEnabled(false));
-            }
-
             await base.Sync();
 
             if (UI != null && Owner != null)

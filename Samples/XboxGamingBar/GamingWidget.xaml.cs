@@ -100,6 +100,8 @@ namespace XboxGamingBar
         private bool isRestartingElevated = false;
         private CancellationTokenSource elevationFallbackCts = null;
         private CancellationTokenSource modalTimeoutCts = null;
+        private readonly SemaphoreSlim _ensureConnectionLock = new SemaphoreSlim(1, 1);
+        private DateTime _lastEnsureConnectionTime = DateTime.MinValue;
         private readonly GameInputStatusProperty gameInputStatus;
         private readonly GpuTargetProperty gpuTarget;
         private readonly DualGpuSupportProperty dualGpuSupport;
@@ -456,9 +458,10 @@ namespace XboxGamingBar
                 nvidiaVSyncSupported
             );
 
+            // Wire up ViewModel and UI property listeners before applying cached snapshot
+            InitializeViewModelBindings();
             // Optimistic Local Cache Rendering: Instantly populate UI from last known state
             properties.TryApplyCachedSnapshot();
-            InitializeViewModelBindings();
 
             PerGameProfileToggle.Toggled += (s, e) =>
             {
@@ -1252,7 +1255,14 @@ namespace XboxGamingBar
 
         private void QuickFPSLimitToggleButton_Click(object sender, RoutedEventArgs e)
         {
-            if (IsElevationMismatch || !IsRTSSRunning || LimitFPSToggle == null) return;
+            if (IsElevationMismatch)
+            {
+                Logger.Info("QuickFPSLimitToggleButton clicked while elevation mismatch: prompting helper elevation restart.");
+                RestartElevatedButton_Click(sender, e);
+                return;
+            }
+
+            if (!IsRTSSRunning || LimitFPSToggle == null) return;
 
             bool newState = !LimitFPSToggle.IsOn;
             Logger.Info($"QuickFPSLimitToggleButton clicked: toggling frame limiter to {newState} (target limit: {(int)FPSLimitSlider.Value} FPS).");
@@ -1793,6 +1803,7 @@ namespace XboxGamingBar
             }
 
             Logger.Info($"App.Connection:{(App.Connection == null ? "NULL" : "NOT_NULL")} FullTrustAppContract:{(ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0) ? "PRESENT" : "NOT_PRESENT")}");
+            isForeground.SetValue(true);
             if (App.Connection != null)
             {
                 HideLoadingModal();
@@ -1800,86 +1811,149 @@ namespace XboxGamingBar
             }
             else
             {
-                if (!properties.HasCachedState)
-                {
-                    ShowLoadingModal();
-                }
+                ShowLoadingModal();
                 await EnsureHelperConnectionOrLaunchAsync();
             }
             Logger.Info("GamingWidget OnNavigatedTo finished.");
         }
 
+        private void SetHelperConnectionBadgeUI(bool visible, string text = "SYNCING", bool isOfflineError = false)
+        {
+            if (LoadingModalProgressRing != null)
+            {
+                LoadingModalProgressRing.IsActive = false;
+            }
+            if (LoadingModalOverlay != null)
+            {
+                LoadingModalOverlay.Visibility = Visibility.Collapsed;
+            }
+
+            if (HelperConnectionBadge == null)
+            {
+                return;
+            }
+
+            if (!visible)
+            {
+                HelperConnectionBadge.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var fgColor = isOfflineError
+                ? Windows.UI.Color.FromArgb(255, 255, 107, 107) // Coral Red (#FFFF6B6B)
+                : Windows.UI.Color.FromArgb(255, 255, 170, 0);  // Amber (#FFFFAA00)
+            var bgColor = isOfflineError
+                ? Windows.UI.Color.FromArgb(37, 255, 107, 107)  // #25FF6B6B
+                : Windows.UI.Color.FromArgb(37, 255, 170, 0);   // #25FFAA00
+
+            var fgBrush = new SolidColorBrush(fgColor);
+            var bgBrush = new SolidColorBrush(bgColor);
+
+            HelperConnectionBadge.Background = bgBrush;
+            HelperConnectionBadge.BorderBrush = fgBrush;
+            if (HelperConnectionDot != null)
+            {
+                HelperConnectionDot.Fill = fgBrush;
+            }
+            if (HelperConnectionBadgeText != null)
+            {
+                HelperConnectionBadgeText.Text = text;
+                HelperConnectionBadgeText.Foreground = fgBrush;
+            }
+            HelperConnectionBadge.Visibility = Visibility.Visible;
+        }
+
+        private void ApplyFullDisconnectedUIState()
+        {
+            helperElevation?.SetDisconnectedState();
+            rtssElevation?.SetDisconnectedState();
+            hardwareProviderProperty?.SetDisconnectedState();
+            hardwareTelemetry?.SetDisconnectedState();
+            gameInputStatus?.SetDisconnectedState();
+            dualGpuSupport?.SetDisconnectedState();
+            activeGpu?.SetDisconnectedState();
+            if (NvidiaVSyncComboBox != null)
+            {
+                NvidiaVSyncComboBox.IsEnabled = false;
+            }
+            UpdateFPSLimiterElevationUI();
+            UpdateOSDStatusUI();
+        }
+
         private async void ShowLoadingModal(string title = "Connecting to Helper...", string subtitle = "Initializing hardware sensors & power controls...")
         {
+            bool isElevating = isRestartingElevated || (title != null && title.IndexOf("Administrator", StringComparison.OrdinalIgnoreCase) >= 0);
+            string badgeLabel = isElevating ? "ELEVATING" : "SYNCING";
+
+            CancellationToken token = CancellationToken.None;
             try
             {
                 modalTimeoutCts?.Cancel();
                 modalTimeoutCts?.Dispose();
                 modalTimeoutCts = new CancellationTokenSource();
-                var token = modalTimeoutCts.Token;
+                token = modalTimeoutCts.Token;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to reset connection status timer.");
+            }
+
+            var disp = Dispatcher ?? CoreApplication.MainView?.CoreWindow?.Dispatcher ?? Windows.UI.Xaml.Window.Current?.Dispatcher;
+
+            // Show immediately when elevating; otherwise debounce by 250ms so sub-50ms reconnects are completely invisible.
+            if (isElevating && disp != null)
+            {
+                if (!disp.HasThreadAccess)
+                {
+                    await disp.RunAsync(CoreDispatcherPriority.Normal, () => SetHelperConnectionBadgeUI(true, badgeLabel, false));
+                }
+                else
+                {
+                    SetHelperConnectionBadgeUI(true, badgeLabel, false);
+                }
+            }
+
+            if (token != CancellationToken.None)
+            {
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        await Task.Delay(5000, token);
-                        if (!token.IsCancellationRequested)
+                        if (!isElevating)
                         {
-                            Logger.Warn("Loading modal safety timeout reached (5s). Dismissing modal so UI remains accessible.");
-                            HideLoadingModal();
+                            await Task.Delay(250, token);
+                            if (!token.IsCancellationRequested && App.Connection == null && disp != null)
+                            {
+                                await disp.RunAsync(CoreDispatcherPriority.Normal, () =>
+                                {
+                                    if (!token.IsCancellationRequested && App.Connection == null)
+                                    {
+                                        SetHelperConnectionBadgeUI(true, badgeLabel, false);
+                                    }
+                                });
+                            }
+                        }
+
+                        await Task.Delay(isElevating ? 15000 : 4750, token);
+                        if (!token.IsCancellationRequested && App.Connection == null && disp != null)
+                        {
+                            Logger.Warn("Helper connection did not complete within 5s. Showing discrete OFFLINE badge.");
+                            await disp.RunAsync(CoreDispatcherPriority.Normal, () =>
+                            {
+                                if (!token.IsCancellationRequested && App.Connection == null)
+                                {
+                                    SetHelperConnectionBadgeUI(true, "OFFLINE", true);
+                                    ApplyFullDisconnectedUIState();
+                                }
+                            });
                         }
                     }
                     catch (TaskCanceledException) { }
+                    catch (Exception ex)
+                    {
+                        Logger.Debug(ex, "Error in discrete connection badge timer.");
+                    }
                 });
-            }
-            catch (Exception ex)
-            {
-                Logger.Warn(ex, "Failed to start modal timeout timer.");
-            }
-
-            var disp = Dispatcher ?? CoreApplication.MainView?.CoreWindow?.Dispatcher ?? Windows.UI.Xaml.Window.Current?.Dispatcher;
-            if (disp != null)
-            {
-                if (!disp.HasThreadAccess)
-                {
-                    await disp.RunAsync(CoreDispatcherPriority.Normal, () =>
-                    {
-                        if (LoadingModalTitleText != null)
-                        {
-                            LoadingModalTitleText.Text = title;
-                        }
-                        if (LoadingModalSubtitleText != null)
-                        {
-                            LoadingModalSubtitleText.Text = subtitle;
-                        }
-                        if (LoadingModalProgressRing != null)
-                        {
-                            LoadingModalProgressRing.IsActive = true;
-                        }
-                        if (LoadingModalOverlay != null)
-                        {
-                            LoadingModalOverlay.Visibility = Visibility.Visible;
-                        }
-                    });
-                }
-                else
-                {
-                    if (LoadingModalTitleText != null)
-                    {
-                        LoadingModalTitleText.Text = title;
-                    }
-                    if (LoadingModalSubtitleText != null)
-                    {
-                        LoadingModalSubtitleText.Text = subtitle;
-                    }
-                    if (LoadingModalProgressRing != null)
-                    {
-                        LoadingModalProgressRing.IsActive = true;
-                    }
-                    if (LoadingModalOverlay != null)
-                    {
-                        LoadingModalOverlay.Visibility = Visibility.Visible;
-                    }
-                }
             }
         }
 
@@ -1898,28 +1972,11 @@ namespace XboxGamingBar
             {
                 if (!disp.HasThreadAccess)
                 {
-                    await disp.RunAsync(CoreDispatcherPriority.Normal, () =>
-                    {
-                        if (LoadingModalProgressRing != null)
-                        {
-                            LoadingModalProgressRing.IsActive = false;
-                        }
-                        if (LoadingModalOverlay != null)
-                        {
-                            LoadingModalOverlay.Visibility = Visibility.Collapsed;
-                        }
-                    });
+                    await disp.RunAsync(CoreDispatcherPriority.Normal, () => SetHelperConnectionBadgeUI(false));
                 }
                 else
                 {
-                    if (LoadingModalProgressRing != null)
-                    {
-                        LoadingModalProgressRing.IsActive = false;
-                    }
-                    if (LoadingModalOverlay != null)
-                    {
-                        LoadingModalOverlay.Visibility = Visibility.Collapsed;
-                    }
+                    SetHelperConnectionBadgeUI(false);
                 }
             }
         }
@@ -1948,7 +2005,7 @@ namespace XboxGamingBar
             }
         }
 
-        private async Task EnsureHelperConnectionOrLaunchAsync()
+        private async Task EnsureHelperConnectionOrLaunchAsync(bool forceSignal = false)
         {
             if (App.Connection != null)
             {
@@ -1956,61 +2013,76 @@ namespace XboxGamingBar
                 return;
             }
 
-            if (ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0))
+            await _ensureConnectionLock.WaitAsync();
+            try
             {
-                Logger.Info("App.Connection is NULL. Registering listeners.");
-                App.AppServiceConnected -= GamingWidget_AppServiceConnected;
-                App.AppServiceConnected += GamingWidget_AppServiceConnected;
-                App.AppServiceDisconnected -= GamingWidget_AppServiceDisconnected;
-                App.AppServiceDisconnected += GamingWidget_AppServiceDisconnected;
-
-                if (IsHelperProcessRunning())
+                if (App.Connection != null)
                 {
-                    Logger.Info("Helper process is already running. Skipping launch and waiting for AppService connection.");
-                    if (!properties.HasCachedState)
-                    {
-                        ShowLoadingModal("Connecting to Helper...", "Establishing communication channel...");
-                    }
+                    HideLoadingModal();
+                    return;
+                }
 
-                    // Reactively signal the running helper process to connect immediately (Task 4.4)
-                    try
+                if (!forceSignal && (DateTime.UtcNow - _lastEnsureConnectionTime).TotalMilliseconds < 1500)
+                {
+                    Logger.Debug("Skipping duplicate EnsureHelperConnectionOrLaunchAsync call within 1500ms window.");
+                    return;
+                }
+                _lastEnsureConnectionTime = DateTime.UtcNow;
+
+                if (ApiInformation.IsApiContractPresent("Windows.ApplicationModel.FullTrustAppContract", 1, 0))
+                {
+                    Logger.Info("App.Connection is NULL. Registering listeners.");
+                    App.AppServiceConnected -= GamingWidget_AppServiceConnected;
+                    App.AppServiceConnected += GamingWidget_AppServiceConnected;
+                    App.AppServiceDisconnected -= GamingWidget_AppServiceDisconnected;
+                    App.AppServiceDisconnected += GamingWidget_AppServiceDisconnected;
+
+                    if (IsHelperProcessRunning())
                     {
-                        if (System.Threading.EventWaitHandle.TryOpenExisting(@"Global\CouchGamingBarHelper_ConnectEvent", out var connectEvent))
+                        Logger.Info("Helper process is already running. Skipping launch and signaling AppService connection.");
+                        ShowLoadingModal("Connecting to Helper...", "Establishing communication channel...");
+
+                        // Reactively signal the running helper process to connect immediately (Task 4.4)
+                        try
                         {
-                            Logger.Info("Signaled running helper via CouchGamingBarHelper_ConnectEvent.");
-                            connectEvent.Set();
-                            connectEvent.Dispose();
+                            if (System.Threading.EventWaitHandle.TryOpenExisting(@"Global\CouchGamingBarHelper_ConnectEvent", out var connectEvent))
+                            {
+                                Logger.Info("Signaled running helper via CouchGamingBarHelper_ConnectEvent.");
+                                connectEvent.Set();
+                                connectEvent.Dispose();
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Warn(ex, "Could not signal CouchGamingBarHelper_ConnectEvent.");
                         }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Logger.Warn(ex, "Could not signal CouchGamingBarHelper_ConnectEvent.");
+                        EnsureWidgetActivity();
+                        ShowLoadingModal("Starting CouchGamingBar Helper...", "Initializing hardware sensors & power controls...");
+                        try
+                        {
+                            Logger.Info("Helper process is not running. Launching full trust process (helper).");
+                            await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
+                            Logger.Info("FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync() completed.");
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Error(ex, "Failed to launch full trust helper process.");
+                            HideLoadingModal();
+                        }
                     }
                 }
                 else
                 {
-                    EnsureWidgetActivity();
-                    if (!properties.HasCachedState)
-                    {
-                        ShowLoadingModal("Starting CouchGamingBar Helper...", "Initializing hardware sensors & power controls...");
-                    }
-                    try
-                    {
-                        Logger.Info("Helper process is not running. Launching full trust process (helper).");
-                        await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
-                        Logger.Info("FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync() completed.");
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(ex, "Failed to launch full trust helper process.");
-                        HideLoadingModal();
-                    }
+                    Logger.Info("FullTrustAppContract not present. Cannot launch full trust helper process.");
+                    HideLoadingModal();
                 }
             }
-            else
+            finally
             {
-                Logger.Info("FullTrustAppContract not present. Cannot launch full trust helper process.");
-                HideLoadingModal();
+                _ensureConnectionLock.Release();
             }
         }
 
@@ -2054,9 +2126,12 @@ namespace XboxGamingBar
                 await widget.CenterWindowAsync();
             }
 
+            isForeground.SetValue(true);
+
             if (App.Connection != null)
             {
-                Logger.Info("GamingWidget LeavingBackground, sync UI now.");
+                Logger.Info("GamingWidget LeavingBackground, pushing foreground state and syncing UI now.");
+                await isForeground.PushCurrentValueToHelperAsync();
                 await properties.Sync();
             }
             else
@@ -2064,14 +2139,13 @@ namespace XboxGamingBar
                 Logger.Info("GamingWidget LeavingBackground but not connected to full trust process. Checking helper status...");
                 await EnsureHelperConnectionOrLaunchAsync();
             }
-
-            isForeground.SetValue(true);
         }
 
         public void GamingWidget_EnteredBackground(object sender, EnteredBackgroundEventArgs e)
         {
             Logger.Info("GamingWidget EnterBackground.");
             isForeground.SetValue(false);
+            properties?.SaveCurrentStateToCache();
         }
 
         private void AppTargetTracker_TargetChanged(XboxGameBarAppTargetTracker sender, object args)
@@ -2134,6 +2208,9 @@ namespace XboxGamingBar
                     HideLoadingModal();
                 }
 
+                // Always push widget-owned foreground state so Helper streams live telemetry while visible
+                await isForeground.PushCurrentValueToHelperAsync();
+
                 if (widget != null)
                 {
                     EnsureWidgetActivity();
@@ -2147,7 +2224,7 @@ namespace XboxGamingBar
                         {
                             Logger.Info("Created new app target tracker to track current game.");
                             var initialTarget = appTargetTracker.GetTarget();
-                            if (initialTarget.IsGame)
+                            if (initialTarget != null && initialTarget.IsGame && !BlackListAppTrackerNames.Contains(initialTarget.DisplayName))
                             {
                                 Logger.Info($"Initial tracked game DisplayName={initialTarget.DisplayName} AumId={initialTarget.AumId} TitleId={initialTarget.TitleId} IsFullscreen={initialTarget.IsFullscreen}");
                                 trackedGame.SetValue(new TrackedGame(initialTarget.AumId, initialTarget.DisplayName, StringHelper.CleanStringForSerialization(initialTarget.TitleId), initialTarget.IsFullscreen));
@@ -2168,6 +2245,8 @@ namespace XboxGamingBar
                     {
                         Logger.Info("App target tracker already created.");
                     }
+
+                    await trackedGame.PushCurrentValueToHelperAsync();
                 }
                 else
                 {
@@ -2193,20 +2272,6 @@ namespace XboxGamingBar
         /// </summary>
         private async void GamingWidget_AppServiceDisconnected(object sender, EventArgs e)
         {
-            helperElevation?.SetDisconnectedState();
-            rtssElevation?.SetDisconnectedState();
-            hardwareProviderProperty?.SetDisconnectedState();
-            hardwareTelemetry?.SetDisconnectedState();
-            gameInputStatus?.SetDisconnectedState();
-            dualGpuSupport?.SetDisconnectedState();
-            activeGpu?.SetDisconnectedState();
-            if (NvidiaVSyncComboBox != null)
-            {
-                NvidiaVSyncComboBox.IsEnabled = false;
-            }
-            UpdateFPSLimiterElevationUI();
-            UpdateOSDStatusUI();
-
             if (isRestartingElevated)
             {
                 Logger.Info("AppService disconnected during elevated restart. Awaiting elevated helper connection without relaunching standard process.");
@@ -2215,31 +2280,18 @@ namespace XboxGamingBar
             }
 
             var eventArgs = e as BackgroundTaskCancellationEventArgs;
-            if (eventArgs != null && eventArgs.Reason != BackgroundTaskCancellationReason.Terminating)
+            var reason = eventArgs?.Reason;
+
+            // Reconnect immediately if the disconnect was not a background termination, or if the widget is currently visible in the foreground
+            if (reason != BackgroundTaskCancellationReason.Terminating || isForeground.Value)
             {
+                Logger.Info($"AppService disconnected (Reason={reason}, IsForeground={isForeground.Value}). Triggering seamless reconnect...");
                 ShowLoadingModal("Reconnecting to Helper...", "Waiting for background service...");
-                if (IsHelperProcessRunning())
-                {
-                    Logger.Info($"AppService disconnected due to {eventArgs.Reason}, but helper process is already running. Skipping relaunch.");
-                }
-                else
-                {
-                    EnsureWidgetActivity();
-                    try
-                    {
-                        Logger.Info($"AppService disconnected due to {eventArgs.Reason}, trying to relaunch.");
-                        await FullTrustProcessLauncher.LaunchFullTrustProcessForCurrentAppAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error(ex, "Failed to relaunch full trust helper process on disconnect.");
-                        HideLoadingModal();
-                    }
-                }
+                await EnsureHelperConnectionOrLaunchAsync(forceSignal: true);
             }
             else
             {
-                Logger.Info($"AppService disconnected due to {eventArgs.Reason}, not relaunching.");
+                Logger.Info($"AppService disconnected due to {reason} while in background, not relaunching.");
                 HideLoadingModal();
                 lock (widgetActivityLock)
                 {
@@ -2345,7 +2397,7 @@ namespace XboxGamingBar
             bool isLimitFPSOn = LimitFPSToggle != null && LimitFPSToggle.IsOn;
             bool isJudderFree = JudderFreeFPSToggle != null && JudderFreeFPSToggle.IsOn;
 
-            if (IsElevationMismatch || !IsRTSSRunning || !isLimitFPSOn)
+            if (!IsRTSSRunning || (!isLimitFPSOn && !IsElevationMismatch))
             {
                 FPSLimitSlider.Visibility = Visibility.Collapsed;
                 FPSLimitJudderFreeSlider.Visibility = Visibility.Collapsed;
@@ -2508,6 +2560,10 @@ namespace XboxGamingBar
                 {
                     FPSLimitElevationWarningCard.Visibility = Visibility.Collapsed;
                 }
+                if (QuickElevationWarningCard != null)
+                {
+                    QuickElevationWarningCard.Visibility = Visibility.Collapsed;
+                }
 
                 if (FPSLimitRTSSWarningBadge != null)
                 {
@@ -2554,18 +2610,23 @@ namespace XboxGamingBar
                         : "Requires RivaTuner Statistics Server to be running";
                 }
 
+                SetFPSControlsReadOnly(false);
+                limitFPS?.EnableControl(false);
+                fpsLimit?.EnableControl(false);
+                fpsLimitMode?.EnableControl(false);
+                judderFreeFPS?.EnableControl(false);
+                if (LimitFPSToggle != null) LimitFPSToggle.IsEnabled = false;
+                if (FPSLimitSlider != null) FPSLimitSlider.IsEnabled = false;
+                if (FPSLimitJudderFreeSlider != null) FPSLimitJudderFreeSlider.IsEnabled = false;
+                if (JudderFreeFPSToggle != null) JudderFreeFPSToggle.IsEnabled = false;
+                if (FPSLimitModeComboBox != null) FPSLimitModeComboBox.IsEnabled = false;
                 if (FPSLimitSettingsContainer != null)
                 {
                     FPSLimitSettingsContainer.Visibility = Visibility.Collapsed;
                 }
-                if (FPSLimitSlider != null)
-                {
-                    FPSLimitSlider.IsEnabled = false;
-                }
             }
             else if (isMismatch)
             {
-                limitFPS?.EnableControl(false);
                 if (FPSLimitRTSSWarningBadge != null)
                 {
                     FPSLimitRTSSWarningBadge.Visibility = Visibility.Collapsed;
@@ -2575,24 +2636,40 @@ namespace XboxGamingBar
                     FPSLimitRTSSWarningCard.Visibility = Visibility.Collapsed;
                 }
 
-                FPSLimitElevationWarningBadge.Visibility = Visibility.Visible;
+                if (FPSLimitElevationWarningBadge != null)
+                {
+                    FPSLimitElevationWarningBadge.Visibility = Visibility.Visible;
+                }
+                if (FPSLimitElevationWarningCard != null)
+                {
+                    FPSLimitElevationWarningCard.Visibility = Visibility.Visible;
+                }
+                if (QuickElevationWarningCard != null)
+                {
+                    QuickElevationWarningCard.Visibility = Visibility.Visible;
+                }
+
+                bool isLimitOn = LimitFPSToggle != null && LimitFPSToggle.IsOn;
+
                 if (FPSLimitValueBadge != null)
                 {
-                    FPSLimitValueBadge.Visibility = Visibility.Collapsed;
+                    FPSLimitValueBadge.Visibility = isLimitOn ? Visibility.Visible : Visibility.Collapsed;
                 }
-                FPSLimitElevationWarningCard.Visibility = Visibility.Visible;
+
                 if (FPSLimitSubtitleText != null)
                 {
-                    FPSLimitSubtitleText.Text = "Requires Administrator privileges to modify RTSS";
+                    FPSLimitSubtitleText.Text = isLimitOn
+                        ? "Active RTSS configuration (elevate permissions to modify)"
+                        : "Framerate limiter disabled (elevate permissions to modify)";
                 }
+
+                // In elevation mismatch, ALWAYS keep settings container visible so user can inspect active RTSS configuration
                 if (FPSLimitSettingsContainer != null)
                 {
-                    FPSLimitSettingsContainer.Visibility = Visibility.Collapsed;
+                    FPSLimitSettingsContainer.Visibility = Visibility.Visible;
                 }
-                if (FPSLimitSlider != null)
-                {
-                    FPSLimitSlider.IsEnabled = false;
-                }
+
+                SetFPSControlsReadOnly(true);
             }
             else
             {
@@ -2604,8 +2681,18 @@ namespace XboxGamingBar
                 {
                     FPSLimitRTSSWarningCard.Visibility = Visibility.Collapsed;
                 }
-                FPSLimitElevationWarningBadge.Visibility = Visibility.Collapsed;
-                FPSLimitElevationWarningCard.Visibility = Visibility.Collapsed;
+                if (FPSLimitElevationWarningBadge != null)
+                {
+                    FPSLimitElevationWarningBadge.Visibility = Visibility.Collapsed;
+                }
+                if (FPSLimitElevationWarningCard != null)
+                {
+                    FPSLimitElevationWarningCard.Visibility = Visibility.Collapsed;
+                }
+                if (QuickElevationWarningCard != null)
+                {
+                    QuickElevationWarningCard.Visibility = Visibility.Collapsed;
+                }
 
                 if (FPSLimitSubtitleText != null)
                 {
@@ -2614,7 +2701,11 @@ namespace XboxGamingBar
                 if (App.Connection != null)
                 {
                     limitFPS?.EnableControl(true);
+                    fpsLimit?.EnableControl(true);
+                    fpsLimitMode?.EnableControl(true);
+                    judderFreeFPS?.EnableControl(true);
                 }
+                SetFPSControlsReadOnly(false);
                 if (FPSLimitSettingsContainer != null)
                 {
                     FPSLimitSettingsContainer.Visibility = (LimitFPSToggle != null && LimitFPSToggle.IsOn) 
@@ -2630,6 +2721,86 @@ namespace XboxGamingBar
             }
             UpdateFPSLimitSliderJudderFree();
             UpdateQuickFPSLimitButtonUI();
+        }
+
+        private void SetFPSControlsReadOnly(bool isReadOnly)
+        {
+            if (isReadOnly)
+            {
+                if (LimitFPSToggle != null)
+                {
+                    LimitFPSToggle.IsEnabled = true;
+                    LimitFPSToggle.IsHitTestVisible = false;
+                    LimitFPSToggle.IsTabStop = false;
+                    LimitFPSToggle.Opacity = 1.0;
+                }
+                if (FPSLimitSlider != null)
+                {
+                    FPSLimitSlider.IsEnabled = true;
+                    FPSLimitSlider.IsHitTestVisible = false;
+                    FPSLimitSlider.IsTabStop = false;
+                    FPSLimitSlider.Opacity = 1.0;
+                }
+                if (FPSLimitJudderFreeSlider != null)
+                {
+                    FPSLimitJudderFreeSlider.IsEnabled = true;
+                    FPSLimitJudderFreeSlider.IsHitTestVisible = false;
+                    FPSLimitJudderFreeSlider.IsTabStop = false;
+                    FPSLimitJudderFreeSlider.Opacity = 1.0;
+                }
+                if (JudderFreeFPSToggle != null)
+                {
+                    JudderFreeFPSToggle.IsEnabled = true;
+                    JudderFreeFPSToggle.IsHitTestVisible = false;
+                    JudderFreeFPSToggle.IsTabStop = false;
+                    JudderFreeFPSToggle.Opacity = 1.0;
+                }
+                if (FPSLimitModeComboBox != null)
+                {
+                    FPSLimitModeComboBox.IsEnabled = true;
+                    FPSLimitModeComboBox.IsHitTestVisible = false;
+                    FPSLimitModeComboBox.IsTabStop = false;
+                    FPSLimitModeComboBox.Opacity = 1.0;
+                }
+            }
+            else
+            {
+                if (LimitFPSToggle != null)
+                {
+                    LimitFPSToggle.IsEnabled = true;
+                    LimitFPSToggle.IsHitTestVisible = true;
+                    LimitFPSToggle.IsTabStop = true;
+                    LimitFPSToggle.Opacity = 1.0;
+                }
+                if (FPSLimitSlider != null)
+                {
+                    FPSLimitSlider.IsEnabled = true;
+                    FPSLimitSlider.IsHitTestVisible = true;
+                    FPSLimitSlider.IsTabStop = true;
+                    FPSLimitSlider.Opacity = 1.0;
+                }
+                if (FPSLimitJudderFreeSlider != null)
+                {
+                    FPSLimitJudderFreeSlider.IsEnabled = true;
+                    FPSLimitJudderFreeSlider.IsHitTestVisible = true;
+                    FPSLimitJudderFreeSlider.IsTabStop = true;
+                    FPSLimitJudderFreeSlider.Opacity = 1.0;
+                }
+                if (JudderFreeFPSToggle != null)
+                {
+                    JudderFreeFPSToggle.IsEnabled = true;
+                    JudderFreeFPSToggle.IsHitTestVisible = true;
+                    JudderFreeFPSToggle.IsTabStop = true;
+                    JudderFreeFPSToggle.Opacity = 1.0;
+                }
+                if (FPSLimitModeComboBox != null)
+                {
+                    FPSLimitModeComboBox.IsEnabled = true;
+                    FPSLimitModeComboBox.IsHitTestVisible = true;
+                    FPSLimitModeComboBox.IsTabStop = true;
+                    FPSLimitModeComboBox.Opacity = 1.0;
+                }
+            }
         }
 
         public void UpdateOSDStatusUI()

@@ -55,3 +55,8 @@
   * Always preserve all exact `x:Name` properties (e.g. `AMDRadeonSuperResolutionText`, `FPSLimitSlider`, `JudderFreeFPSToggle`, etc.) as they are directly referenced by widget property classes in `Data/` and event subscriptions.
   * **Dynamic 2D XY Navigation**: Rely on container-level `XYFocusKeyboardNavigation="Enabled"` for vertical stack navigation rather than hardcoded vertical `XYFocusUp`/`XYFocusDown` links that break when sub-controls collapse. Preserve horizontal navigation (`XYFocusLeft`/`XYFocusRight`) on segmented button rows.
   * **ComboBox Navigation**: ComboBoxes must intercept directional navigation when closed (`!IsDropDownOpen`) via `PreviewKeyDown` and route to `FocusManager.TryMoveFocus`, only committing selection changes when `DropDownClosed` fires.
+
+## User Communication & Mockup Preferences
+* **Artifact Links**: Whenever sharing or linking an artifact, always format the link using the full `file:///` notation with forward slashes (e.g. `[name](file:///C:/Users/andre/.../artifact.md)`).
+* **Visual Mockups**: When the user requests a "visual" mockup or visual preview, provide actual rendered image assets (using the `image-generator` subagent or high-fidelity UI rendering) rather than only text/ASCII mockups.
+
