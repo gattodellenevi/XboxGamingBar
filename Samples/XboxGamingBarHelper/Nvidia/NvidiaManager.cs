@@ -1,4 +1,4 @@
-using NLog;
+using Shared.Enums;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -7,13 +7,39 @@ using XboxGamingBarHelper.Core;
 
 namespace XboxGamingBarHelper.Nvidia
 {
-    internal class NvidiaManager : Manager
+    internal class NvidiaManager : Manager, IDisposable
     {
+        private readonly NvidiaDrsService drsService;
+
         public LaunchNvidiaAppProperty LaunchNvidiaApp { get; }
+        public NvidiaVSyncModeProperty NvidiaVSyncMode { get; }
+        public NvidiaVSyncSupportedProperty NvidiaVSyncSupported { get; }
 
         public NvidiaManager(AppServiceConnection connection) : base(connection)
         {
             LaunchNvidiaApp = new LaunchNvidiaAppProperty(false, this);
+            drsService = new NvidiaDrsService();
+
+            bool supported = drsService.IsAvailable;
+            NvidiaVSyncSupported = new NvidiaVSyncSupportedProperty(supported, this);
+
+            int initialMode = supported ? (int)drsService.GetVSyncMode() : 0;
+            NvidiaVSyncMode = new NvidiaVSyncModeProperty(initialMode, this);
+            Logger.Info($"NVIDIA Manager initialized: Supported={supported}, InitialVSyncMode={(NvidiaVSyncMode)initialMode}");
+        }
+
+        public bool SetVSyncMode(NvidiaVSyncMode mode)
+        {
+            if (drsService != null && drsService.IsAvailable)
+            {
+                return drsService.SetVSyncMode(mode);
+            }
+            return false;
+        }
+
+        public void Dispose()
+        {
+            drsService?.Dispose();
         }
 
         public void StartNvidiaApp()

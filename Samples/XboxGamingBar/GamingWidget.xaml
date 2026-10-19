@@ -2059,17 +2059,39 @@
                                     </Grid>
                                 </Border>
 
-                                <!-- NVIDIA App Launcher Card -->
+                                <!-- NVIDIA Driver Settings Card -->
                                 <Border Style="{StaticResource SettingsCardStyle}">
-                                    <Grid Margin="0,2,0,2">
-                                        <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
-                                            <TextBlock x:Name="NvidiaAppText" Text="NVIDIA App" FontWeight="SemiBold" FontSize="15"
-                                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
-                                            <TextBlock Text="Launch overlay &amp; configure 3D game profiles" Style="{StaticResource SubtitleTextStyle}"/>
-                                        </StackPanel>
-                                        <Button x:Name="LaunchNvidiaAppButton" Content="Open NVIDIA App" Width="160" HorizontalAlignment="Right" Click="LaunchNvidiaAppButton_Click"
-                                            Background="#76B900" Foreground="Black" FontWeight="Bold" CornerRadius="6"/>
-                                    </Grid>
+                                    <StackPanel>
+                                        <!-- Vertical Sync Row -->
+                                        <Grid Margin="0,2,0,2">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <TextBlock x:Name="NvidiaVSyncText" Text="Vertical Sync" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <TextBlock Text="Driver-level vertical synchronization mode" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <ComboBox x:Name="NvidiaVSyncComboBox" SelectedIndex="0" HorizontalAlignment="Right" VerticalAlignment="Center" Width="170" IsEnabled="False">
+                                                <ComboBoxItem Content="3D App Setting"/>
+                                                <ComboBoxItem Content="Off"/>
+                                                <ComboBoxItem Content="On"/>
+                                                <ComboBoxItem Content="Adaptive"/>
+                                                <ComboBoxItem Content="Fast"/>
+                                                <ComboBoxItem Content="Adaptive (Half)"/>
+                                            </ComboBox>
+                                        </Grid>
+
+                                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,12,0,12"/>
+
+                                        <!-- NVIDIA App Launcher Row -->
+                                        <Grid Margin="0,2,0,2">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <TextBlock x:Name="NvidiaAppText" Text="NVIDIA App" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <TextBlock Text="Launch overlay &amp; configure 3D game profiles" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <Button x:Name="LaunchNvidiaAppButton" Content="Open NVIDIA App" Width="160" HorizontalAlignment="Right" Click="LaunchNvidiaAppButton_Click"
+                                                Background="#76B900" Foreground="Black" FontWeight="Bold" CornerRadius="6"/>
+                                        </Grid>
+                                    </StackPanel>
                                 </Border>
                             </StackPanel>
 

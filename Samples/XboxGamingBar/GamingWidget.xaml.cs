@@ -85,6 +85,10 @@ namespace XboxGamingBar
         private readonly AMDRadeonChillMinFPSProperty amdRadeonChillMinFPSProperty;
         private readonly AMDRadeonChillMaxFPSProperty amdRadeonChillMaxFPSProperty;
 
+        // NVIDIA properties
+        private readonly NvidiaVSyncModeProperty nvidiaVSyncMode;
+        private readonly NvidiaVSyncSupportedProperty nvidiaVSyncSupported;
+
         private readonly FPSLimitProperty fpsLimit;
         private readonly FPSLimitModeProperty fpsLimitMode;
         private readonly JudderFreeFPSProperty judderFreeFPS;
@@ -181,6 +185,8 @@ namespace XboxGamingBar
             amdRadeonChillSupported = new AMDRadeonChillSupportedProperty(AMDRadeonChillToggle, this);
             amdRadeonChillMinFPSProperty = new AMDRadeonChillMinFPSProperty(AMDRadeonChillMinFPSSlider, this);
             amdRadeonChillMaxFPSProperty = new AMDRadeonChillMaxFPSProperty(AMDRadeonChillMaxFPSSlider, this);
+            nvidiaVSyncMode = new NvidiaVSyncModeProperty(NvidiaVSyncComboBox, this);
+            nvidiaVSyncSupported = new NvidiaVSyncSupportedProperty(NvidiaVSyncComboBox, this);
 
             focusingOnOSDSlider = new FocusingOnOSDSliderProperty(PerformanceOverlaySlider, this);
             limitFPS = new LimitFPSProperty(LimitFPSToggle, this);
@@ -445,7 +451,9 @@ namespace XboxGamingBar
                 controllerBattery,
                 mouseSpeed,
                 mouseScrollSpeed,
-                mouseEnhancePointerPrecision
+                mouseEnhancePointerPrecision,
+                nvidiaVSyncMode,
+                nvidiaVSyncSupported
             );
 
             // Optimistic Local Cache Rendering: Instantly populate UI from last known state
@@ -2192,6 +2200,10 @@ namespace XboxGamingBar
             gameInputStatus?.SetDisconnectedState();
             dualGpuSupport?.SetDisconnectedState();
             activeGpu?.SetDisconnectedState();
+            if (NvidiaVSyncComboBox != null)
+            {
+                NvidiaVSyncComboBox.IsEnabled = false;
+            }
             UpdateFPSLimiterElevationUI();
             UpdateOSDStatusUI();
 

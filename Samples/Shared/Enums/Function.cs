@@ -59,6 +59,8 @@ namespace Shared.Enums
         HDRSupported,
         LaunchAmdApp,
         ActiveGpu,
+        NvidiaVSyncMode,
+        NvidiaVSyncSupported,
 
         AppExit = 100
     }

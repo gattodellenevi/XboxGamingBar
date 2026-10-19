@@ -259,6 +259,8 @@ namespace XboxGamingBarHelper
                     amdManager.FocusingOnOSDSlider,
                     settingsManager.OnScreenDisplayProvider,
                     nvidiaManager.LaunchNvidiaApp,
+                    nvidiaManager.NvidiaVSyncMode,
+                    nvidiaManager.NvidiaVSyncSupported,
                     amdManager.LaunchAmdApp,
                     rtssManager.LimitFPS,
                     rtssManager.FPSLimit,
