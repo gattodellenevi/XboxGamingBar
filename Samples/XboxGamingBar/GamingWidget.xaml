@@ -2032,7 +2032,7 @@
                                                 VerticalAlignment="Center" Padding="10,6,10,6"
                                                 CornerRadius="6"
                                                 Click="RestartGameInputServiceButton_Click"
-                                                ToolTipService.ToolTip="Restart service if Gamepad Cursor mode is enabled in Game Bar but the cursor doesn't move">
+                                                ToolTipService.ToolTip="Restart service if Gamepad Cursor mode is enabled in Game Bar but the cursor doesn't move (prompts UAC if helper is not elevated)">
                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <FontIcon Glyph="&#xE72C;" FontSize="12" VerticalAlignment="Center"/>
                                                 <TextBlock x:Name="RestartGameInputServiceButtonText" Text="Restart" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>

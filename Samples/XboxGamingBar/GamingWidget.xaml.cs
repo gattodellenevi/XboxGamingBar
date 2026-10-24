@@ -645,7 +645,7 @@ namespace XboxGamingBar
                 }
                 finally
                 {
-                    await Task.Delay(2000);
+                    await Task.Delay(3000);
                     if (RestartGameInputServiceButtonText != null)
                     {
                         RestartGameInputServiceButtonText.Text = "Restart";
@@ -1540,7 +1540,14 @@ namespace XboxGamingBar
             if (gpuTarget != null) gpuTarget.PropertyChanged += (s, e) => { ViewModel.Settings.GpuTarget = gpuTarget.Value; };
             if (helperElevation != null) helperElevation.PropertyChanged += (s, e) => { ViewModel.Settings.IsHelperElevated = helperElevation.Value; UpdateFPSLimiterElevationUI(); UpdateOSDStatusUI(); UpdateQuickFPSLimitButtonUI(); UpdateQuickRTSSStatus(); };
             if (rtssElevation != null) rtssElevation.PropertyChanged += (s, e) => { ViewModel.Performance.EvaluateElevationStatus(App.Connection != null, rtssElevation.Value, helperElevation != null && helperElevation.Value); UpdateFPSLimiterElevationUI(); UpdateOSDStatusUI(); UpdateQuickFPSLimitButtonUI(); UpdateQuickOSDButtonUI((int)PerformanceOverlaySlider.Value); UpdateQuickRTSSStatus(); };
-            if (gameInputStatus != null) gameInputStatus.PropertyChanged += (s, e) => { ViewModel.Settings.GameInputStatus = gameInputStatus.Value; };
+            if (gameInputStatus != null) gameInputStatus.PropertyChanged += (s, e) => {
+                ViewModel.Settings.GameInputStatus = gameInputStatus.Value;
+                var ignore = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
+                {
+                    if (RestartGameInputServiceButtonText != null) RestartGameInputServiceButtonText.Text = "Restart";
+                    if (RestartGameInputServiceButton != null) RestartGameInputServiceButton.IsEnabled = true;
+                });
+            };
             if (mouseSpeed != null) mouseSpeed.PropertyChanged += (s, e) => { ViewModel.Settings.MouseSpeed = mouseSpeed.Value; };
             if (mouseScrollSpeed != null) mouseScrollSpeed.PropertyChanged += (s, e) => { ViewModel.Settings.MouseScrollSpeed = mouseScrollSpeed.Value; };
             if (mouseEnhancePointerPrecision != null) mouseEnhancePointerPrecision.PropertyChanged += (s, e) => { ViewModel.Settings.IsMouseEnhancePointerPrecision = mouseEnhancePointerPrecision.Value; };
