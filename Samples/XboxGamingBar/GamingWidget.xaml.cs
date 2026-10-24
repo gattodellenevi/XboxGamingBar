@@ -25,6 +25,7 @@ using Windows.UI.Xaml.Media;
 using Windows.UI.Xaml.Navigation;
 using Windows.UI.Xaml.Input;
 using Windows.System;
+using Windows.UI.ViewManagement;
 using XboxGamingBar.Data;
 using XboxGamingBar.Event;
 using XboxGamingBar.ViewModels;
@@ -853,6 +854,43 @@ namespace XboxGamingBar
                     EditorCancelButton_Click(this, null);
                     e.Handled = true;
                     return;
+                }
+            }
+
+            // Fullscreen toggle for standalone window mode (F11 or Alt+Enter)
+            if (widget == null)
+            {
+                bool isF11 = e.Key == VirtualKey.F11;
+                bool isAltEnter = false;
+                if (e.Key == VirtualKey.Enter && Window.Current?.CoreWindow != null)
+                {
+                    var altState = Window.Current.CoreWindow.GetKeyState(VirtualKey.Menu);
+                    isAltEnter = (altState & CoreVirtualKeyStates.Down) == CoreVirtualKeyStates.Down;
+                }
+
+                if (isF11 || isAltEnter)
+                {
+                    try
+                    {
+                        var view = ApplicationView.GetForCurrentView();
+                        if (view != null)
+                        {
+                            if (view.IsFullScreenMode)
+                            {
+                                view.ExitFullScreenMode();
+                            }
+                            else
+                            {
+                                view.TryEnterFullScreenMode();
+                            }
+                            e.Handled = true;
+                            return;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn(ex, "Failed to toggle fullscreen mode.");
+                    }
                 }
             }
 
@@ -1754,6 +1792,21 @@ namespace XboxGamingBar
             }
         }
 
+        private void WindowRoot_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            var props = e.GetCurrentPoint(this).Properties;
+            int delta = props.MouseWheelDelta;
+            if (delta != 0 && MainPivot?.SelectedItem is PivotItem currentPivotItem)
+            {
+                if (currentPivotItem.Content is ScrollViewer sv)
+                {
+                    double newOffset = sv.VerticalOffset - (delta * 0.5);
+                    sv.ChangeView(null, newOffset, null);
+                    e.Handled = true;
+                }
+            }
+        }
+
         private void JumpToVisibleTab(int targetIndex)
         {
             if (tabInfos == null || MainPivot == null) return;
@@ -2350,9 +2403,17 @@ namespace XboxGamingBar
             this.RequestedTheme = currentTheme;
             var themeBrush = (currentTheme == ElementTheme.Dark) ? widgetDarkThemeBrush : widgetLightThemeBrush;
             RootGrid.Background = themeBrush;
+            if (WindowRoot != null)
+            {
+                WindowRoot.Background = themeBrush;
+            }
             if (LoadingModalOverlay != null)
             {
                 LoadingModalOverlay.Background = themeBrush;
+            }
+            if (ShortcutEditorOverlay != null)
+            {
+                ShortcutEditorOverlay.Background = themeBrush;
             }
         }
 

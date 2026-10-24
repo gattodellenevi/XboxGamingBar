@@ -122,7 +122,10 @@
         </Style>
     </Page.Resources>
 
-    <Grid x:Name="RootGrid">
+    <Grid x:Name="WindowRoot" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          PointerWheelChanged="WindowRoot_PointerWheelChanged">
+        <Viewbox x:Name="WidgetViewbox" Stretch="Uniform" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Grid x:Name="RootGrid" Width="500" Height="670">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
@@ -2432,6 +2435,8 @@
                     Height="48" 
                     IsHitTestVisible="False"/>
         </Grid>
+    </Grid>
+        </Viewbox>
     </Grid>
 
 </Page>
