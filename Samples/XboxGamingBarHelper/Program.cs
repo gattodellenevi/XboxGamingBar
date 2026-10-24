@@ -288,7 +288,9 @@ namespace XboxGamingBarHelper
                     systemManager.ControllerBattery,
                     systemManager.MouseSpeed,
                     systemManager.MouseEnhancePointerPrecision,
-                    systemManager.MouseScrollSpeed);
+                    systemManager.MouseScrollSpeed,
+                    systemManager.TrayItems,
+                    systemManager.InvokeTrayItem);
 
                 Logger.Info("Initialize callbacks.");
                 systemManager.RunningGame.PropertyChanged += RunningGame_PropertyChanged;

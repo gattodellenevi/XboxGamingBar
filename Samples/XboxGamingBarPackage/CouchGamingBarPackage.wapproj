@@ -165,19 +165,8 @@
   <Target Name="SyncSelfContainedHelperLayout" AfterTargets="_CreateTestLayout">
     <PropertyGroup>
       <_TargetHelperDir>$(MSBuildProjectDirectory)\bin\$(Platform)\$(Configuration)\AppX\CouchGamingBarHelper</_TargetHelperDir>
-      <_MsixPublishDir>$(MSBuildProjectDirectory)\..\XboxGamingBarHelper\bin\$(Platform)\$(Configuration)\net8.0-windows10.0.22000.0\win-$(Platform)\msixpublish</_MsixPublishDir>
     </PropertyGroup>
-    <ItemGroup Condition="Exists('$(_MsixPublishDir)')">
-      <_MsixPublishFiles Include="$(_MsixPublishDir)\**\*" />
-    </ItemGroup>
-    <Copy Condition="Exists('$(_MsixPublishDir)') and Exists('$(_TargetHelperDir)')"
-          SourceFiles="@(_MsixPublishFiles)"
-          DestinationFiles="@(_MsixPublishFiles->'$(_TargetHelperDir)\%(RecursiveDir)%(Filename)%(Extension)')"
-          SkipUnchangedFiles="true"
-          ContinueOnError="WarnAndContinue"
-          Retries="1" />
-    <Exec Condition="!Exists('$(_MsixPublishDir)') and Exists('$(_TargetHelperDir)')"
-          Command="dotnet publish &quot;$(MSBuildProjectDirectory)\..\XboxGamingBarHelper\CouchGamingBarHelper.csproj&quot; -c $(Configuration) -p:Platform=$(Platform) -r win-$(Platform) --self-contained true --output &quot;$(_TargetHelperDir)&quot;" />
+    <Exec Condition="Exists('$(_TargetHelperDir)')" Command="dotnet publish &quot;$(MSBuildProjectDirectory)\..\XboxGamingBarHelper\CouchGamingBarHelper.csproj&quot; -c $(Configuration) -p:Platform=$(Platform) -r win-$(Platform) --self-contained true --output &quot;$(_TargetHelperDir)&quot;" />
   </Target>
   <Target Name="CreateReleasePackage" AfterTargets="SyncSelfContainedHelperLayout">
     <PropertyGroup>

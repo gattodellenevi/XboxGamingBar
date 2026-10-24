@@ -139,6 +139,7 @@
     <Compile Include="Data\RunningGameProperty.cs" />
     <Compile Include="Data\ShortcutManager.cs" />
     <Compile Include="Data\TrackedGameProperty.cs" />
+    <Compile Include="Data\TrayItemViewModel.cs" />
     <Compile Include="Data\WidgetAppServiceRequest.cs" />
     <Compile Include="Data\WidgetAppServiceResponse.cs" />
     <Compile Include="Data\WidgetComboBoxSelectionProperty.cs" />

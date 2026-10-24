@@ -6,7 +6,9 @@ using Shared.Utilities;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
@@ -481,6 +483,7 @@ namespace XboxGamingBar
             this.PreviewKeyDown += GamingWidget_KeyDown;
             InitializeAppVersion();
             InitializeShortcuts();
+            InitializeTrayApps();
             InitializeTabNavigation();
             UpdateFPSLimiterElevationUI();
             UpdateOSDStatusUI();
@@ -1664,6 +1667,10 @@ namespace XboxGamingBar
         private void MainPivot_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             UpdateTabNavigationHUD();
+            if (MainPivot?.SelectedItem == QuickAccessPivotItem)
+            {
+                _ = FetchTrayItemsAsync();
+            }
         }
 
         private void UpdateTabNavigationHUD()
@@ -2181,7 +2188,7 @@ namespace XboxGamingBar
         /// <summary>
         /// When the desktop process is connected, get ready to send/receive requests
         /// </summary>
-        private async void GamingWidget_AppServiceConnected(object sender, AppServiceTriggerDetails _)
+        private async void GamingWidget_AppServiceConnected(object sender, AppServiceTriggerDetails triggerDetails)
         {
             Logger.Info("GamingWidget AppService connected.");
             try
@@ -2256,6 +2263,7 @@ namespace XboxGamingBar
                 await properties.Sync();
                 UpdateFPSLimiterElevationUI();
                 UpdateOSDStatusUI();
+                _ = FetchTrayItemsAsync();
             }
             catch (Exception ex)
             {
@@ -3469,6 +3477,247 @@ namespace XboxGamingBar
             else
             {
                 Logger.Warn("App.Connection is null when attempting to execute shortcut.");
+            }
+        }
+
+        #endregion
+
+        #region System Tray Apps Logic
+
+        private readonly ObservableCollection<TrayItemViewModel> trayApps = new ObservableCollection<TrayItemViewModel>();
+        public ObservableCollection<TrayItemViewModel> TrayApps => trayApps;
+
+        private void InitializeTrayApps()
+        {
+            if (TrayAppsGridView != null)
+            {
+                TrayAppsGridView.ItemsSource = trayApps;
+            }
+        }
+
+        private async Task FetchTrayItemsAsync()
+        {
+            if (App.Connection == null)
+            {
+                Logger.Warn("Cannot fetch tray items: App.Connection is null.");
+                UpdateTrayAppsUI(new List<TrayItemViewModel>());
+                return;
+            }
+
+            try
+            {
+                var valueSet = new ValueSet();
+                valueSet.Add(nameof(Command), (int)Command.Get);
+                valueSet.Add(nameof(Function), (int)Function.TrayItems);
+                valueSet.Add(nameof(UpdatedTime), DateTime.UtcNow.Ticks);
+
+                var response = await App.Connection.SendMessageAsync(valueSet);
+                if (response?.Status == AppServiceResponseStatus.Success && response.Message != null)
+                {
+                    object contentObj = null;
+                    if (response.Message.TryGetValue(nameof(Content), out contentObj) ||
+                        response.Message.TryGetValue("Value", out contentObj))
+                    {
+                        string json = contentObj?.ToString();
+                        if (!string.IsNullOrWhiteSpace(json))
+                        {
+                            var rawItems = JsonSerializer.Deserialize<List<TrayItem>>(json);
+                            if (rawItems != null)
+                            {
+                                var vms = rawItems.Select(item => new TrayItemViewModel(item)).ToList();
+                                UpdateTrayAppsUI(vms);
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to fetch system tray items from helper.");
+            }
+
+            UpdateTrayAppsUI(new List<TrayItemViewModel>());
+        }
+
+        private void UpdateTrayAppsUI(List<TrayItemViewModel> items)
+        {
+            var disp = Dispatcher ?? CoreApplication.MainView?.CoreWindow?.Dispatcher ?? Windows.UI.Xaml.Window.Current?.Dispatcher;
+            if (disp != null && !disp.HasThreadAccess)
+            {
+                _ = disp.RunAsync(CoreDispatcherPriority.Normal, () => ApplyTrayApps(items));
+            }
+            else
+            {
+                ApplyTrayApps(items);
+            }
+        }
+
+        private void ApplyTrayApps(List<TrayItemViewModel> items)
+        {
+            trayApps.Clear();
+            foreach (var item in items)
+            {
+                trayApps.Add(item);
+            }
+
+            if (NoTrayAppsPlaceholder != null)
+            {
+                NoTrayAppsPlaceholder.Visibility = (trayApps.Count == 0) ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        private async void RefreshTrayAppsButton_Click(object sender, RoutedEventArgs e)
+        {
+            await FetchTrayItemsAsync();
+        }
+
+        private async void TrayAppsGridView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is TrayItemViewModel vm)
+            {
+                Logger.Info($"Tray app clicked via ItemClick: '{vm.Name}' (PID {vm.ProcessId})");
+                await SendTrayActionAsync(vm, TrayAction.BringToFront);
+            }
+        }
+
+        private void TrayAppsGridView_PreviewKeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == VirtualKey.GamepadMenu || e.Key == VirtualKey.GamepadX || e.Key == VirtualKey.Application)
+            {
+                var focused = FocusManager.GetFocusedElement() as DependencyObject;
+                DependencyObject current = focused;
+                while (current != null && !(current is GridViewItem) && current != TrayAppsGridView)
+                {
+                    current = VisualTreeHelper.GetParent(current);
+                }
+
+                if (current is GridViewItem gvi)
+                {
+                    var btn = FindVisualChild<Button>(gvi);
+                    if (btn?.ContextFlyout is MenuFlyout flyout)
+                    {
+                        flyout.ShowAt(btn);
+                        e.Handled = true;
+                    }
+                }
+            }
+        }
+
+        private async void TrayAppButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is TrayItemViewModel vm)
+            {
+                Logger.Info($"Tray app button clicked: '{vm.Name}' (PID {vm.ProcessId})");
+                await SendTrayActionAsync(vm, TrayAction.BringToFront);
+            }
+        }
+
+        private void TrayAppButton_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.ContextFlyout is MenuFlyout flyout)
+            {
+                flyout.ShowAt(fe);
+                e.Handled = true;
+            }
+        }
+
+        private void TrayAppButton_Holding(object sender, HoldingRoutedEventArgs e)
+        {
+            if (e.HoldingState == Windows.UI.Input.HoldingState.Started && sender is FrameworkElement fe && fe.ContextFlyout is MenuFlyout flyout)
+            {
+                flyout.ShowAt(fe);
+                e.Handled = true;
+            }
+        }
+
+        private async void TrayMenuBringToFront_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is TrayItemViewModel vm)
+            {
+                await SendTrayActionAsync(vm, TrayAction.BringToFront);
+            }
+        }
+
+        private async void TrayMenuLeftClick_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is TrayItemViewModel vm)
+            {
+                await SendTrayActionAsync(vm, TrayAction.PrimaryClick);
+            }
+        }
+
+        private async void TrayMenuDoubleClick_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is TrayItemViewModel vm)
+            {
+                await SendTrayActionAsync(vm, TrayAction.DoubleClick);
+            }
+        }
+
+        private async void TrayMenuRightClick_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is TrayItemViewModel vm)
+            {
+                await SendTrayActionAsync(vm, TrayAction.SecondaryClick);
+            }
+        }
+
+        private async void TrayMenuCloseApp_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is MenuFlyoutItem item && item.Tag is TrayItemViewModel vm)
+            {
+                await SendTrayActionAsync(vm, TrayAction.Terminate);
+            }
+        }
+
+        private async Task SendTrayActionAsync(TrayItemViewModel vm, TrayAction action)
+        {
+            if (vm == null) return;
+
+            Logger.Info($"SendTrayActionAsync: Executing '{action}' on '{vm.Name}' (PID {vm.ProcessId})");
+
+            if (App.Connection != null)
+            {
+                try
+                {
+                    var request = new TrayActionRequest
+                    {
+                        ItemId = vm.Id,
+                        ProcessId = vm.ProcessId,
+                        Action = action,
+                        X = vm.X,
+                        Y = vm.Y
+                    };
+
+                    string json = JsonSerializer.Serialize(request);
+
+                    var valueSet = new ValueSet();
+                    valueSet.Add(nameof(Command), (int)Command.Set);
+                    valueSet.Add(nameof(Function), (int)Function.InvokeTrayItem);
+                    valueSet.Add(nameof(Content), json);
+                    valueSet.Add(nameof(UpdatedTime), DateTime.UtcNow.Ticks);
+
+                    var response = await App.Connection.SendMessageAsync(valueSet);
+                    Logger.Info($"SendMessageAsync InvokeTrayItem status: {response?.Status}");
+
+                    if (action == TrayAction.Terminate)
+                    {
+                        trayApps.Remove(vm);
+                        if (NoTrayAppsPlaceholder != null)
+                        {
+                            NoTrayAppsPlaceholder.Visibility = (trayApps.Count == 0) ? Visibility.Visible : Visibility.Collapsed;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to send tray action payload to helper.");
+                }
+            }
+            else
+            {
+                Logger.Warn("App.Connection is null when attempting to execute tray action.");
             }
         }
 

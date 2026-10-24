@@ -5,6 +5,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:XboxGamingBar"
     xmlns:converter="using:XboxGamingBar.Converter"
+    xmlns:data="using:XboxGamingBar.Data"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     d:DesignHeight="670" d:DesignWidth="500"
@@ -1127,6 +1128,124 @@
                                 </Button>
                             </Grid>
 
+                            <!-- SECTION: SYSTEM TRAY APPS -->
+                            <Grid Margin="10,12,10,4">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <FontIcon Glyph="&#xE7FC;" FontSize="13" Foreground="{StaticResource TabQuickAccessBrush}" Margin="0,0,6,0"/>
+                                    <TextBlock Text="SYSTEM TRAY APPS" Style="{StaticResource SectionHeaderTextStyle}" Margin="0"/>
+                                </StackPanel>
+                                <Button x:Name="RefreshTrayAppsButton" 
+                                        HorizontalAlignment="Right" 
+                                        Padding="8,4" 
+                                        Click="RefreshTrayAppsButton_Click"
+                                        CornerRadius="6">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <FontIcon Glyph="&#xE72C;" FontSize="11"/>
+                                        <TextBlock Text="Refresh" FontSize="11"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <Border Style="{StaticResource SettingsCardStyle}" Padding="10,10,10,10">
+                                <StackPanel>
+                                    <!-- Empty / offline placeholder -->
+                                    <StackPanel x:Name="NoTrayAppsPlaceholder" Visibility="Collapsed" HorizontalAlignment="Center" Margin="0,16,0,16">
+                                        <FontIcon Glyph="&#xE718;" FontSize="28" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+                                        <TextBlock Text="No tray applications detected" FontWeight="SemiBold" FontSize="14" HorizontalAlignment="Center"/>
+                                        <TextBlock Text="Ensure CouchGamingBarHelper is running" Style="{StaticResource SubtitleTextStyle}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                    </StackPanel>
+
+                                    <!-- Grid of system tray apps -->
+                                    <GridView x:Name="TrayAppsGridView"
+                                              SelectionMode="None"
+                                              IsItemClickEnabled="True"
+                                              ItemClick="TrayAppsGridView_ItemClick"
+                                              PreviewKeyDown="TrayAppsGridView_PreviewKeyDown"
+                                              XYFocusKeyboardNavigation="Enabled"
+                                              HorizontalAlignment="Center">
+                                        <GridView.ItemContainerStyle>
+                                            <Style TargetType="GridViewItem">
+                                                <Setter Property="Margin" Value="0"/>
+                                                <Setter Property="Padding" Value="0"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                                <Setter Property="MinWidth" Value="0"/>
+                                                <Setter Property="MinHeight" Value="0"/>
+                                                <Setter Property="CornerRadius" Value="8"/>
+                                            </Style>
+                                        </GridView.ItemContainerStyle>
+                                        <GridView.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="-1" ItemWidth="105" ItemHeight="95"/>
+                                            </ItemsPanelTemplate>
+                                        </GridView.ItemsPanel>
+                                        <GridView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Button Click="TrayAppButton_Click"
+                                                        RightTapped="TrayAppButton_RightTapped"
+                                                        Holding="TrayAppButton_Holding"
+                                                        IsTabStop="False"
+                                                        Tag="{Binding}"
+                                                        Width="98" Height="88"
+                                                        Margin="2,2,2,2"
+                                                        Padding="4,6,4,6"
+                                                        CornerRadius="8"
+                                                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                        BorderThickness="1"
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center">
+                                                    <Button.ContextFlyout>
+                                                        <MenuFlyout>
+                                                            <MenuFlyoutItem Text="Bring to Front" Click="TrayMenuBringToFront_Click" Tag="{Binding}">
+                                                                <MenuFlyoutItem.Icon>
+                                                                    <FontIcon Glyph="&#xE737;"/>
+                                                                </MenuFlyoutItem.Icon>
+                                                            </MenuFlyoutItem>
+                                                            <MenuFlyoutItem Text="Left-Click (Open)" Click="TrayMenuLeftClick_Click" Tag="{Binding}">
+                                                                <MenuFlyoutItem.Icon>
+                                                                    <FontIcon Glyph="&#xE8A7;"/>
+                                                                </MenuFlyoutItem.Icon>
+                                                            </MenuFlyoutItem>
+                                                            <MenuFlyoutItem Text="Double-Click" Click="TrayMenuDoubleClick_Click" Tag="{Binding}">
+                                                                <MenuFlyoutItem.Icon>
+                                                                    <FontIcon Glyph="&#xE8EE;"/>
+                                                                </MenuFlyoutItem.Icon>
+                                                            </MenuFlyoutItem>
+                                                            <MenuFlyoutItem Text="Right-Click (Menu)" Click="TrayMenuRightClick_Click" Tag="{Binding}">
+                                                                <MenuFlyoutItem.Icon>
+                                                                    <FontIcon Glyph="&#xE700;"/>
+                                                                </MenuFlyoutItem.Icon>
+                                                            </MenuFlyoutItem>
+                                                            <MenuFlyoutSeparator/>
+                                                            <MenuFlyoutItem Text="Close App" Click="TrayMenuCloseApp_Click" Tag="{Binding}">
+                                                                <MenuFlyoutItem.Icon>
+                                                                    <FontIcon Glyph="&#xE711;"/>
+                                                                </MenuFlyoutItem.Icon>
+                                                            </MenuFlyoutItem>
+                                                        </MenuFlyout>
+                                                    </Button.ContextFlyout>
+                                                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+                                                        <Grid Width="32" Height="32">
+                                                            <Image Source="{Binding IconSource}" Width="32" Height="32" Stretch="Uniform"
+                                                                   Visibility="{Binding HasIcon, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                            <FontIcon Glyph="&#xE718;" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                      Visibility="{Binding HasNoIcon, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+                                                        </Grid>
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   FontSize="11"
+                                                                   FontWeight="SemiBold"
+                                                                   TextAlignment="Center"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   MaxLines="1"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </DataTemplate>
+                                        </GridView.ItemTemplate>
+                                    </GridView>
+                                </StackPanel>
+                            </Border>
+
                             <!-- Inline Elevation Mismatch Warning Banner (Quick Access) -->
                             <Border x:Name="QuickElevationWarningCard"
                                     Background="#2D2305" BorderBrush="#CA8A04" BorderThickness="1"
@@ -1976,6 +2095,7 @@
                                     </Grid>
                                 </StackPanel>
                             </Border>
+
 
                             <!-- SECTION: BACKGROUND SERVICES -->
                             <TextBlock Text="BACKGROUND SERVICES" Style="{StaticResource SectionHeaderTextStyle}"/>

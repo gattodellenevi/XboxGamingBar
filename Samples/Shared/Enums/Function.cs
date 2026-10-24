@@ -62,6 +62,10 @@ namespace Shared.Enums
         NvidiaVSyncMode,
         NvidiaVSyncSupported,
 
+        TrayItems,
+        GetTrayItems,
+        InvokeTrayItem,
+
         AppExit = 100
     }
 }

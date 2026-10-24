@@ -171,6 +171,18 @@ namespace XboxGamingBarHelper.Systems
             get { return hdrSupported; }
         }
 
+        private readonly TrayItemsProperty trayItems;
+        public TrayItemsProperty TrayItems
+        {
+            get { return trayItems; }
+        }
+
+        private readonly InvokeTrayItemProperty invokeTrayItem;
+        public InvokeTrayItemProperty InvokeTrayItem
+        {
+            get { return invokeTrayItem; }
+        }
+
         private IReadOnlyDictionary<GameId, GameProfile> Profiles { get; }
 
         // Keep track to current opening windows to determine currently running game.
@@ -261,6 +273,9 @@ namespace XboxGamingBarHelper.Systems
             Logger.Info($"Check initial HDR status: Supported={initialHdrSupported}, Enabled={initialHdrEnabled}.");
             hdr = new HDRProperty(initialHdrEnabled, this);
             hdrSupported = new HDRSupportedProperty(initialHdrSupported, this);
+
+            trayItems = new TrayItemsProperty(this);
+            invokeTrayItem = new InvokeTrayItemProperty(this);
 
             displayUpdateTimer = new System.Timers.Timer(500); // 500ms debounce
             displayUpdateTimer.AutoReset = false;
