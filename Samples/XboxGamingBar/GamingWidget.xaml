@@ -316,6 +316,8 @@
                     <ColumnDefinition Width="*"/>
                     <!-- Controller Battery Pill -->
                     <ColumnDefinition Width="Auto"/>
+                    <!-- Force Close Game Pill -->
+                    <ColumnDefinition Width="Auto"/>
                     <!-- Segmented Profile Capsule -->
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
@@ -407,8 +409,58 @@
                     </StackPanel>
                 </Button>
 
+                <!-- Force Close Game Pill Button with Confirmation Flyout -->
+                <Button x:Name="HeroForceCloseButton" Grid.Column="3" 
+                        Margin="0,0,8,0" Padding="8,4,8,4"
+                        Height="32" CornerRadius="8"
+                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed"
+                        Click="HeroForceCloseButton_Click"
+                        ToolTipService.ToolTip="Force close running game">
+                    <Button.Flyout>
+                        <Flyout x:Name="HeroForceCloseFlyout" Placement="Bottom" LightDismissOverlayMode="On">
+                            <StackPanel Width="270" Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <Border Width="28" Height="28" CornerRadius="6" Background="#33FF5555" VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE711;" FontSize="13" Foreground="#FFFF5555" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel VerticalAlignment="Center">
+                                        <TextBlock Text="Force Close Game?" FontWeight="Bold" FontSize="13" Foreground="White"/>
+                                        <TextBlock Text="Lost progress cannot be recovered" Style="{StaticResource SubtitleTextStyle}" FontSize="11"/>
+                                    </StackPanel>
+                                </StackPanel>
+                                <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,2,0,2"/>
+                                <TextBlock x:Name="HeroForceClosePromptText" 
+                                           Text="Are you sure you want to terminate the active game immediately? Any unsaved progress will be lost." 
+                                           FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" 
+                                           TextWrapping="Wrap"/>
+                                <Grid Margin="0,4,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Button x:Name="CancelForceCloseButton" Grid.Column="0" Content="Cancel" 
+                                            HorizontalAlignment="Stretch" Height="32" CornerRadius="6"
+                                            Click="CancelForceCloseButton_Click"/>
+                                    <Button x:Name="ConfirmForceCloseButton" Grid.Column="2" Content="Terminate" 
+                                            HorizontalAlignment="Stretch" Height="32" CornerRadius="6"
+                                            Background="#C42B1C" Foreground="White" BorderThickness="0"
+                                            Click="ConfirmForceCloseButton_Click"/>
+                                </Grid>
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="5">
+                        <FontIcon Glyph="&#xE711;" FontSize="11" Foreground="#FFFF5555" VerticalAlignment="Center"/>
+                        <TextBlock Text="Close" FontSize="11" FontWeight="Bold" Foreground="#FFFF5555" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
+
                 <!-- Modern Segmented Profile Capsule [ Global | 🎮 Per-Game ] -->
-                <StackPanel Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
                     <!-- Underlying ToggleSwitch preserved for backend bindings -->
                     <ToggleSwitch x:Name="PerGameProfileToggle" Visibility="Collapsed" IsEnabled="False"
                                   OffContent="Global" OnContent="Per-game"/>

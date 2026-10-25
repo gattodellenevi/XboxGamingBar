@@ -12,6 +12,8 @@ using Shared.Utilities;
 using Microsoft.Win32;
 using System.Timers;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace XboxGamingBarHelper.Systems
 {
@@ -132,6 +134,8 @@ namespace XboxGamingBarHelper.Systems
         private readonly VirtualKeyboardProperty virtualKeyboard;
         private readonly SteamOverlayProperty steamOverlay;
         public SteamOverlayProperty SteamOverlay => steamOverlay;
+        private readonly ForceCloseGameProperty forceCloseGame;
+        public ForceCloseGameProperty ForceCloseGame => forceCloseGame;
         public VirtualKeyboardProperty VirtualKeyboard
         {
             get { return virtualKeyboard; }
@@ -245,6 +249,7 @@ namespace XboxGamingBarHelper.Systems
             restartGameInputService = new RestartGameInputServiceProperty(this);
             virtualKeyboard = new VirtualKeyboardProperty(this);
             steamOverlay = new SteamOverlayProperty(this);
+            forceCloseGame = new ForceCloseGameProperty(this);
             var initialBattery = ControllerBatteryManager.GetCurrentBatteryStatus();
             Logger.Info($"Check controller battery status: Connected={initialBattery.IsConnected}, Level={initialBattery.BatteryLevel}%, Category={initialBattery.LevelCategory}.");
             controllerBattery = new ControllerBatteryProperty(initialBattery, this);
@@ -481,6 +486,73 @@ namespace XboxGamingBarHelper.Systems
                 lastDetectedGame = highestFPSGame;
                 return lastDetectedGame;
             }
+        }
+
+        public void ForceCloseRunningGame()
+        {
+            Task.Run(() =>
+            {
+                try
+                {
+                    var game = RunningGame.Value;
+                    int pid = game.IsValid() ? game.ProcessId : 0;
+                    string gameName = game.IsValid() ? game.GameId.Name : "unknown";
+
+                    Logger.Info($"ForceCloseRunningGame requested for '{gameName}' (PID: {pid})");
+
+                    if (pid <= 0)
+                    {
+                        Logger.Warn("ForceCloseRunningGame: No valid PID found in RunningGame.");
+                        return;
+                    }
+
+                    bool killed = false;
+                    try
+                    {
+                        var proc = Process.GetProcessById(pid);
+                        if (proc != null && !proc.HasExited)
+                        {
+                            proc.Kill(entireProcessTree: true);
+                            Logger.Info($"Process.Kill(true) succeeded for PID {pid} ('{gameName}').");
+                            killed = true;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn(ex, $"Process.Kill failed for PID {pid}, trying taskkill.exe fallback.");
+                    }
+
+                    try
+                    {
+                        using var p = Process.Start(new ProcessStartInfo
+                        {
+                            FileName = "taskkill.exe",
+                            Arguments = $"/F /T /PID {pid}",
+                            CreateNoWindow = true,
+                            UseShellExecute = false
+                        });
+                        p?.WaitForExit(3000);
+                        killed = true;
+                        Logger.Info($"taskkill.exe completed for PID {pid}.");
+                    }
+                    catch (Exception tkEx)
+                    {
+                        Logger.Warn(tkEx, $"taskkill.exe fallback failed for PID {pid}.");
+                    }
+
+                    if (killed)
+                    {
+                        lastDetectedGame = new RunningGame();
+                        lastForegroundHwnd = IntPtr.Zero;
+                        RunningGame.SetValue(new RunningGame());
+                        Logger.Info("RunningGame reset to empty after force close.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Unexpected error in ForceCloseRunningGame.");
+                }
+            });
         }
 
         private RunningGameOptions CreateGameOptions(ProcessWindow window, string customPath = null, string aumId = "", uint fps = 0)

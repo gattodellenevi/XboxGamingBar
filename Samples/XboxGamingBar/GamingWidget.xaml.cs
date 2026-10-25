@@ -1053,6 +1053,64 @@ namespace XboxGamingBar
             UpdateHeroSubtitle();
         }
 
+        private void HeroForceCloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            string gameName = runningGame != null && runningGame.Value.IsValid()
+                ? runningGame.Value.GameId.Name
+                : (RunningGameText != null && !string.IsNullOrWhiteSpace(RunningGameText.Text) ? RunningGameText.Text : "the running game");
+
+            if (HeroForceClosePromptText != null)
+            {
+                HeroForceClosePromptText.Text = $"Are you sure you want to terminate \"{gameName}\" immediately? Any unsaved progress will be lost.";
+            }
+        }
+
+        private void CancelForceCloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            HeroForceCloseFlyout?.Hide();
+        }
+
+        private async void ConfirmForceCloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("ConfirmForceCloseButton clicked - sending ForceCloseGame command to helper.");
+            HeroForceCloseFlyout?.Hide();
+
+            if (HeroForceCloseButton != null)
+            {
+                HeroForceCloseButton.IsEnabled = false;
+            }
+
+            try
+            {
+                if (App.Connection != null)
+                {
+                    var valueSet = new ValueSet();
+                    valueSet.Add(nameof(Command), (int)Command.Set);
+                    valueSet.Add(nameof(Function), (int)Function.ForceCloseGame);
+                    valueSet.Add(nameof(Content), true);
+                    valueSet.Add(nameof(UpdatedTime), DateTime.UtcNow.Ticks);
+
+                    var response = await App.Connection.SendMessageAsync(valueSet);
+                    Logger.Info($"SendMessageAsync ForceCloseGame status: {response?.Status}");
+                }
+                else
+                {
+                    Logger.Warn("App.Connection is null when attempting to force close game.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "Failed to send ForceCloseGame message to helper.");
+            }
+            finally
+            {
+                if (HeroForceCloseButton != null)
+                {
+                    HeroForceCloseButton.IsEnabled = true;
+                }
+            }
+        }
+
         private void UpdateHeroGameUI()
         {
             if (Dispatcher != null && !Dispatcher.HasThreadAccess)
@@ -1093,6 +1151,7 @@ namespace XboxGamingBar
                     HeroGameStatusBadgeText.Text = "RUNNING";
                     HeroGameStatusBadgeText.Foreground = xboxGreenBrush;
                 }
+                if (HeroForceCloseButton != null) HeroForceCloseButton.Visibility = Visibility.Visible;
             }
             else
             {
@@ -1110,6 +1169,8 @@ namespace XboxGamingBar
                     HeroGameStatusBadgeText.Text = "STANDBY";
                     HeroGameStatusBadgeText.Foreground = mediumBrush;
                 }
+                if (HeroForceCloseButton != null) HeroForceCloseButton.Visibility = Visibility.Collapsed;
+                HeroForceCloseFlyout?.Hide();
             }
 
             UpdateHeroSubtitle();

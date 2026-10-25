@@ -284,6 +284,7 @@ namespace XboxGamingBarHelper
                     systemManager.RestartGameInputService,
                     systemManager.VirtualKeyboard,
                     systemManager.SteamOverlay,
+                    systemManager.ForceCloseGame,
                     systemManager.HDR,
                     systemManager.HDRSupported,
                     systemManager.ControllerBattery,
