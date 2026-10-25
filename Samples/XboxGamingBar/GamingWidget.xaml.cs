@@ -1403,6 +1403,55 @@ namespace XboxGamingBar
             }
         }
 
+        private async void QuickSteamOverlayButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("QuickSteamOverlayButton clicked.");
+            if (App.Connection != null)
+            {
+                try
+                {
+                    if (QuickSteamOverlaySubtitleText != null)
+                    {
+                        QuickSteamOverlaySubtitleText.Text = "Opening...";
+                    }
+                    if (QuickSteamOverlayButton != null)
+                    {
+                        QuickSteamOverlayButton.IsEnabled = false;
+                    }
+
+                    var valueSet = new ValueSet();
+                    valueSet.Add(nameof(Command), (int)Command.Set);
+                    valueSet.Add(nameof(Function), (int)Function.SteamOverlay);
+                    valueSet.Add(nameof(Content), true);
+                    valueSet.Add(nameof(UpdatedTime), DateTime.UtcNow.Ticks);
+
+                    var response = await App.Connection.SendMessageAsync(valueSet);
+                    Logger.Info($"SendMessageAsync SteamOverlay status: {response?.Status}");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to send SteamOverlay message to helper.");
+                }
+                finally
+                {
+                    await Task.Delay(1500);
+                    if (QuickSteamOverlaySubtitleText != null)
+                    {
+                        QuickSteamOverlaySubtitleText.Text = "Open in-game overlay";
+                    }
+                    if (QuickSteamOverlayButton != null)
+                    {
+                        QuickSteamOverlayButton.IsEnabled = true;
+                    }
+                }
+            }
+            else
+            {
+                Logger.Warn("App.Connection is null when attempting to open Steam Overlay.");
+                await EnsureHelperConnectionOrLaunchAsync();
+            }
+        }
+
         private void QuickHDRToggleButton_Click(object sender, RoutedEventArgs e)
         {
             if (hdrSupported == null || !hdrSupported.Value) return;

@@ -1236,6 +1236,7 @@ namespace XboxGamingBarHelper.Windows
 
         #region System Tray and UI Automation Helpers
 
+
         public const int SW_RESTORE = 9;
         public const int SW_SHOW = 5;
 
@@ -1277,6 +1278,36 @@ namespace XboxGamingBarHelper.Windows
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+
+        [DllImport("user32.dll")]
+        public static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
+
+        public const uint MAPVK_VK_TO_VSC = 0x00;
+
+        [DllImport("user32.dll")]
+        public static extern uint MapVirtualKey(uint uCode, uint uMapType);
+
+
+
+        public static bool ForceSetForegroundWindow(IntPtr hWnd)
+        {
+            if (hWnd == IntPtr.Zero || !IsWindow(hWnd)) return false;
+
+            try
+            {
+                // Simulate an Alt key press/release to unlock SetForegroundWindow permission
+                keybd_event(0x12, 0, 0, UIntPtr.Zero);
+                keybd_event(0x12, 0, 0x0002, UIntPtr.Zero);
+
+                ShowWindow(hWnd, SW_RESTORE);
+                return SetForegroundWindow(hWnd);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, $"ForceSetForegroundWindow failed for handle {hWnd}");
+                return false;
+            }
+        }
 
         #endregion
     }

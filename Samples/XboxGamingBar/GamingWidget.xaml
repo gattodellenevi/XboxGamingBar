@@ -1099,9 +1099,10 @@
                                 </Button>
 
                                 <!-- Row 2: HDR Quick Toggle -->
-                                <Button x:Name="QuickHDRToggleButton" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
+                                <Button x:Name="QuickHDRToggleButton" Grid.Row="2" Grid.Column="0"
                                         HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
-                                        Margin="0,0,0,0" Padding="12,10,12,10" CornerRadius="8"
+                                        Margin="0,0,5,0" Padding="12,10,12,10" CornerRadius="8"
+                                        XYFocusRight="{x:Bind QuickSteamOverlayButton}"
                                         Background="{ThemeResource LayerFillColorDefaultBrush}"
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="1"
@@ -1119,13 +1120,46 @@
                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
                                         </Border>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
-                                            <TextBlock Text="HDR (High Dynamic Range)" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="HDR" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
                                             <TextBlock x:Name="QuickHDRSubtitleText" Text="Disabled" Style="{StaticResource SubtitleTextStyle}" FontSize="11" TextTrimming="CharacterEllipsis"/>
                                         </StackPanel>
                                         <Border x:Name="QuickHDRBadge" Grid.Column="2" VerticalAlignment="Center"
                                                 Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2"
                                                 Background="#3A3A3A" BorderBrush="#3A3A3A">
                                             <TextBlock x:Name="QuickHDRBadgeText" Text="OFF" Style="{StaticResource ValueBadgeTextStyle}" Foreground="#CCCCCC"/>
+                                        </Border>
+                                    </Grid>
+                                </Button>
+
+                                <!-- Row 2: Steam Overlay Button -->
+                                <Button x:Name="QuickSteamOverlayButton" Grid.Row="2" Grid.Column="1"
+                                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                        Margin="5,0,0,0" Padding="12,10,12,10" CornerRadius="8"
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        XYFocusLeft="{x:Bind QuickHDRToggleButton}"
+                                        Click="QuickSteamOverlayButton_Click">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="QuickSteamOverlayIconBorder" Grid.Column="0" Width="32" Height="32" CornerRadius="6" 
+                                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}" 
+                                                Margin="0,0,10,0" VerticalAlignment="Center">
+                                            <FontIcon x:Name="QuickSteamOverlayIcon" Glyph="&#xE7FC;" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                                      Foreground="{StaticResource XboxGreenBrush}"/>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,6,0">
+                                            <TextBlock Text="Steam Overlay" FontWeight="SemiBold" FontSize="13" TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock x:Name="QuickSteamOverlaySubtitleText" Text="Open in-game overlay" Style="{StaticResource SubtitleTextStyle}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <Border x:Name="QuickSteamOverlayBadge" Grid.Column="2" VerticalAlignment="Center"
+                                                Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2"
+                                                Background="#107C41" BorderBrush="#107C41">
+                                            <TextBlock x:Name="QuickSteamOverlayBadgeText" Text="OPEN" Style="{StaticResource ValueBadgeTextStyle}" Foreground="White"/>
                                         </Border>
                                     </Grid>
                                 </Button>

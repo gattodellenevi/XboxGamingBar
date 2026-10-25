@@ -14,11 +14,15 @@ namespace XboxGamingBarHelper.Windows
         private const uint INPUT_KEYBOARD = 1;
         private const uint KEYEVENTF_EXTENDEDKEY = 0x0001;
         private const uint KEYEVENTF_KEYUP = 0x0002;
+        private const uint KEYEVENTF_SCANCODE = 0x0008;
 
         private const ushort VK_SHIFT = 0x10;
         private const ushort VK_CONTROL = 0x11;
         private const ushort VK_MENU = 0x12; // Alt
         private const ushort VK_LWIN = 0x5B;
+
+        private const ushort SCANCODE_LSHIFT = 0x2A;
+        private const ushort SCANCODE_TAB = 0x0F;
 
         [StructLayout(LayoutKind.Sequential)]
         private struct INPUT
@@ -84,6 +88,8 @@ namespace XboxGamingBarHelper.Windows
                 flags |= KEYEVENTF_EXTENDEDKEY;
             }
 
+            ushort scan = (ushort)User32.MapVirtualKey((uint)vk, User32.MAPVK_VK_TO_VSC);
+
             return new INPUT
             {
                 type = INPUT_KEYBOARD,
@@ -92,13 +98,90 @@ namespace XboxGamingBarHelper.Windows
                     ki = new KEYBDINPUT
                     {
                         wVk = vk,
-                        wScan = 0,
+                        wScan = scan,
                         dwFlags = flags,
                         time = 0,
                         dwExtraInfo = IntPtr.Zero
                     }
                 }
             };
+        }
+
+        private static INPUT CreateScanCodeInput(ushort scanCode, bool isKeyUp, bool isExtended = false)
+        {
+            uint flags = KEYEVENTF_SCANCODE;
+            if (isKeyUp)
+            {
+                flags |= KEYEVENTF_KEYUP;
+            }
+            if (isExtended)
+            {
+                flags |= KEYEVENTF_EXTENDEDKEY;
+            }
+
+            return new INPUT
+            {
+                type = INPUT_KEYBOARD,
+                u = new InputUnion
+                {
+                    ki = new KEYBDINPUT
+                    {
+                        wVk = 0,
+                        wScan = scanCode,
+                        dwFlags = flags,
+                        time = 0,
+                        dwExtraInfo = IntPtr.Zero
+                    }
+                }
+            };
+        }
+
+        public static void SendSteamOverlayShortcut(IntPtr targetHwnd = default)
+        {
+            Task.Run(async () =>
+            {
+                try
+                {
+                    Logger.Info($"Sending Steam Overlay shortcut: Dismissing Game Bar and targeting HWND: {targetHwnd}");
+
+                    // 1. Dismiss Game Bar by toggling Win + G so the game window regains native foreground focus
+                    User32.keybd_event(0x5B, 0x5B, 0, UIntPtr.Zero); // Win down
+                    User32.keybd_event(0x47, 0x22, 0, UIntPtr.Zero); // G down
+                    await Task.Delay(35);
+                    User32.keybd_event(0x47, 0x22, 0x0002, UIntPtr.Zero); // G up
+                    User32.keybd_event(0x5B, 0x5B, 0x0002, UIntPtr.Zero); // Win up
+
+                    // 2. Allow Windows shell time to dismiss Game Bar and transfer focus
+                    await Task.Delay(350);
+
+                    // 3. Ensure target game window is brought to foreground
+                    if (targetHwnd != IntPtr.Zero)
+                    {
+                        User32.ForceSetForegroundWindow(targetHwnd);
+                        await Task.Delay(100);
+                    }
+
+                    // 4. Send Shift + Tab using keybd_event with BOTH VirtualKey and Hardware ScanCode
+                    // Down: Shift (VK_SHIFT = 0x10, ScanCode = 0x2A), then Tab (VK_TAB = 0x09, ScanCode = 0x0F)
+                    User32.keybd_event(0x10, 0x2A, 0, UIntPtr.Zero);
+                    await Task.Delay(30);
+                    User32.keybd_event(0x09, 0x0F, 0, UIntPtr.Zero);
+
+                    // Hold for 75ms so game hook and frame pump register both keys
+                    await Task.Delay(75);
+
+                    // Up: Tab, then Shift
+                    User32.keybd_event(0x09, 0x0F, 0x0002, UIntPtr.Zero);
+                    await Task.Delay(30);
+                    User32.keybd_event(0x10, 0x2A, 0x0002, UIntPtr.Zero);
+
+                    Logger.Info("Steam Overlay shortcut (Win+G dismiss + Shift+Tab keybd_event) sent successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error(ex, "Failed to send Steam Overlay shortcut.");
+                }
+            });
         }
 
         public static void SendKeyCombo(bool ctrl, bool alt, bool shift, bool win, int virtualKey)

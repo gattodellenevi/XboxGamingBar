@@ -65,6 +65,7 @@ namespace Shared.Enums
         TrayItems,
         GetTrayItems,
         InvokeTrayItem,
+        SteamOverlay,
 
         AppExit = 100
     }

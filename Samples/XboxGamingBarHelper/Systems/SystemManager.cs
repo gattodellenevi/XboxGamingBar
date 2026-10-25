@@ -130,6 +130,8 @@ namespace XboxGamingBarHelper.Systems
         }
 
         private readonly VirtualKeyboardProperty virtualKeyboard;
+        private readonly SteamOverlayProperty steamOverlay;
+        public SteamOverlayProperty SteamOverlay => steamOverlay;
         public VirtualKeyboardProperty VirtualKeyboard
         {
             get { return virtualKeyboard; }
@@ -186,7 +188,7 @@ namespace XboxGamingBarHelper.Systems
         private IReadOnlyDictionary<GameId, GameProfile> Profiles { get; }
 
         // Keep track to current opening windows to determine currently running game.
-        private Dictionary<int, ProcessWindow> ProcessWindows { get; }
+        public Dictionary<int, ProcessWindow> ProcessWindows { get; }
         private Dictionary<int, AppEntry> AppEntries { get; }
         private readonly System.Timers.Timer displayUpdateTimer;
 
@@ -242,6 +244,7 @@ namespace XboxGamingBarHelper.Systems
             gameInputStatus = new GameInputStatusProperty(initialGameInputStatus, this);
             restartGameInputService = new RestartGameInputServiceProperty(this);
             virtualKeyboard = new VirtualKeyboardProperty(this);
+            steamOverlay = new SteamOverlayProperty(this);
             var initialBattery = ControllerBatteryManager.GetCurrentBatteryStatus();
             Logger.Info($"Check controller battery status: Connected={initialBattery.IsConnected}, Level={initialBattery.BatteryLevel}%, Category={initialBattery.LevelCategory}.");
             controllerBattery = new ControllerBatteryProperty(initialBattery, this);
