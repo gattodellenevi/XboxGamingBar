@@ -2361,6 +2361,205 @@
                                         </Grid>
                                     </StackPanel>
                                 </Border>
+
+                                <!-- SECTION: NVIDIA OVERLAY & SHADOWPLAY -->
+                                <TextBlock Text="NVIDIA OVERLAY &amp; SHADOWPLAY" Style="{StaticResource SectionHeaderTextStyle}" Margin="14,8,14,6"/>
+
+                                <!-- Real-Time Injection Notice Banner -->
+                                <Border Margin="10,0,10,10" Padding="12,10,12,10" CornerRadius="8"
+                                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <FontIcon Grid.Column="0" Glyph="&#xE759;" FontSize="15" Foreground="{StaticResource GeForceGreenBrush}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="Instant execution via controller or button trigger without restarting your game."
+                                                   FontSize="12" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- NVIDIA Overlay Hotkeys Card -->
+                                <Border Style="{StaticResource SettingsCardStyle}">
+                                    <StackPanel>
+                                        <!-- Row 1: Toggle Performance Overlay -->
+                                        <Grid Margin="0,2,0,2">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <TextBlock Text="Performance Overlay" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <TextBlock Text="Toggle FPS, GPU latency &amp; telemetry HUD" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="Alt" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                    <TextBlock Text="+" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="3,0,3,0" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="R" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <Button x:Name="NvidiaTriggerPerfOverlayButton" Height="30" Padding="10,0,10,0" CornerRadius="6"
+                                                        Click="NvidiaTriggerPerfOverlayButton_Click" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                        <FontIcon Glyph="&#xE768;" FontSize="10" Foreground="{StaticResource GeForceGreenBrush}"/>
+                                                        <TextBlock Text="Trigger" FontSize="11" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
+
+                                        <!-- Row 2: Cycle Overlay Mode -->
+                                        <Grid Margin="0,2,0,2">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <TextBlock Text="Cycle Overlay Mode" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <TextBlock Text="Switch layout: Basic &#x2192; Advanced &#x2192; Custom" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="Alt" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                    <TextBlock Text="+" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="3,0,3,0" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="Shift" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                    <TextBlock Text="+" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="3,0,3,0" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="R" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <Button x:Name="NvidiaTriggerCycleModeButton" Height="30" Padding="10,0,10,0" CornerRadius="6"
+                                                        Click="NvidiaTriggerCycleModeButton_Click" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                        <FontIcon Glyph="&#xE768;" FontSize="10" Foreground="{StaticResource GeForceGreenBrush}"/>
+                                                        <TextBlock Text="Trigger" FontSize="11" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
+
+                                        <!-- Row 3: In-Game Overlay (HUD) -->
+                                        <Grid Margin="0,2,0,2">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <TextBlock Text="In-Game Overlay (HUD)" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <TextBlock Text="Open GeForce full gallery &amp; overlay menu" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="Alt" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                    <TextBlock Text="+" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="3,0,3,0" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="Z" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <Button x:Name="NvidiaTriggerOverlayHUDButton" Height="30" Padding="10,0,10,0" CornerRadius="6"
+                                                        Click="NvidiaTriggerOverlayHUDButton_Click" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                        <FontIcon Glyph="&#xE768;" FontSize="10" Foreground="{StaticResource GeForceGreenBrush}"/>
+                                                        <TextBlock Text="Trigger" FontSize="11" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
+
+                                        <!-- Row 4: Save Instant Replay -->
+                                        <Grid Margin="0,2,0,2">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <TextBlock Text="Save Instant Replay" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <TextBlock Text="Save clip of the last 5 minutes of gameplay" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="Alt" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                    <TextBlock Text="+" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="3,0,3,0" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="F10" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <Button x:Name="NvidiaTriggerSaveReplayButton" Height="30" Padding="10,0,10,0" CornerRadius="6"
+                                                        Click="NvidiaTriggerSaveReplayButton_Click" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                        <FontIcon Glyph="&#xE768;" FontSize="10" Foreground="{StaticResource GeForceGreenBrush}"/>
+                                                        <TextBlock Text="Trigger" FontSize="11" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
+
+                                        <!-- Row 5: Toggle Recording -->
+                                        <Grid Margin="0,2,0,2">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <TextBlock Text="Toggle Recording" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <TextBlock Text="Start or stop full session video recording" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="Alt" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                    <TextBlock Text="+" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="3,0,3,0" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="F9" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <Button x:Name="NvidiaTriggerRecordButton" Height="30" Padding="10,0,10,0" CornerRadius="6"
+                                                        Click="NvidiaTriggerRecordButton_Click" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                        <FontIcon Glyph="&#xE768;" FontSize="10" Foreground="{StaticResource GeForceGreenBrush}"/>
+                                                        <TextBlock Text="Trigger" FontSize="11" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+
+                                        <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,10,0,10"/>
+
+                                        <!-- Row 6: Game Filters (Freestyle) -->
+                                        <Grid Margin="0,2,0,2">
+                                            <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                                                <TextBlock Text="Game Filters (Freestyle)" FontWeight="SemiBold" FontSize="15"
+                                                    TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"/>
+                                                <TextBlock Text="Real-time post-processing color &amp; HDR filters" Style="{StaticResource SubtitleTextStyle}"/>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="Alt" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                    <TextBlock Text="+" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" Margin="3,0,3,0" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                    <Border Style="{StaticResource ValueBadgeStyle}" Padding="6,2,6,2">
+                                                        <TextBlock Text="F3" Style="{StaticResource ValueBadgeTextStyle}"/>
+                                                    </Border>
+                                                </StackPanel>
+                                                <Button x:Name="NvidiaTriggerGameFiltersButton" Height="30" Padding="10,0,10,0" CornerRadius="6"
+                                                        Click="NvidiaTriggerGameFiltersButton_Click" VerticalAlignment="Center">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5" VerticalAlignment="Center">
+                                                        <FontIcon Glyph="&#xE768;" FontSize="10" Foreground="{StaticResource GeForceGreenBrush}"/>
+                                                        <TextBlock Text="Trigger" FontSize="11" FontWeight="SemiBold"/>
+                                                    </StackPanel>
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
                             </StackPanel>
 
                             <!-- SECTION: AMD RADEON REAL-TIME CONTROLS -->

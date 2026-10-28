@@ -47,6 +47,34 @@ namespace XboxGamingBar.Data
             }
         }
 
+        public void Update(TrayItem newItem)
+        {
+            if (newItem == null || RawItem == null) return;
+
+            bool iconChanged = !string.Equals(RawItem.IconBase64, newItem.IconBase64, StringComparison.Ordinal);
+            RawItem.Name = newItem.Name;
+            RawItem.Tooltip = newItem.Tooltip;
+            RawItem.ProcessName = newItem.ProcessName;
+            RawItem.ProcessId = newItem.ProcessId;
+            RawItem.IsHidden = newItem.IsHidden;
+            RawItem.X = newItem.X;
+            RawItem.Y = newItem.Y;
+            RawItem.IconBase64 = newItem.IconBase64;
+
+            OnPropertyChanged(nameof(Name));
+            OnPropertyChanged(nameof(Tooltip));
+            OnPropertyChanged(nameof(ProcessName));
+            OnPropertyChanged(nameof(ProcessId));
+            OnPropertyChanged(nameof(IsHidden));
+            OnPropertyChanged(nameof(X));
+            OnPropertyChanged(nameof(Y));
+
+            if (iconChanged && !string.IsNullOrEmpty(newItem.IconBase64))
+            {
+                LoadIconAsync(newItem.IconBase64);
+            }
+        }
+
         private async void LoadIconAsync(string base64)
         {
             try

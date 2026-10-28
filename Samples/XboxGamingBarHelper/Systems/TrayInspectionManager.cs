@@ -1,4 +1,5 @@
 using NLog;
+using Microsoft.Win32;
 using Shared.Data;
 using System;
 using System.Collections.Concurrent;
@@ -8,6 +9,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -22,6 +24,15 @@ namespace XboxGamingBarHelper.Systems
     {
         private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
         private static readonly ConcurrentDictionary<string, string> IconCache = new ConcurrentDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<string, TrayItem> LastKnownTrayItems = new ConcurrentDictionary<string, TrayItem>(StringComparer.OrdinalIgnoreCase);
+        private static readonly ConcurrentDictionary<Guid, string> KnownFolderCache = new ConcurrentDictionary<Guid, string>();
+
+        [DllImport("shell32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        private static extern int SHGetKnownFolderPath(
+            [MarshalAs(UnmanagedType.LPStruct)] Guid rfid,
+            uint dwFlags,
+            IntPtr hToken,
+            out IntPtr pszPath);
 
         private static readonly HashSet<string> IgnoredButtonNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
@@ -60,6 +71,7 @@ namespace XboxGamingBarHelper.Systems
         {
             var results = new List<TrayItem>();
             var seenNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var seenPids = new HashSet<int>();
 
             try
             {
@@ -70,27 +82,33 @@ namespace XboxGamingBarHelper.Systems
                 IntPtr taskbarHwnd = User32.FindWindow("Shell_TrayWnd", null);
                 if (taskbarHwnd != IntPtr.Zero)
                 {
-                    EnumerateContainerButtons(taskbarHwnd, false, runningProcesses, seenNames, results);
+                    EnumerateContainerButtons(taskbarHwnd, false, runningProcesses, seenNames, seenPids, results);
                 }
 
                 IntPtr secondaryTaskbarHwnd = User32.FindWindow("Shell_SecondaryTrayWnd", null);
                 if (secondaryTaskbarHwnd != IntPtr.Zero)
                 {
-                    EnumerateContainerButtons(secondaryTaskbarHwnd, false, runningProcesses, seenNames, results);
+                    EnumerateContainerButtons(secondaryTaskbarHwnd, false, runningProcesses, seenNames, seenPids, results);
                 }
 
                 // 2. Inspect Hidden / Overflow Icons Window (modern Win11 and classic Win10)
                 IntPtr overflowXamlHwnd = User32.FindWindow("TopLevelWindowForOverflowXamlIsland", null);
                 if (overflowXamlHwnd != IntPtr.Zero)
                 {
-                    EnumerateContainerButtons(overflowXamlHwnd, true, runningProcesses, seenNames, results);
+                    EnumerateContainerButtons(overflowXamlHwnd, true, runningProcesses, seenNames, seenPids, results);
                 }
 
                 IntPtr overflowClassicHwnd = User32.FindWindow("NotifyIconOverflowWindow", null);
                 if (overflowClassicHwnd != IntPtr.Zero)
                 {
-                    EnumerateContainerButtons(overflowClassicHwnd, true, runningProcesses, seenNames, results);
+                    EnumerateContainerButtons(overflowClassicHwnd, true, runningProcesses, seenNames, seenPids, results);
                 }
+
+                // 3. Inspect Registry NotifyIconSettings (Fallback and supplement for missing/hidden icons in FSE)
+                EnumerateRegistryTrayItems(runningProcesses, seenNames, seenPids, results);
+
+                // 4. Merge with Last-Known-Good In-Memory Cache and validate process liveness
+                results = MergeWithLastKnownCache(results, runningProcesses);
             }
             catch (Exception ex)
             {
@@ -157,6 +175,7 @@ namespace XboxGamingBarHelper.Systems
             bool isHiddenOverflow,
             Process[] processes,
             HashSet<string> seenNames,
+            HashSet<int> seenPids,
             List<TrayItem> results)
         {
             try
@@ -245,6 +264,12 @@ namespace XboxGamingBarHelper.Systems
                             X = centerX,
                             Y = centerY
                         };
+
+                        if (pid > 0)
+                        {
+                            seenPids.Add(pid);
+                        }
+                        seenNames.Add(displayName);
 
                         results.Add(item);
                     }
@@ -477,6 +502,297 @@ namespace XboxGamingBarHelper.Systems
             return string.Empty;
         }
 
+        #region Registry and Cache Fallback
+
+        public static void RemoveFromCache(int processId)
+        {
+            if (processId <= 0) return;
+            var keysToRemove = LastKnownTrayItems.Where(kvp => kvp.Value.ProcessId == processId).Select(kvp => kvp.Key).ToList();
+            foreach (var k in keysToRemove)
+            {
+                LastKnownTrayItems.TryRemove(k, out _);
+            }
+        }
+
+        private static List<TrayItem> MergeWithLastKnownCache(List<TrayItem> currentScan, Process[] runningProcesses)
+        {
+            var merged = new List<TrayItem>(currentScan);
+            var seenPids = new HashSet<int>(currentScan.Where(i => i.ProcessId > 0).Select(i => i.ProcessId));
+            var seenNames = new HashSet<string>(currentScan.Select(i => i.Name), StringComparer.OrdinalIgnoreCase);
+
+            // 1. Update cache with items discovered in current scan
+            foreach (var item in currentScan)
+            {
+                string key = $"{item.ProcessName}_{item.Name}".ToLowerInvariant();
+                LastKnownTrayItems[key] = item;
+            }
+
+            // 2. Retain items from cache that were missed (e.g. due to FSE / DWM occlusion) if process is still alive
+            foreach (var kvp in LastKnownTrayItems)
+            {
+                var cached = kvp.Value;
+                if (cached.ProcessId > 0 && !seenPids.Contains(cached.ProcessId) && !seenNames.Contains(cached.Name))
+                {
+                    bool isAlive = false;
+                    try
+                    {
+                        isAlive = User32.IsProcessAlive(cached.ProcessId);
+                    }
+                    catch
+                    {
+                        isAlive = runningProcesses != null && runningProcesses.Any(p => p.Id == cached.ProcessId);
+                    }
+
+                    if (isAlive)
+                    {
+                        merged.Add(cached);
+                        seenPids.Add(cached.ProcessId);
+                        seenNames.Add(cached.Name);
+                        Logger.Info($"Retained active tray application from cache: '{cached.Name}' (PID {cached.ProcessId})");
+                    }
+                    else
+                    {
+                        // Prune dead process from cache
+                        LastKnownTrayItems.TryRemove(kvp.Key, out _);
+                    }
+                }
+            }
+
+            return merged;
+        }
+
+        private static void EnumerateRegistryTrayItems(
+            Process[] runningProcesses,
+            HashSet<string> seenNames,
+            HashSet<int> seenPids,
+            List<TrayItem> results)
+        {
+            if (runningProcesses == null || runningProcesses.Length == 0) return;
+
+            try
+            {
+                using (var key = Registry.CurrentUser.OpenSubKey(@"Control Panel\NotifyIconSettings"))
+                {
+                    if (key == null) return;
+
+                    string[] subKeyNames = key.GetSubKeyNames();
+                    for (int i = 0; i < subKeyNames.Length; i++)
+                    {
+                        string subKeyName = subKeyNames[i];
+                        try
+                        {
+                            using (var subKey = key.OpenSubKey(subKeyName))
+                            {
+                                if (subKey == null) continue;
+
+                                string rawExePath = subKey.GetValue("ExecutablePath") as string;
+                                if (string.IsNullOrWhiteSpace(rawExePath)) continue;
+
+                                string resolvedExePath = ResolvePathWithKnownFolder(rawExePath);
+                                string exeName = !string.IsNullOrEmpty(resolvedExePath) ? Path.GetFileNameWithoutExtension(resolvedExePath) : string.Empty;
+                                if (string.IsNullOrWhiteSpace(exeName)) continue;
+
+                                string tooltip = (subKey.GetValue("InitialTooltip") as string)?.Trim();
+                                string displayName = CleanDisplayName(!string.IsNullOrEmpty(tooltip) ? tooltip : exeName);
+                                if (string.IsNullOrWhiteSpace(displayName)) displayName = exeName;
+
+                                if (IgnoredButtonNames.Contains(displayName) || IgnoredButtonNames.Contains(exeName))
+                                {
+                                    continue;
+                                }
+
+                                // Match against active running processes
+                                MatchRegistryProcess(resolvedExePath, displayName, exeName, runningProcesses, out int pid, out string procName, out string actualExePath);
+                                if (pid <= 0) continue;
+
+                                if (seenPids.Contains(pid)) continue;
+
+                                string dedupeKey = $"{displayName}_{pid}";
+                                if (seenNames.Contains(dedupeKey)) continue;
+
+                                seenPids.Add(pid);
+                                seenNames.Add(dedupeKey);
+                                seenNames.Add(displayName);
+
+                                // Prioritize IconSnapshot (pre-rendered PNG bytes directly from registry)
+                                string iconBase64 = string.Empty;
+                                byte[] iconBytes = subKey.GetValue("IconSnapshot") as byte[];
+                                if (iconBytes != null && iconBytes.Length > 0)
+                                {
+                                    iconBase64 = Convert.ToBase64String(iconBytes);
+                                }
+
+                                if (string.IsNullOrEmpty(iconBase64) && !string.IsNullOrEmpty(actualExePath))
+                                {
+                                    iconBase64 = GetOrExtractIconBase64(actualExePath);
+                                }
+
+                                var item = new TrayItem
+                                {
+                                    Id = $"{displayName}_reg_{pid}",
+                                    Name = displayName,
+                                    Tooltip = !string.IsNullOrEmpty(tooltip) ? tooltip : displayName,
+                                    ProcessName = procName,
+                                    ProcessId = pid,
+                                    IconBase64 = iconBase64,
+                                    IsHidden = true,
+                                    X = 0,
+                                    Y = 0
+                                };
+
+                                results.Add(item);
+                                Logger.Info($"Discovered tray application via Registry fallback: '{displayName}' (PID {pid}, {procName})");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Debug(ex, $"Failed to inspect NotifyIconSettings subkey {subKeyName}");
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to read NotifyIconSettings registry key.");
+            }
+        }
+
+        private static void MatchRegistryProcess(
+            string resolvedExePath,
+            string displayName,
+            string exeName,
+            Process[] runningProcesses,
+            out int pid,
+            out string procName,
+            out string actualExePath)
+        {
+            pid = 0;
+            procName = string.Empty;
+            actualExePath = resolvedExePath;
+
+            // 1. Exact match on ProcessName with exeName
+            foreach (var p in runningProcesses)
+            {
+                try
+                {
+                    if (string.Equals(p.ProcessName, exeName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        pid = p.Id;
+                        procName = p.ProcessName;
+                        actualExePath = User32.GetProcessExecutablePath(p.Id) ?? resolvedExePath;
+                        return;
+                    }
+                }
+                catch { }
+            }
+
+            // 2. Full executable path match if available
+            if (!string.IsNullOrEmpty(resolvedExePath))
+            {
+                foreach (var p in runningProcesses)
+                {
+                    try
+                    {
+                        string pPath = User32.GetProcessExecutablePath(p.Id);
+                        if (!string.IsNullOrEmpty(pPath) && string.Equals(pPath, resolvedExePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            pid = p.Id;
+                            procName = p.ProcessName;
+                            actualExePath = pPath;
+                            return;
+                        }
+                    }
+                    catch { }
+                }
+            }
+
+            // 3. Fallback to general MatchProcess
+            MatchProcess(displayName, exeName, runningProcesses, out pid, out procName, out string matchedPath);
+            if (!string.IsNullOrEmpty(matchedPath))
+            {
+                actualExePath = matchedPath;
+            }
+        }
+
+        private static string ResolvePathWithKnownFolder(string rawPath)
+        {
+            if (string.IsNullOrWhiteSpace(rawPath)) return string.Empty;
+
+            if (rawPath.StartsWith("{", StringComparison.Ordinal))
+            {
+                int closingBrace = rawPath.IndexOf('}');
+                if (closingBrace > 1)
+                {
+                    string guidStr = rawPath.Substring(1, closingBrace - 1);
+                    string relativePart = rawPath.Substring(closingBrace + 1).TrimStart('\\', '/');
+
+                    if (Guid.TryParse(guidStr, out Guid folderGuid))
+                    {
+                        string knownFolder = GetKnownFolderPath(folderGuid);
+                        if (!string.IsNullOrEmpty(knownFolder))
+                        {
+                            return Path.Combine(knownFolder, relativePart);
+                        }
+                    }
+                }
+            }
+
+            return Environment.ExpandEnvironmentVariables(rawPath);
+        }
+
+        private static string GetKnownFolderPath(Guid folderGuid)
+        {
+            if (KnownFolderCache.TryGetValue(folderGuid, out string cached))
+            {
+                return cached;
+            }
+
+            // Fast static mappings for standard Windows Known Folders
+            if (folderGuid == new Guid("6D809377-6AF0-444B-8957-A3773F02200E"))
+                return Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            if (folderGuid == new Guid("7C5A40EF-A0FB-4BFC-874A-C0F2E0B9FA8E"))
+                return Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            if (folderGuid == new Guid("D0384E7D-BAC3-4797-8F14-CBA229B392B5"))
+                return Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            if (folderGuid == new Guid("F1B32785-6FBA-4FCF-9D55-7B8E7F157091"))
+                return Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (folderGuid == new Guid("3EB685D2-658F-477E-A060-26CC0C35F7E2"))
+                return Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            if (folderGuid == new Guid("1AC14E77-02E7-4E5D-B744-2EB1AE5198B7"))
+                return Environment.GetFolderPath(Environment.SpecialFolder.System);
+            if (folderGuid == new Guid("F38BF404-1D43-42F2-9305-67DE0B28FC23"))
+                return Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+
+            try
+            {
+                int hr = SHGetKnownFolderPath(folderGuid, 0, IntPtr.Zero, out IntPtr pszPath);
+                if (hr == 0 && pszPath != IntPtr.Zero)
+                {
+                    try
+                    {
+                        string path = Marshal.PtrToStringUni(pszPath);
+                        if (!string.IsNullOrEmpty(path))
+                        {
+                            KnownFolderCache[folderGuid] = path;
+                            return path;
+                        }
+                    }
+                    finally
+                    {
+                        Marshal.FreeCoTaskMem(pszPath);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Debug(ex, $"Failed to resolve KnownFolder GUID {folderGuid}");
+            }
+
+            return string.Empty;
+        }
+
+        #endregion
+
         public static bool ExecuteAction(TrayActionRequest request)
         {
             if (request == null) return false;
@@ -497,6 +813,14 @@ namespace XboxGamingBarHelper.Systems
                         return true;
 
                     case TrayAction.PrimaryClick:
+                        if (request.X == 0 && request.Y == 0)
+                        {
+                            Logger.Info($"Headless item clicked for PID {request.ProcessId}. Attempting BringAppToFront first.");
+                            if (BringAppToFront(request.ProcessId, request.ItemId))
+                            {
+                                return true;
+                            }
+                        }
                         return PrimaryClickTrayItem(request.ItemId, request.X, request.Y);
 
                     case TrayAction.DoubleClick:
@@ -987,6 +1311,7 @@ namespace XboxGamingBarHelper.Systems
                 {
                     Logger.Info($"Terminating process {proc.ProcessName} (PID {processId}).");
                     proc.Kill();
+                    RemoveFromCache(processId);
                     return true;
                 }
             }

@@ -1,4 +1,4 @@
-using Microsoft.Gaming.XboxGameBar;
+﻿using Microsoft.Gaming.XboxGameBar;
 using NLog;
 using Shared.Data;
 using Shared.Enums;
@@ -950,6 +950,48 @@ namespace XboxGamingBar
             {
                 Logger.Warn("App.Connection is null, helper is not connected.");
             }
+        }
+
+        private async void NvidiaTriggerPerfOverlayButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("Triggering NVIDIA Performance Overlay (Alt + R).");
+            var item = new ShortcutItem("NVIDIA Performance Overlay", "\uE7FC", ctrl: false, alt: true, shift: false, win: false, virtualKey: (int)VirtualKey.R);
+            await SendShortcutAsync(item);
+        }
+
+        private async void NvidiaTriggerCycleModeButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("Triggering NVIDIA Cycle Overlay Mode (Alt + Shift + R).");
+            var item = new ShortcutItem("NVIDIA Cycle Overlay Mode", "\uE7FC", ctrl: false, alt: true, shift: true, win: false, virtualKey: (int)VirtualKey.R);
+            await SendShortcutAsync(item);
+        }
+
+        private async void NvidiaTriggerOverlayHUDButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("Triggering NVIDIA In-Game Overlay HUD (Alt + Z).");
+            var item = new ShortcutItem("NVIDIA In-Game Overlay", "\uE7FC", ctrl: false, alt: true, shift: false, win: false, virtualKey: (int)VirtualKey.Z);
+            await SendShortcutAsync(item);
+        }
+
+        private async void NvidiaTriggerSaveReplayButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("Triggering NVIDIA Save Instant Replay (Alt + F10).");
+            var item = new ShortcutItem("NVIDIA Save Replay", "\uE714", ctrl: false, alt: true, shift: false, win: false, virtualKey: (int)VirtualKey.F10);
+            await SendShortcutAsync(item);
+        }
+
+        private async void NvidiaTriggerRecordButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("Triggering NVIDIA Toggle Recording (Alt + F9).");
+            var item = new ShortcutItem("NVIDIA Toggle Recording", "\uE714", ctrl: false, alt: true, shift: false, win: false, virtualKey: (int)VirtualKey.F9);
+            await SendShortcutAsync(item);
+        }
+
+        private async void NvidiaTriggerGameFiltersButton_Click(object sender, RoutedEventArgs e)
+        {
+            Logger.Info("Triggering NVIDIA Game Filters (Alt + F3).");
+            var item = new ShortcutItem("NVIDIA Game Filters", "\uE790", ctrl: false, alt: true, shift: false, win: false, virtualKey: (int)VirtualKey.F3);
+            await SendShortcutAsync(item);
         }
 
         private async void LaunchAmdAppButton_Click(object sender, RoutedEventArgs e)
