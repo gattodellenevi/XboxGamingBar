@@ -938,6 +938,92 @@ namespace XboxGamingBarHelper.Windows
             }
         }
 
+        public const uint SPI_SETCURSORS = 0x0057;
+        public const uint SPI_GETCURSORSIZE = 0x2028;
+        public const uint SPI_SETCURSORSIZE = 0x2029;
+
+        public static int GetCursorSize()
+        {
+            try
+            {
+                uint pixelSize = 0;
+                if (SystemParametersInfoGet(SPI_GETCURSORSIZE, 0, ref pixelSize, 0) && pixelSize > 0)
+                {
+                    int calculated = (int)(pixelSize <= 32 ? 1 : ((pixelSize - 32) / 16 + 1));
+                    return Math.Max(1, Math.Min(15, calculated));
+                }
+
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Accessibility"))
+                {
+                    if (key?.GetValue("CursorSize") is int size)
+                    {
+                        return Math.Max(1, Math.Min(15, size));
+                    }
+                }
+
+                using (var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Control Panel\Cursors"))
+                {
+                    if (key?.GetValue("CursorBaseSize") is int baseSize)
+                    {
+                        int calculated = baseSize <= 32 ? 1 : ((baseSize - 32) / 16 + 1);
+                        return Math.Max(1, Math.Min(15, calculated));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to get cursor size.");
+            }
+            return 1;
+        }
+
+        public static bool SetCursorSize(int size)
+        {
+            try
+            {
+                int clamped = Math.Max(1, Math.Min(15, size));
+                int basePixelSize = clamped == 1 ? 32 : (32 + (clamped - 1) * 16);
+                Logger.Info($"Setting cursor size to {clamped} (base pixel size {basePixelSize}).");
+
+                // Update system cursor size via modern Windows 10/11 accessibility API
+                bool ok = SystemParametersInfoSet(SPI_SETCURSORSIZE, 0, (IntPtr)basePixelSize, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
+
+                try
+                {
+                    using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Accessibility"))
+                    {
+                        key?.SetValue("CursorSize", clamped, Microsoft.Win32.RegistryValueKind.DWord);
+                    }
+                }
+                catch (Exception regEx)
+                {
+                    Logger.Debug(regEx, "Failed to persist CursorSize to Accessibility registry key.");
+                }
+
+                try
+                {
+                    using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"Control Panel\Cursors"))
+                    {
+                        key?.SetValue("CursorBaseSize", basePixelSize, Microsoft.Win32.RegistryValueKind.DWord);
+                    }
+                }
+                catch (Exception regEx)
+                {
+                    Logger.Debug(regEx, "Failed to persist CursorBaseSize to Cursors registry key.");
+                }
+
+                // In case any legacy components or cursors need a refresh
+                SystemParametersInfoSet(SPI_SETCURSORS, 0, IntPtr.Zero, 0);
+
+                return ok;
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn(ex, "Failed to set cursor size.");
+                return false;
+            }
+        }
+
         #region CCD / HDR APIs
 
         [StructLayout(LayoutKind.Sequential)]

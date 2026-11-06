@@ -291,6 +291,7 @@ namespace XboxGamingBarHelper
                     systemManager.MouseSpeed,
                     systemManager.MouseEnhancePointerPrecision,
                     systemManager.MouseScrollSpeed,
+                    systemManager.CursorSize,
                     systemManager.TrayItems,
                     systemManager.InvokeTrayItem);
 

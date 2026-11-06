@@ -16,6 +16,7 @@ namespace XboxGamingBar.ViewModels
         private bool _isHelperElevated = false;
         private int _gameInputStatus = 1;
         private int _mouseSpeed = 10;
+        private int _cursorSize = 1;
         private int _mouseScrollSpeed = 3;
         private bool _isMouseEnhancePointerPrecision = true;
 
@@ -59,6 +60,12 @@ namespace XboxGamingBar.ViewModels
         {
             get => _mouseSpeed;
             set => SetProperty(ref _mouseSpeed, value);
+        }
+
+        public int CursorSize
+        {
+            get => _cursorSize;
+            set => SetProperty(ref _cursorSize, value);
         }
 
         public int MouseScrollSpeed

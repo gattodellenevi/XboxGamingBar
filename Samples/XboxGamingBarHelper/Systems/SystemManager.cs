@@ -165,6 +165,12 @@ namespace XboxGamingBarHelper.Systems
             get { return mouseScrollSpeed; }
         }
 
+        private readonly CursorSizeProperty cursorSize;
+        public CursorSizeProperty CursorSize
+        {
+            get { return cursorSize; }
+        }
+
         private readonly HDRProperty hdr;
         public HDRProperty HDR
         {
@@ -262,6 +268,9 @@ namespace XboxGamingBarHelper.Systems
             int initialScrollSpeed = User32.GetMouseScrollSpeed();
             Logger.Info($"Check initial mouse scroll speed: {initialScrollSpeed}.");
             mouseScrollSpeed = new MouseScrollSpeedProperty(initialScrollSpeed, this);
+            int initialCursorSize = User32.GetCursorSize();
+            Logger.Info($"Check initial cursor size: {initialCursorSize}.");
+            cursorSize = new CursorSizeProperty(initialCursorSize, this);
             bool isElevated = CheckIsElevated();
             Logger.Info($"Check helper elevation status: {isElevated}.");
             helperElevation = new HelperElevationProperty(isElevated, this);

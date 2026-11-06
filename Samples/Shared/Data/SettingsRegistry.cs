@@ -51,6 +51,9 @@ namespace Shared.Data
         public static readonly ISettingDefinition<int> MouseScrollSpeed = Register(
             new SettingDefinition<int>(Function.MouseScrollSpeed, "MouseScrollSpeed", SettingScope.GlobalOnly, 3, v => Math.Max(1, Math.Min(100, v))));
 
+        public static readonly ISettingDefinition<int> CursorSize = Register(
+            new SettingDefinition<int>(Function.CursorSize, "CursorSize", SettingScope.GlobalOnly, 1, v => Math.Max(1, Math.Min(15, v))));
+
         public static ISettingDefinition<T> Register<T>(SettingDefinition<T> definition)
         {
             definitionsByFunction[definition.Function] = definition;

@@ -37,19 +37,6 @@ namespace XboxGamingBar.Data
     {
         private static new readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
-        // Hero Card elements
-        private readonly Button heroBadgeButton;
-        private readonly FontIcon heroBadgeIcon;
-        private readonly TextBlock heroBadgeText;
-
-        // Hero Flyout elements
-        private readonly FontIcon flyoutIcon;
-        private readonly TextBlock flyoutName;
-        private readonly TextBlock flyoutSubtitle;
-        private readonly TextBlock flyoutPercent;
-        private readonly TextBlock flyoutType;
-        private readonly TextBlock flyoutStatus;
-
         // System Tab elements
         private readonly Border systemBadgeBorder;
         private readonly TextBlock systemBadgeText;
@@ -67,15 +54,6 @@ namespace XboxGamingBar.Data
         private static readonly Color WhiteColor = Colors.White;
 
         public ControllerBatteryProperty(
-            Button inHeroBadgeButton,
-            FontIcon inHeroBadgeIcon,
-            TextBlock inHeroBadgeText,
-            FontIcon inFlyoutIcon,
-            TextBlock inFlyoutName,
-            TextBlock inFlyoutSubtitle,
-            TextBlock inFlyoutPercent,
-            TextBlock inFlyoutType,
-            TextBlock inFlyoutStatus,
             Border inSystemBadgeBorder,
             TextBlock inSystemBadgeText,
             TextBlock inSystemSubtitleText,
@@ -83,15 +61,6 @@ namespace XboxGamingBar.Data
             Page inOwner)
             : base(ControllerBattery.Disconnected, null, Function.ControllerBattery)
         {
-            heroBadgeButton = inHeroBadgeButton;
-            heroBadgeIcon = inHeroBadgeIcon;
-            heroBadgeText = inHeroBadgeText;
-            flyoutIcon = inFlyoutIcon;
-            flyoutName = inFlyoutName;
-            flyoutSubtitle = inFlyoutSubtitle;
-            flyoutPercent = inFlyoutPercent;
-            flyoutType = inFlyoutType;
-            flyoutStatus = inFlyoutStatus;
             systemBadgeBorder = inSystemBadgeBorder;
             systemBadgeText = inSystemBadgeText;
             systemSubtitleText = inSystemSubtitleText;
@@ -354,85 +323,25 @@ namespace XboxGamingBar.Data
             {
                 if (battery.IsConnected)
                 {
-                    // Select glyph and color
-                    string glyph;
+                    // Select color for system badge
                     Color accentColor;
-                    string badgeText;
 
-                    if (battery.IsCharging || string.Equals(battery.BatteryType, "Wired", StringComparison.OrdinalIgnoreCase))
+                    if (battery.IsCharging || string.Equals(battery.BatteryType, "Wired", StringComparison.OrdinalIgnoreCase) ||
+                        battery.BatteryLevel >= 35 || string.Equals(battery.LevelCategory, "Full", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(battery.LevelCategory, "Medium", StringComparison.OrdinalIgnoreCase))
                     {
-                        glyph = "\uEA93"; // Lightning bolt / plugged
                         accentColor = GreenColor;
-                        badgeText = "Wired";
-                    }
-                    else if (battery.BatteryLevel >= 70 || string.Equals(battery.LevelCategory, "Full", StringComparison.OrdinalIgnoreCase))
-                    {
-                        glyph = "\uEBB5"; // Battery 10 (Full)
-                        accentColor = GreenColor;
-                        badgeText = battery.BatteryLevel >= 0 ? $"{battery.BatteryLevel}%" : "Full";
-                    }
-                    else if (battery.BatteryLevel >= 35 || string.Equals(battery.LevelCategory, "Medium", StringComparison.OrdinalIgnoreCase))
-                    {
-                        glyph = "\uEBAE"; // Battery 4 (Medium)
-                        accentColor = GreenColor;
-                        badgeText = battery.BatteryLevel >= 0 ? $"{battery.BatteryLevel}%" : "Med";
                     }
                     else if (battery.BatteryLevel >= 15 || string.Equals(battery.LevelCategory, "Low", StringComparison.OrdinalIgnoreCase))
                     {
-                        glyph = "\uEBAB"; // Battery 2 (Low)
                         accentColor = AmberColor;
-                        badgeText = battery.BatteryLevel >= 0 ? $"{battery.BatteryLevel}%" : "Low";
                     }
                     else
                     {
-                        glyph = "\uEBAA"; // Battery 1 (Critical)
                         accentColor = RedColor;
-                        badgeText = battery.BatteryLevel >= 0 ? $"{battery.BatteryLevel}%" : "Crit";
                     }
 
-                    // 1. Hero Card Badge
-                    if (heroBadgeButton != null)
-                    {
-                        heroBadgeButton.Visibility = Visibility.Visible;
-                    }
-                    if (heroBadgeIcon != null)
-                    {
-                        heroBadgeIcon.Glyph = glyph;
-                        heroBadgeIcon.Foreground = new SolidColorBrush(accentColor);
-                    }
-                    if (heroBadgeText != null)
-                    {
-                        heroBadgeText.Text = badgeText;
-                    }
-
-                    // 2. Hero Card Flyout
-                    if (flyoutIcon != null)
-                    {
-                        flyoutIcon.Glyph = glyph;
-                        flyoutIcon.Foreground = new SolidColorBrush(accentColor);
-                    }
-                    if (flyoutName != null)
-                    {
-                        flyoutName.Text = string.IsNullOrEmpty(battery.DeviceName) ? "Controller" : battery.DeviceName;
-                    }
-                    if (flyoutSubtitle != null)
-                    {
-                        flyoutSubtitle.Text = battery.IsCharging ? "Charging / Wired" : $"{battery.BatteryType} Connection";
-                    }
-                    if (flyoutPercent != null)
-                    {
-                        flyoutPercent.Text = battery.BatteryLevel >= 0 ? $"{battery.BatteryLevel}%" : battery.LevelCategory;
-                    }
-                    if (flyoutType != null)
-                    {
-                        flyoutType.Text = battery.BatteryType;
-                    }
-                    if (flyoutStatus != null)
-                    {
-                        flyoutStatus.Text = battery.IsCharging ? "Charging" : (string.Equals(battery.BatteryType, "Wired", StringComparison.OrdinalIgnoreCase) ? "Wired" : "Discharging");
-                    }
-
-                    // 3. System Tab Status Row
+                    // 1. System Tab Status Row
                     if (systemBadgeBorder != null)
                     {
                         systemBadgeBorder.Background = new SolidColorBrush(accentColor);
@@ -450,7 +359,7 @@ namespace XboxGamingBar.Data
                         systemSubtitleText.Text = $"{battery.DeviceName} ({battery.BatteryType})";
                     }
 
-                    // 4. Quick Access Gamepad Buttons
+                    // 2. Quick Access Gamepad Buttons
                     if (quickGamepadUI != null)
                     {
                         var controllers = battery.Controllers;
@@ -605,10 +514,6 @@ namespace XboxGamingBar.Data
                 else
                 {
                     // Disconnected state
-                    if (heroBadgeButton != null)
-                    {
-                        heroBadgeButton.Visibility = Visibility.Collapsed;
-                    }
                     if (systemBadgeBorder != null)
                     {
                         systemBadgeBorder.Background = new SolidColorBrush(GrayColor);
@@ -624,7 +529,7 @@ namespace XboxGamingBar.Data
                         systemSubtitleText.Text = "No game controller detected";
                     }
 
-                    // 4. Quick Access Gamepad Buttons (Disconnected)
+                    // 2. Quick Access Gamepad Buttons (Disconnected)
                     if (quickGamepadUI != null)
                     {
                         if (quickGamepadUI.Section != null)

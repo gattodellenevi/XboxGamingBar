@@ -109,7 +109,7 @@ namespace XboxGamingBar.Data
                         AdditionalUI.Foreground = new SolidColorBrush(WhiteColor);
                         if (subtitleText != null)
                         {
-                            subtitleText.Text = "Powers Game Bar gamepad cursor and controller navigation";
+                            subtitleText.Text = "Restart this service if Windows gamepad cursor mode doesn't work";
                         }
                         break;
                     case 2: // Desync / Degraded

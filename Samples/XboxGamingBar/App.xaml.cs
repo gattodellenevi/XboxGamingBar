@@ -343,7 +343,21 @@ namespace XboxGamingBar
                 var appView = ApplicationView.GetForCurrentView();
                 appView.Title = "Couch Gaming Bar";
 
-                var preferredSize = new Size(500, 670);
+                double scale = 1.25;
+                try
+                {
+                    if (Windows.Storage.ApplicationData.Current.LocalSettings.Values.TryGetValue("UiScalePercent", out object saved) && saved != null)
+                    {
+                        int pct = Convert.ToInt32(saved);
+                        if (pct >= 100 && pct <= 200)
+                        {
+                            scale = pct / 100.0;
+                        }
+                    }
+                }
+                catch { }
+
+                var preferredSize = new Size(Math.Round(500 * scale), Math.Round(670 * scale));
                 ApplicationView.PreferredLaunchViewSize = preferredSize;
                 ApplicationView.PreferredLaunchWindowingMode = ApplicationViewWindowingMode.PreferredLaunchViewSize;
                 appView.SetPreferredMinSize(new Size(500, 670));

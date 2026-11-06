@@ -127,6 +127,7 @@
     <Compile Include="Data\GameInputStatusProperty.cs" />
     <Compile Include="Data\ControllerBatteryProperty.cs" />
     <Compile Include="Data\MouseSpeedProperty.cs" />
+    <Compile Include="Data\CursorSizeProperty.cs" />
     <Compile Include="Data\MouseScrollSpeedProperty.cs" />
     <Compile Include="Data\MouseEnhancePointerPrecisionProperty.cs" />
     <Compile Include="Data\RefreshRateProperty.cs" />

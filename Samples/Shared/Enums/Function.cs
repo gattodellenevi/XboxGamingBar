@@ -54,6 +54,7 @@ namespace Shared.Enums
         MouseSpeed,
         MouseEnhancePointerPrecision,
         MouseScrollSpeed,
+        CursorSize,
         VirtualKeyboard,
         HDR,
         HDRSupported,

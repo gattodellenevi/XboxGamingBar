@@ -224,7 +224,7 @@ namespace XboxGamingBar.ViewModels
             if (level <= 0)
             {
                 string savedLevelName = GetOsdLevelName(lastActiveLevel > 0 ? lastActiveLevel : 1);
-                OsdSubtitle = $"Disabled (saved: {savedLevelName})";
+                OsdSubtitle = $"Disabled ({savedLevelName})";
                 OsdBadgeText = "OFF";
                 IsOsdActive = false;
             }
@@ -255,13 +255,13 @@ namespace XboxGamingBar.ViewModels
                 IsFpsLimitMismatch = true;
                 if (!isLimitOn)
                 {
-                    FpsLimitSubtitle = $"Disabled: {fpsValue} FPS (Elevate to modify)";
+                    FpsLimitSubtitle = "Elevate to modify";
                     FpsLimitBadgeText = "OFF • 🔒";
                     IsFpsLimitActive = false;
                 }
                 else
                 {
-                    FpsLimitSubtitle = $"Active: {fpsValue} FPS (Elevate to modify)";
+                    FpsLimitSubtitle = "Elevate to modify";
                     FpsLimitBadgeText = $"{fpsValue} FPS • 🔒";
                     IsFpsLimitActive = true;
                 }
@@ -273,7 +273,7 @@ namespace XboxGamingBar.ViewModels
 
             if (!isLimitOn)
             {
-                FpsLimitSubtitle = $"Disabled (saved: {fpsValue} FPS)";
+                FpsLimitSubtitle = $"Disabled ({fpsValue} FPS)";
                 FpsLimitBadgeText = "OFF";
                 IsFpsLimitActive = false;
             }
@@ -290,7 +290,7 @@ namespace XboxGamingBar.ViewModels
             if (!isSupported)
             {
                 IsHdrButtonEnabled = false;
-                HdrSubtitle = "Not supported by display";
+                HdrSubtitle = "Not supported";
                 HdrBadgeText = "SDR";
                 IsHdrActive = false;
                 return;
@@ -300,13 +300,13 @@ namespace XboxGamingBar.ViewModels
 
             if (isEnabled)
             {
-                HdrSubtitle = "High Dynamic Range active";
+                HdrSubtitle = "HDR Active";
                 HdrBadgeText = "ON";
                 IsHdrActive = true;
             }
             else
             {
-                HdrSubtitle = "High Dynamic Range disabled";
+                HdrSubtitle = "HDR Disabled";
                 HdrBadgeText = "OFF";
                 IsHdrActive = false;
             }

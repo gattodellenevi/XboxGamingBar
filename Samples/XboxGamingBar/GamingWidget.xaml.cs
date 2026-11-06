@@ -1,4 +1,4 @@
-﻿using Microsoft.Gaming.XboxGameBar;
+using Microsoft.Gaming.XboxGameBar;
 using NLog;
 using Shared.Data;
 using Shared.Enums;
@@ -110,6 +110,7 @@ namespace XboxGamingBar
         private readonly DualGpuSupportProperty dualGpuSupport;
         private readonly ControllerBatteryProperty controllerBattery;
         private readonly MouseSpeedProperty mouseSpeed;
+        private readonly CursorSizeProperty cursorSize;
         private readonly MouseScrollSpeedProperty mouseScrollSpeed;
         private readonly MouseEnhancePointerPrecisionProperty mouseEnhancePointerPrecision;
         private readonly ActiveGpuProperty activeGpu;
@@ -129,9 +130,14 @@ namespace XboxGamingBar
         private readonly WidgetProperties properties;
         private const string SETTING_LAST_ACTIVE_OSD_LEVEL = "LastActiveOSDLevel";
         private int _lastActiveOsdLevel = 1;
+        private const string SETTING_UI_SCALE_PERCENT = "UiScalePercent";
+        private const int DEFAULT_UI_SCALE_PERCENT = 125;
+        private double _currentUiScale = 1.25;
+        private bool _isInitializingUiScale = true;
 
         public GamingWidget()
         {
+            LoadUiScaleSetting();
             InitializeComponent();
             ViewModel = new MainViewModel(Dispatcher);
             LoadLastActiveOsdLevel();
@@ -168,6 +174,7 @@ namespace XboxGamingBar
                 QuickRAMUsedText);
             gameInputStatus = new GameInputStatusProperty(GameInputStatusBadge, GameInputStatusBadgeText, GameInputStatusSubtitleText, this);
             mouseSpeed = new MouseSpeedProperty(10, MouseSpeedSlider, this);
+            cursorSize = new CursorSizeProperty(1, CursorSizeSlider, this);
             mouseScrollSpeed = new MouseScrollSpeedProperty(3, MouseScrollSpeedSlider, this);
             mouseEnhancePointerPrecision = new MouseEnhancePointerPrecisionProperty(EnhancePointerPrecisionToggle, this);
             trackedGame = new TrackedGameProperty(new TrackedGame());
@@ -270,15 +277,6 @@ namespace XboxGamingBar
             };
 
             controllerBattery = new ControllerBatteryProperty(
-                ControllerBatteryBadge,
-                ControllerBatteryIcon,
-                ControllerBatteryText,
-                FlyoutBatteryIcon,
-                FlyoutControllerNameText,
-                FlyoutBatterySubtitleText,
-                FlyoutBatteryPercentText,
-                FlyoutBatteryTypeText,
-                FlyoutBatteryStatusText,
                 ControllerBatteryStatusBadge,
                 ControllerBatteryStatusBadgeText,
                 ControllerBatteryStatusSubtitleText,
@@ -455,6 +453,7 @@ namespace XboxGamingBar
                 activeGpu,
                 controllerBattery,
                 mouseSpeed,
+                cursorSize,
                 mouseScrollSpeed,
                 mouseEnhancePointerPrecision,
                 nvidiaVSyncMode,
@@ -494,6 +493,7 @@ namespace XboxGamingBar
             UpdateHeroGameUI();
             UpdateProfileSegmentedUI();
             UpdateHeroSubtitle();
+            InitializeUiScale();
         }
 
         private async Task LaunchExternalUriAsync(string uriString)
@@ -1365,6 +1365,51 @@ namespace XboxGamingBar
             }
         }
 
+        private void LoadUiScaleSetting()
+        {
+            try
+            {
+                if (Windows.Storage.ApplicationData.Current.LocalSettings.Values.TryGetValue(SETTING_UI_SCALE_PERCENT, out object saved) && saved != null)
+                {
+                    int pct = Convert.ToInt32(saved);
+                    if (pct >= 100 && pct <= 200)
+                    {
+                        _currentUiScale = pct / 100.0;
+                        Logger.Info($"Loaded saved UI scale setting: {pct}% ({_currentUiScale})");
+                        return;
+                    }
+                }
+                _currentUiScale = DEFAULT_UI_SCALE_PERCENT / 100.0;
+                Logger.Info($"Using default UI scale setting: {DEFAULT_UI_SCALE_PERCENT}% ({_currentUiScale})");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to load UI scale setting: {ex.Message}");
+                _currentUiScale = DEFAULT_UI_SCALE_PERCENT / 100.0;
+            }
+        }
+
+        private void InitializeUiScale()
+        {
+            _isInitializingUiScale = true;
+            try
+            {
+                int percent = (int)Math.Round(_currentUiScale * 100);
+                if (UiScaleSlider != null)
+                {
+                    UiScaleSlider.Value = percent;
+                }
+                if (UiScaleBadgeText != null)
+                {
+                    UiScaleBadgeText.Text = $"{percent}%";
+                }
+            }
+            finally
+            {
+                _isInitializingUiScale = false;
+            }
+        }
+
         private static string GetOsdLevelName(int level)
         {
             switch (level)
@@ -1653,6 +1698,7 @@ namespace XboxGamingBar
             if (helperElevation != null) ViewModel.Settings.IsHelperElevated = helperElevation.Value;
             if (gameInputStatus != null) ViewModel.Settings.GameInputStatus = gameInputStatus.Value;
             if (mouseSpeed != null) ViewModel.Settings.MouseSpeed = mouseSpeed.Value;
+            if (cursorSize != null) ViewModel.Settings.CursorSize = cursorSize.Value;
             if (mouseScrollSpeed != null) ViewModel.Settings.MouseScrollSpeed = mouseScrollSpeed.Value;
             if (mouseEnhancePointerPrecision != null) ViewModel.Settings.IsMouseEnhancePointerPrecision = mouseEnhancePointerPrecision.Value;
 
@@ -1701,6 +1747,7 @@ namespace XboxGamingBar
                 });
             };
             if (mouseSpeed != null) mouseSpeed.PropertyChanged += (s, e) => { ViewModel.Settings.MouseSpeed = mouseSpeed.Value; };
+            if (cursorSize != null) cursorSize.PropertyChanged += (s, e) => { ViewModel.Settings.CursorSize = cursorSize.Value; };
             if (mouseScrollSpeed != null) mouseScrollSpeed.PropertyChanged += (s, e) => { ViewModel.Settings.MouseScrollSpeed = mouseScrollSpeed.Value; };
             if (mouseEnhancePointerPrecision != null) mouseEnhancePointerPrecision.PropertyChanged += (s, e) => { ViewModel.Settings.IsMouseEnhancePointerPrecision = mouseEnhancePointerPrecision.Value; };
 
@@ -1777,7 +1824,7 @@ namespace XboxGamingBar
                 {
                     Item = QuickAccessPivotItem,
                     Title = "QUICK ACCESS",
-                    ShortName = "Quick Access",
+                    ShortName = "Quick",
                     Glyph = "\uEC7A",
                     AccentBrush = quickAccessBrush,
                     AccentColor = quickAccessColor,
@@ -1790,7 +1837,7 @@ namespace XboxGamingBar
                 {
                     Item = PerformancePivotItem,
                     Title = "PERFORMANCE",
-                    ShortName = "Performance",
+                    ShortName = "Perf",
                     Glyph = "\uE9D2",
                     AccentBrush = performanceBrush,
                     AccentColor = performanceColor,
@@ -1803,7 +1850,7 @@ namespace XboxGamingBar
                 {
                     Item = ShortcutsPivotItem,
                     Title = "SHORTCUTS",
-                    ShortName = "Shortcuts",
+                    ShortName = "Keys",
                     Glyph = "\uE765",
                     AccentBrush = shortcutsBrush,
                     AccentColor = shortcutsColor,
@@ -1842,7 +1889,7 @@ namespace XboxGamingBar
                 {
                     Item = GpuConfigPivotItem,
                     Title = "GPU CONFIG",
-                    ShortName = "GPU Config",
+                    ShortName = "GPU",
                     Glyph = "\uE7F4",
                     AccentBrush = gpuConfigBrush,
                     AccentColor = gpuConfigColor,
@@ -1966,6 +2013,110 @@ namespace XboxGamingBar
             }
         }
 
+        private void WindowRoot_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateLayoutScaling();
+        }
+
+        private void EnsureStandaloneLayout()
+        {
+            UpdateLayoutScaling();
+        }
+
+        private void EnsureGameBarWidgetLayout()
+        {
+            UpdateLayoutScaling();
+        }
+
+        private void UpdateLayoutScaling()
+        {
+            if (WindowRoot == null || RootGrid == null || WidgetViewbox == null) return;
+
+            double windowWidth = WindowRoot.ActualWidth;
+            double windowHeight = WindowRoot.ActualHeight;
+
+            if (widget != null) // Xbox Game Bar mode
+            {
+                if (windowWidth <= 0 || windowHeight <= 0) return;
+
+                WidgetViewbox.Stretch = Stretch.Fill;
+                WidgetViewbox.HorizontalAlignment = HorizontalAlignment.Stretch;
+                WidgetViewbox.VerticalAlignment = VerticalAlignment.Top;
+
+                // Zero-letterbox responsive scaling:
+                // RootGrid dimensions = window dimensions / scale factor.
+                // Viewbox stretches RootGrid to exactly fill the window, scaling all content by _currentUiScale
+                // with NO letterboxing or black margins, and identical X/Y scale.
+                RootGrid.Width = Math.Round(windowWidth / _currentUiScale);
+                RootGrid.Height = Math.Round(windowHeight / _currentUiScale);
+                RootGrid.HorizontalAlignment = HorizontalAlignment.Center;
+                RootGrid.VerticalAlignment = VerticalAlignment.Top;
+            }
+            else // Standalone app mode
+            {
+                WidgetViewbox.Stretch = Stretch.Uniform;
+                WidgetViewbox.HorizontalAlignment = HorizontalAlignment.Center;
+                WidgetViewbox.VerticalAlignment = VerticalAlignment.Center;
+
+                // Standalone mode preserves uniform 500:670 portrait aspect ratio
+                RootGrid.Width = 500;
+                RootGrid.Height = 670;
+                RootGrid.HorizontalAlignment = HorizontalAlignment.Center;
+                RootGrid.VerticalAlignment = VerticalAlignment.Center;
+            }
+        }
+
+        private async void UiScaleSlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
+        {
+            if (UiScaleBadgeText == null) return;
+            int percent = (int)Math.Round(e.NewValue);
+            UiScaleBadgeText.Text = $"{percent}%";
+
+            if (_isInitializingUiScale) return;
+
+            double newScale = percent / 100.0;
+            if (Math.Abs(_currentUiScale - newScale) < 0.001) return;
+
+            _currentUiScale = newScale;
+            try
+            {
+                Windows.Storage.ApplicationData.Current.LocalSettings.Values[SETTING_UI_SCALE_PERCENT] = percent;
+                Logger.Info($"Saved UI scale setting: {percent}% ({newScale})");
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn($"Failed to save UI scale setting: {ex.Message}");
+            }
+
+            UpdateLayoutScaling();
+
+            if (widget != null)
+            {
+                try
+                {
+                    var targetSize = new Windows.Foundation.Size(Math.Round(500 * _currentUiScale), Math.Round(670 * _currentUiScale));
+                    await widget.TryResizeWindowAsync(targetSize);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"Failed to resize Game Bar widget window: {ex.Message}");
+                }
+            }
+            else
+            {
+                try
+                {
+                    var appView = ApplicationView.GetForCurrentView();
+                    var targetSize = new Windows.Foundation.Size(Math.Round(500 * _currentUiScale), Math.Round(670 * _currentUiScale));
+                    appView.TryResizeView(targetSize);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warn($"Failed to resize standalone window: {ex.Message}");
+                }
+            }
+        }
+
         private void JumpToVisibleTab(int targetIndex)
         {
             if (tabInfos == null || MainPivot == null) return;
@@ -2010,6 +2161,7 @@ namespace XboxGamingBar
             if (widget != null)
             {
                 Logger.Info("Running as a Xbox Game Bar widget.");
+                EnsureGameBarWidgetLayout();
                 await widget.CenterWindowAsync();
                 widget.RequestedThemeChanged += GamingWidget_RequestedThemeChanged;
                 widget.SettingsClicked += GamingWidget_SettingsClicked;
@@ -2018,6 +2170,7 @@ namespace XboxGamingBar
             else
             {
                 Logger.Info("XboxGameBarWidget not available, probably running as an app instead of widget.");
+                EnsureStandaloneLayout();
                 SetBackgroundColor();
             }
 
